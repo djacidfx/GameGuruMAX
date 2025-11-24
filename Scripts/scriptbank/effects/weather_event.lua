@@ -362,7 +362,6 @@ function weather_event_main(e)
 		end
 	end
 	timedelay = GetTimer(e)
-	PromptDuration("Timedelay = " .. timedelay .. " repeatdelay = " .. weather_event[e].repeatdelay,4000)
 	if status[e] == "end_delay" and timedelay > weather_event[e].repeatdelay then
 		-- Event State Resets --
 		current_value[e] = 0
