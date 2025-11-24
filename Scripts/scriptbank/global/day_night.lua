@@ -400,8 +400,6 @@ function day_night_main(e)
 			changeday[e] = 1
 		
 			local trigtest = a_wastriggered + b_wastriggered
-	
-			PromptDuration("trigtest succeeded",3000)
 			a_wastriggered = 0
 			b_wastriggered = 0 
 			runonce = 1
