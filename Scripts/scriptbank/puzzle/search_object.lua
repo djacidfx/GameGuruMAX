@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Search Object v12 by Necrym59
+-- Search Object v14 by Necrym59
 -- DESCRIPTION: Searching this object will give the player the selected contents?
 -- DESCRIPTION: [USE_RANGE=90(0,100)]
 -- DESCRIPTION: [PROMPT_TEXT$="E to Search"]
@@ -51,6 +51,7 @@ local playonce		= {}
 local keypressed	= {}
 local tEnt 			= {}
 local selectobj 	= {}
+local resulttimer	= {}
 
 function search_object_properties(e, use_range, prompt_text, content, named_item, quantity, search_time, search_text, result_text, noise_range, search_trigger, searchbar_image, prompt_display, item_highlight, highlight_icon_imagefile)
 	searchobject[e].prompt_text = prompt_text
@@ -93,6 +94,7 @@ function search_object_init(e)
 	keypressed[e] = 0
 	g_tEnt = 0
 	selectobj[e] = 0
+	resulttimer[e] = math.huge	
 end
 
 function search_object_main(e)
@@ -139,7 +141,7 @@ function search_object_main(e)
 		--end pinpoint select object--
 		if PlayerDist < searchobject[e].use_range and tEnt[e] == e and GetEntityVisibility(e) == 1 then
 			if status[e] == "sealed" then  --Sealed
-				if searchobject[e].prompt_display == 1 and keypressed[e] == 0 then PromptLocal(e,searchobject[e].prompt_text) end		
+				if searchobject[e].prompt_display == 1 and keypressed[e] == 0 then TextCenterOnX(50,55,1,searchobject[e].prompt_text) end				
 				if searchobject[e].prompt_display == 2 and keypressed[e] == 0 then Prompt(searchobject[e].prompt_text) end
 				if g_KeyPressE == 1 then
 					keypressed[e] = 1
@@ -148,10 +150,16 @@ function search_object_main(e)
 							PlaySound(e,0)
 							playonce[e] = 1
 						end
-						if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].search_text) end
-						if searchobject[e].prompt_display == 2 then Prompt(searchobject[e].search_text) end
-						PasteSpritePosition(searchbar[e],50-(stime[e]/16),95)						
-						SetSpriteSize(searchbar[e],stime[e]/8,1)
+						if searchobject[e].prompt_display == 1 then
+							TextCenterOnX(50,55,1,searchobject[e].search_text)
+							PasteSpritePosition(searchbar[e],50-(stime[e]/16),56)						
+							SetSpriteSize(searchbar[e],stime[e]/8,1)							
+						end
+						if searchobject[e].prompt_display == 2 then
+							Prompt(searchobject[e].search_text)
+							PasteSpritePosition(searchbar[e],50-(stime[e]/16),95)						
+							SetSpriteSize(searchbar[e],stime[e]/8,1)
+						end						
 						if searchobject[e].noise_range > 0 then MakeAISound(g_PlayerPosX,g_PlayerPosY,g_PlayerPosZ,searchobject[e].noise_range,1,-1) end
 						stime[e] = stime[e]-0.1
 						if stime[e] < 0 then stime[e] = 0 end
@@ -160,6 +168,7 @@ function search_object_main(e)
 						SetAnimationName(e,"open")
 						PlayAnimation(e)
 						status[e] = "opened"
+						resulttimer[e] = g_Time + 2000
 					end
 				end
 				if g_KeyPressE == 0 then StopSound(e,0) end
@@ -168,7 +177,7 @@ function search_object_main(e)
 		----------------------------------------------------------------------------------------------------------------------------------------------------
 		if status[e] == "opened" then  --Opened
 			if searchobject[e].content == 1 then	--Ammo
-				if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Ammo") end
+				if searchobject[e].prompt_display == 1 then TextCenterOnX(50,55,1,searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Ammo") end
 				if searchobject[e].prompt_display == 2 then PromptDuration(searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Ammo",2000) end				
 				if doonce[e] == 0 then
 					for index = 1, 10, 1 do
@@ -185,7 +194,7 @@ function search_object_main(e)
 			end
 
 			if searchobject[e].content == 2 then	--Health
-				if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Health") end
+				if searchobject[e].prompt_display == 1 then	TextCenterOnX(50,55,1,searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Health") end
 				if searchobject[e].prompt_display == 2 then PromptDuration(searchobject[e].result_text.. " " ..searchobject[e].quantity..  " Health",2000) end
 				if doonce[e] == 0 then
 					StopSound(e,0)
@@ -211,7 +220,7 @@ function search_object_main(e)
 					if item_entity[e] ~= nil then
 						CollisionOn(item_entity[e])
 						Show(item_entity[e])
-						if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].result_text.. " " ..searchobject[e].quantity.. " "..searchobject[e].named_item) end
+						if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].result_text.. " " ..searchobject[e].quantity.. " "..searchobject[e].named_item) end							
 						if searchobject[e].prompt_display == 2 then PromptDuration(searchobject[e].result_text.. " " ..searchobject[e].quantity.. " "..searchobject[e].named_item,2000) end
 					end
 					doonce[e] = 1
@@ -220,7 +229,7 @@ function search_object_main(e)
 			end
 
 			if searchobject[e].content == 4 then	--Nothing
-				if searchobject[e].prompt_display == 1 then PromptLocal(e,"Nothing found") end
+				if searchobject[e].prompt_display == 1 then TextCenterOnX(50,55,1,"Nothing found") end
 				if searchobject[e].prompt_display == 2 then PromptDuration("Nothing found",2000) end
 				StopSound(e,0)
 				status[e] = "searched"
@@ -230,7 +239,7 @@ function search_object_main(e)
 		if status[e] == "searched" then  --Finished
 			if searchobject[e].search_trigger == 2 then
 				PerformLogicConnections(e)
-				ActivateIfUsed(e)				
+				ActivateIfUsed(e)
 				status[e] = "finish"
 			end
 		end
