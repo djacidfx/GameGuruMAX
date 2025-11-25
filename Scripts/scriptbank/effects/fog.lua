@@ -26,7 +26,7 @@ local status 			= {}
 local fogswitch			= {}
 local fog_inprogress	= {}
 
--- "Default" values (The state of the world before the script runs)
+-- "Default" values
 local default_fogn		= {}
 local default_fogd		= {}	
 local default_fog_r		= {}
@@ -34,7 +34,7 @@ local default_fog_g		= {}
 local default_fog_b		= {}
 local default_fog_intensity = {}
 
--- "Start" values (The snapshot of values when a transition begins)
+-- "Start" values
 local start_fogn		= {}
 local start_fogd		= {}
 local start_fog_r		= {}
@@ -48,6 +48,10 @@ local fog_t             = {}
 -- Linear Interpolation
 local function math_lerp(a, b, t)
     return a + (b - a) * t
+end
+
+local function math_smoothstep(t)
+    return t * t * (3 - 2 * t)
 end
 
 function fog_GetTargetFogUnit(percent_input)
@@ -77,7 +81,7 @@ function fog_init(e)
     fog[e].fog_speed = 10
     fog[e].fog_colour_change = 1
     
-    -- Defaults to current
+    -- Initialize defaults
     fog[e].fog_red = GetFogRed()
     fog[e].fog_green = GetFogGreen()
     fog[e].fog_blue = GetFogBlue()
@@ -89,26 +93,27 @@ function fog_init(e)
     status[e] = "init"
 end
 
+
 function fog_main(e)
 
     if status[e] == "init" then
-        -- Capture the "Level Defaults" to return to later
+        -- Capture curren levels
         default_fogn[e]	= GetFogNearest()
         default_fogd[e]	= GetFogDistance()
         default_fog_r[e] = GetFogRed()
         default_fog_g[e] = GetFogGreen()
         default_fog_b[e] = GetFogBlue()
-        default_fog_intensity[e] = GetFogIntensity()        
-        -- Logic to decide initial switch state based on current distance
+        default_fog_intensity[e] = GetFogIntensity()
         if default_fogd[e] > fog[e].fog_distance then fogswitch[e] = 0 end
-        if default_fogd[e] < default_fogd[e] then fogswitch[e] = 1 end        
+        if default_fogd[e] < default_fogd[e] then fogswitch[e] = 1 end
+        
         SetActivated(e,0)
         status[e] = "endinit"
     end
 
     if g_Entity[e]['activated'] == 1 then
-
-        -- PHASE 1: INITIALIZATION OF TRANSITION
+		PromptDuration(fog[e].prompt_text, 2000)
+        -- PHASE 1: INITIALIZATION
         if fog_inprogress[e] == 0 then
             fog_inprogress[e] = 1
             fog_t[e] = 0 -- Reset timer
@@ -120,11 +125,11 @@ function fog_main(e)
             start_fog_intensity[e] = GetFogIntensity()
         end
 
-        -- PHASE 2: CALCULATE TARGETS
+        -- PHASE 2: CALCULATE
         local target_n, target_d, target_r, target_g, target_b, target_i
         
         if fogswitch[e] == 0 then
-            -- Moving TO the Custom Fog settings
+            -- To new fog settings
             target_n = fog[e].fog_nearest
             target_d = fog[e].fog_distance
             target_r = fog[e].fog_red
@@ -132,7 +137,7 @@ function fog_main(e)
             target_b = fog[e].fog_blue
             target_i = fog[e].fog_intensity
         else
-            -- Moving BACK to Default settings
+            -- Back to default settings
             target_n = default_fogn[e]
             target_d = default_fogd[e]
             target_r = default_fog_r[e]
@@ -144,24 +149,24 @@ function fog_main(e)
         -- PHASE 3: INTERPOLATION
         local speed_factor = (fog[e].fog_speed / 10000.0) * 0.05 
         fog_t[e] = fog_t[e] + speed_factor
-        if fog_t[e] > 1.0 then fog_t[e] = 1.0 end
-        local t = fog_t[e]
-        -- Apply Distance Fogs
-        SetFogNearest(math_lerp(start_fogn[e], target_n, t))
-        SetFogDistance(math_lerp(start_fogd[e], target_d, t))
-        -- Apply Color Changes (Only if enabled)
+        -- Clamp timer at 1.0
+        if fog_t[e] > 1.0 then fog_t[e] = 1.0 end        
+        local t_linear = fog_t[e]
+        local t_curved = math_smoothstep(t_linear) 
+        -- Apply Distance Fogs using the curved time
+        SetFogNearest(math_lerp(start_fogn[e], target_n, t_curved))
+        SetFogDistance(math_lerp(start_fogd[e], target_d, t_curved))
+        -- Apply Color Changes (If enabled)
         if fog[e].fog_colour_change == 2 then
-            SetFogRed(math_lerp(start_fog_r[e], target_r, t))
-            SetFogGreen(math_lerp(start_fog_g[e], target_g, t))
-            SetFogBlue(math_lerp(start_fog_b[e], target_b, t))
-            SetFogIntensity(math_lerp(start_fog_intensity[e], target_i, t))
+            SetFogRed(math_lerp(start_fog_r[e], target_r, t_curved))
+            SetFogGreen(math_lerp(start_fog_g[e], target_g, t_curved))
+            SetFogBlue(math_lerp(start_fog_b[e], target_b, t_curved))
+            SetFogIntensity(math_lerp(start_fog_intensity[e], target_i, t_curved))
         end
-		
+ 
         -- PHASE 4: COMPLETION
-        if fog_t[e] >= 1.0 then
-            fog_inprogress[e] = 0
-            
-            -- Toggle for next time
+		if t_linear >= 1.0 then
+            fog_inprogress[e] = 0            
             if fogswitch[e] == 0 then
                 fogswitch[e] = 1 
             else
