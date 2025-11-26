@@ -112,7 +112,6 @@ function fog_main(e)
     end
 
     if g_Entity[e]['activated'] == 1 then
-		PromptDuration(fog[e].prompt_text, 2000)
         -- PHASE 1: INITIALIZATION
         if fog_inprogress[e] == 0 then
             fog_inprogress[e] = 1
@@ -169,8 +168,10 @@ function fog_main(e)
             fog_inprogress[e] = 0            
             if fogswitch[e] == 0 then
                 fogswitch[e] = 1 
+				PromptDuration(fog[e].prompt_text, 3000)
             else
                 fogswitch[e] = 0
+				PromptDuration(fog[e].prompt_text, 3000)
             end            
             SetActivated(e, 0)
         end
