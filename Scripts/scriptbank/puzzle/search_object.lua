@@ -3,9 +3,9 @@
 -- DESCRIPTION: Searching this object will give the player the selected contents?
 -- DESCRIPTION: [USE_RANGE=90(0,100)]
 -- DESCRIPTION: [PROMPT_TEXT$="E to Search"]
--- DESCRIPTION: [@CONTENT=1(1=Ammo, 2=Health, 3=Named Item, 4=Nothing)]
--- DESCRIPTION: [NAMED_ITEM$=""] Unique entity name (will be auto hidden)
--- DESCRIPTION: [QUANTITY=1(1,50)]
+-- DESCRIPTION: [@CONTENT=1(1=Ammo, 2=Health, 3=Unique Named Item, 4=Cloned Named Item, 5=Nothing)]
+-- DESCRIPTION: [NAMED_ITEM$=""] Entity name (will be auto hidden)
+-- DESCRIPTION: [QUANTITY=1(1,50)] Health/Ammo only
 -- DESCRIPTION: [SEARCH_TIME=8(1,30)]
 -- DESCRIPTION: [SEARCH_TEXT$="Searching..."]
 -- DESCRIPTION: [RESULT_TEXT$="Found.."]
@@ -52,6 +52,13 @@ local keypressed	= {}
 local tEnt 			= {}
 local selectobj 	= {}
 local resulttimer	= {}
+local itemtoclone	= {}
+local newEntn		= {}
+local terrainheight = {}
+local surfaceheight = {}
+local newposx		= {}
+local newposy		= {}
+local newposz		= {}
 
 function search_object_properties(e, use_range, prompt_text, content, named_item, quantity, search_time, search_text, result_text, noise_range, search_trigger, searchbar_image, prompt_display, item_highlight, highlight_icon_imagefile)
 	searchobject[e].prompt_text = prompt_text
@@ -94,7 +101,10 @@ function search_object_init(e)
 	keypressed[e] = 0
 	g_tEnt = 0
 	selectobj[e] = 0
-	resulttimer[e] = math.huge	
+	itemtoclone[e] = nil
+	newEntn[e] = nil
+	terrainheight[e] = 0
+	surfaceheight[e] = 0
 end
 
 function search_object_main(e)
@@ -116,7 +126,7 @@ function search_object_main(e)
 			SetSpritePosition(hl_icon[e],500,500)
 		end		
 	
-		if searchobject[e].content == 3 and searchobject[e].named_item ~= "" then
+		if searchobject[e].content == 3 or searchobject[e].content == 4 and searchobject[e].named_item ~= "" then
 			item_entity[e] = nil
 			for a = 1, g_EntityElementMax do
 				if a ~= nil and g_Entity[a] ~= nil then
@@ -124,6 +134,7 @@ function search_object_main(e)
 						item_entity[e] = a
 						CollisionOff(a)
 						Hide(a)
+						itemtoclone[e] = a
 						break
 					end
 				end
@@ -213,7 +224,7 @@ function search_object_main(e)
 				StopSound(e,0)
 			end
 
-			if searchobject[e].content == 3 then -- Named Item
+			if searchobject[e].content == 3 then -- Unique Named Item
 				if doonce[e] == 0 then
 					StopSound(e, 0)
 					PlaySound(e, 1)
@@ -227,8 +238,35 @@ function search_object_main(e)
 				end
 				status[e] = "searched"
 			end
+			
+			if searchobject[e].content == 4 then -- Cloned Named Item
+				if doonce[e] == 0 then
+					StopSound(e, 0)
+					PlaySound(e, 1)
+					if itemtoclone[e] ~= nil then
+						local ox,oy,oz = U.Rotate3D( 0, 0, 50, math.rad( g_PlayerAngX ), math.rad( g_PlayerAngY ), math.rad( g_PlayerAngZ ) )
+						newposx[e], newposy[e], newposz[e] = g_PlayerPosX + ox, g_PlayerPosY + oy, g_PlayerPosZ + oz
+						terrainheight[e] = GetTerrainHeight(newposx[e],newposz[e])
+						surfaceheight[e] = GetSurfaceHeight(newposx[e],newposy[e],newposz[e])
+						if surfaceheight[e] > terrainheight[e] then
+							newposy[e] = surfaceheight[e] + math.random(5,10)
+						else
+							newposy[e] = terrainheight[e] + math.random(5,10)
+						end
+						newEntn[e] = SpawnNewEntity(itemtoclone[e])
+						ResetPosition(newEntn[e],newposx[e],newposy[e],newposz[e])
+						Show(newEntn[e])
+						CollisionOn(newEntn[e])
+						GravityOn(newEntn[e])						
+						if searchobject[e].prompt_display == 1 then PromptLocal(e,searchobject[e].result_text.. " " ..searchobject[e].quantity.. " "..searchobject[e].named_item) end							
+						if searchobject[e].prompt_display == 2 then PromptDuration(searchobject[e].result_text.. " " ..searchobject[e].quantity.. " "..searchobject[e].named_item,2000) end
+					end
+					doonce[e] = 1
+				end
+				status[e] = "searched"
+			end		
 
-			if searchobject[e].content == 4 then	--Nothing
+			if searchobject[e].content == 5 then --Nothing
 				if searchobject[e].prompt_display == 1 then TextCenterOnX(50,55,1,"Nothing found") end
 				if searchobject[e].prompt_display == 2 then PromptDuration("Nothing found",2000) end
 				StopSound(e,0)
@@ -236,11 +274,12 @@ function search_object_main(e)
 			end
 		end
 
-		if status[e] == "searched" then  --Finished
+		if status[e] == "searched" then --Finished
 			if searchobject[e].search_trigger == 2 then
 				PerformLogicConnections(e)
 				ActivateIfUsed(e)
-				status[e] = "finish"
+				status[e] = "finish"				
+				SwitchScript(e,"no_behavior_selected.lua")
 			end
 		end
 	end
