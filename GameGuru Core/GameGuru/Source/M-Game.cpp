@@ -2933,8 +2933,68 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 		}
 		else
 		{
-			// start title system loop
-			titleslua_main("title");
+			bool bValid = false;
+			int FindFirstSplashNode(void);
+			int nodeid = FindFirstSplashNode();
+			if (nodeid >= 0)
+			{
+				int index = 1;
+
+				int iLinkTo = Storyboard.Nodes[nodeid].output_linkto[0];
+				int iLinkScreen = -1;
+				for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+				{
+					if (Storyboard.Nodes[i].used)
+					{
+						for (int l = 0; l < STORYBOARD_MAXOUTPUTS; l++)
+						{
+							if (iLinkTo > 0 && iLinkTo == Storyboard.Nodes[i].input_id[l])
+							{
+								iLinkScreen = i;
+								break;
+							}
+						}
+					}
+				}
+				if (iLinkScreen >= 0)
+				{
+					//PE: Check if we got a video outlink.
+					for (int ll = 0; ll < STORYBOARD_MAXWIDGETS; ll++)
+					{
+						if (Storyboard.Nodes[iLinkScreen].widget_used[ll])
+						{
+							if (Storyboard.Nodes[iLinkScreen].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+							{
+								if (Storyboard.Nodes[iLinkScreen].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+								{
+									bValid = true;
+									break;
+								}
+							}
+						}
+					}
+					if (bValid)
+					{
+						// screens can have same name (old corruption issue), so new method to identify screen by node
+						std::string node_ident_name = ":node:";
+						node_ident_name += std::to_string(iLinkScreen);
+						t.s_s = node_ident_name.c_str();
+						lua_switchpage();
+						//bLuaPageClosing = true; //always stop music.
+						//iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+					}
+				}
+			}
+			if (bValid)
+			{
+				titleslua_main(t.s_s.Get());
+				strcpy(t.game.pSwitchToLastPage, "title");
+			}
+			else
+			{
+				// start title system loop
+				titleslua_main("title");
+			}
 			return true;
 		}
 	}
