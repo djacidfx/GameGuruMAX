@@ -11601,6 +11601,22 @@ int SetSunIntensity(lua_State* L)
 	return 1;
 }
 
+int GetSunColorRed(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunRed_f);
+	return 1;
+}
+int GetSunColorGreen(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunGreen_f);
+	return 1;
+}
+int GetSunColorBlue(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunBlue_f);
+	return 1;
+}
+
 int GetSunIntensity(lua_State* L)
 {
 	lua_pushnumber(L, t.visuals.SunIntensity_f);
@@ -14302,6 +14318,10 @@ void addFunctions()
 	lua_register(lua, "SetSunLightingColor", SetSunLightingColor);
 	lua_register(lua, "SetSunIntensity", SetSunIntensity);
 	lua_register(lua, "GetSunIntensity", GetSunIntensity);
+
+	lua_register(lua, "GetSunColorBlue", GetSunColorBlue);
+	lua_register(lua, "GetSunColorGreen", GetSunColorGreen);
+	lua_register(lua, "GetSunColorRed", GetSunColorRed);
 
 	// Lighting
 	lua_register(lua, "SetExposure", SetExposure);
