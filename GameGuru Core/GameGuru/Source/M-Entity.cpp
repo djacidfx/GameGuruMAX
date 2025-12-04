@@ -7805,13 +7805,20 @@ void entity_addentitytomap_core ( void )
 		}
 
 		// Create new or use free entity element
-		if ( t.tokay == 0 && g.entityelementlist > 0 ) 
+		if (t.tokay == 0 && g.entityelementlist > 0)
 		{
-			for ( t.e = 1 ; t.e<=  g.entityelementlist; t.e++ )
+			for (t.e = 1; t.e <= g.entityelementlist; t.e++)
 			{
-				if ( t.entityelement[t.e].maintype == 0 ) { t.tokay = t.e; break; }
+				if (t.entityelement[t.e].maintype == 0)
+				{
+					t.tokay = t.e;
+					//PE: If old object was part of group remove it, or if will get deleted on next load.
+					t.entityelement[t.e].creationOfGroupID = -1;
+					break;
+				}
 			}
 		}
+
 		if ( t.tokay == 0 ) 
 		{
 			++g.entityelementlist;
