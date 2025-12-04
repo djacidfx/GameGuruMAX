@@ -2780,7 +2780,19 @@ void entity_loaddata ( void )
 					cmpStrConst( t_field_s, "speed" );
 					if (  matched  )  t.entityprofile[t.entid].speed = t.value1;
 					cmpStrConst( t_field_s, "animspeed" );
-					if (  matched  )  t.entityprofile[t.entid].animspeed = t.value1;
+					if (matched)
+					{
+						// LB: recent performance impprovements caused characters to move comically fast
+						// so detect this specific default value and restore to a more reasonable speed
+						// https://github.com/Dark-Basic-Software-Limited/GameGuruRepo/issues/6048
+						if (t.entityprofile[t.entid].ischaracter == 1)
+						{
+							if (t.value1 == 100) t.value1 = 70;
+						}
+
+						// and of course any other value other than 100 will be the actual speed value set
+						t.entityprofile[t.entid].animspeed = t.value1;
+					}
 					cmpStrConst( t_field_s, "hurtfall" );
 					if (  matched  )  t.entityprofile[t.entid].hurtfall = t.value1;
 

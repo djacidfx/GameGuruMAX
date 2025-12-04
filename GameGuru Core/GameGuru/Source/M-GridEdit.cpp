@@ -1058,6 +1058,7 @@ void mapeditorexecutable_init ( void )
 	LoadImage("editors\\uiv3\\camera.png", TOOL_CAMERA);
 	LoadImage("editors\\uiv3\\light.png", TOOL_CAMERALIGHT);
 	LoadImage("editors\\uiv3\\goback.png", TOOL_GOBACK);
+	LoadImage("editors\\uiv3\\goexit.png", TOOL_GOEXIT);
 	LoadImage("editors\\uiv3\\media-maximize.png", MEDIA_MAXIMIZE);
 	LoadImage("editors\\uiv3\\media-minimize.png", MEDIA_MINIMIZE);
 
@@ -2741,7 +2742,9 @@ void mapeditorexecutable_loop(void)
 		float cursorpos = ImGui::GetCursorPos().x;
 
 		//PE: New "Back to Game Project" ? 
-		if (ImGui::ImgBtn(TOOL_GOBACK, iToolbarIconSize, drawCol_back_gg, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant,false,false,false, bBoostIconColors)) 
+		drawCol_tmp = drawCol_back_test; //LB: same background as toogle buttons for consistency
+		//if (ImGui::ImgBtn(TOOL_GOBACK, iToolbarIconSize, drawCol_back_gg, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant, false, false, false, bBoostIconColors))
+		if (ImGui::ImgBtn(TOOL_GOBACK, iToolbarIconSize, drawCol_tmp, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant, false, false, false, bBoostIconColors))
 		{
 			CloseAllOpenToolsThatNeedSave();
 	
@@ -2785,7 +2788,9 @@ void mapeditorexecutable_loop(void)
 		if (ImGui::IsItemHovered() && iSkibFramesBeforeLaunch == 0) ImGui::SetTooltip("%s", "Back to Game Project Storyboard");
 	
 		ImGui::SameLine();
-		if (ImGui::ImgBtn(TOOL_SAVELEVEL, iToolbarIconSize, drawCol_back_gg, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant, false, false, false, bBoostIconColors)) 
+		drawCol_tmp = drawCol_back_test; //LB: same background as toogle buttons for consistency
+		//if (ImGui::ImgBtn(TOOL_SAVELEVEL, iToolbarIconSize, drawCol_back_gg, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant, false, false, false, bBoostIconColors))
+		if (ImGui::ImgBtn(TOOL_SAVELEVEL, iToolbarIconSize, drawCol_tmp, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down, 0, 0, 0, 0, false, toolbar_gradiant, false, false, false, bBoostIconColors))
 		{
 			CloseAllOpenToolsThatNeedSave();
 			if (bTutorialCheckAction) TutorialNextAction();
@@ -2804,23 +2809,16 @@ void mapeditorexecutable_loop(void)
 
 		ImVec2 tool_selected_padding = { 1.0, 1.0 };
 
-
-
 		ImGui::SameLine();
 		drawCol_Selection = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-
-
-
-
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 2.0f, ImGui::GetCursorPos().y));
 		float precise_icon_width = ImGui::GetCursorPos().x;
 
 		//---------------------------------------------------------------------------------
-		drawCol_tmp = drawCol_back_entities;
-		if (current_mode == TOOL_ENTITY || current_mode == TOOL_LOGIC) drawCol_tmp = drawCol_back_entities * drawCol_back_active; else drawCol_tmp = drawCol_back_entities;
-
+		drawCol_tmp = drawCol_back_test; //LB: same background as toogle buttons for consistency
+		//drawCol_tmp = drawCol_back_entities;
+		//if (current_mode == TOOL_ENTITY || current_mode == TOOL_LOGIC) drawCol_tmp = drawCol_back_entities * drawCol_back_active; else drawCol_tmp = drawCol_back_entities;
 
 		CheckTutorialAction("TOOL_TESTGAME", -10.0f); //Tutorial: check if we are waiting for this action
 		if (ImGui::ImgBtn(TOOL_TESTGAME, iToolbarIconSize, drawCol_tmp, drawCol_normal/**drawCol_Selection*/, drawCol_hover, drawCol_Down,0, 0, 0, 0, false, toolbar_gradiant,false,false,false, bBoostIconColors))
@@ -3507,12 +3505,6 @@ void mapeditorexecutable_loop(void)
 				{
 					ExecuteFile("https://github.com/TheGameCreators/GameGuruRepo/issues/new", "", "", 0);
 
-				}
-
-				if (ImGui::MenuItem("GameGuru MAX Hub"))
-				{
-					bWelcomeNoBackButton = false;
-					bWelcomeScreen_Window = true;
 				}
 				if (g_bFreeTrialVersion == true)
 				{
