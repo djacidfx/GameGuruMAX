@@ -8561,7 +8561,7 @@ void mapeditorexecutable_loop(void)
 					// Default to tutorial panel if no object is selected.
 					// if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 20)
 					//LB: can keep tutorial closed now even if no object selected 
-					if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 15 && iLastOpenHeader != 20 && sGotoPreviewWithFile.Len() == 0) // 20 is keyboard shortcxuts, 15 is grid component
+					if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 15 && iLastOpenHeader != 16 && iLastOpenHeader != 8 && iLastOpenHeader != 9 && iLastOpenHeader != 20 && sGotoPreviewWithFile.Len() == 0) // 20 is keyboard shortcxuts, 15 is grid component
 						iLastOpenHeader = 19;
 
 					if (pref.bAutoClosePropertySections && iLastOpenHeader != 19)
