@@ -4776,7 +4776,7 @@ struct Stemps
 	DWORD bestdif;
 	DWORD bestpos;
 	int bkwidth;
-	cstr brass_s;
+	cstr brass_s = "01234567890123456789012345678901234567890123456789012345678901234567890123456789";
 	int chkfile;
 	cstr chunk_s;
 	cstr decal_s;
