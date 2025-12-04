@@ -818,7 +818,17 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		extern bool g_bNoSwapchainPresent;
 		//PE: Why was we doing this, this will make a 10 sec blackscreen delay until loading screen is displayed ?????
 		//PE: Removed for now TODO check why it was added.
-		t.game.levelloadprogress=0  ; titles_loadingpageupdate ( );
+		
+		//PE: This was to prevent old loadingscreen is displayed.
+		//g_Storyboard_Current_Loading_Page
+		extern char g_Storyboard_Current_Loading_Page[256];
+		void FindLoadingScreen(void);
+		FindLoadingScreen();
+		//PE: If using cuatom loading screen delay rendering, TODO: find another way to speed up the 10 sec delay before the screen. (mapfile_loadproject_fpm)
+		if( stricmp(g_Storyboard_Current_Loading_Page , "loading.lua") != NULL)
+			g_bNoSwapchainPresent = true;
+		t.game.levelloadprogress=0  ;
+		titles_loadingpageupdate ( );
 		g_bNoSwapchainPresent = false;
 
 	}
@@ -2677,6 +2687,9 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							timestampactivity(0, tmp);
 							if (script != "title")
 							{
+								//PE: Block for one frame so we do not see old screens.
+								extern bool bBlockImGuiUntilNewFrame;
+								bBlockImGuiUntilNewFrame = true;
 								sky_hide();
 								titleslua_init();
 								titleslua_main((char *)script.c_str());
