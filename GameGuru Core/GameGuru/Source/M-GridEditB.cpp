@@ -46623,7 +46623,9 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 
 		ImVec2 fGlobalScale = ImVec2(screen_editor_scalemod(vViewportSize.x / 1920.0f), screen_editor_scalemod(vViewportSize.x / 1920.0f));
 		ImVec2 vScale = vMonitorSize / vViewportSize;
-		float fFontScale = screen_editor_scalemod(1080.0f / monitor_size_y);
+		//float fFontScale = screen_editor_scalemod(1080.0f / monitor_size_y); // 0.75
+		//PE: fFontScale = 1.0 Gives the best overall result on all different resolutions.
+		float fFontScale = 1.0f;
 
 		ImVec2 vUniversalScale = ImVec2(vMonitorSize.x / monitor_size_x, vMonitorSize.x / monitor_size_x);
 		ImVec2 fUniversalGlobalScale = ImVec2(screen_editor_scalemod(monitor_size_y / 1080.0f), screen_editor_scalemod(monitor_size_y / 1080.0f)); //Fit by y resolution.
