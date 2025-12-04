@@ -40,6 +40,7 @@ StoryboardStruct Storyboard;
 StoryboardStruct checkproject;
 StoryboardStruct202 updateproject202;
 std::vector< std::pair<ImFont*, std::string>> StoryboardFonts;
+std::vector< std::pair<ImFont*, std::string>> DefaultStoryboardFonts;
 bool bScreen_Editor_Window = false;
 int iScreen_Editor_Node = -1;
 int iStoryboardExecuteKey = 0;
@@ -2101,6 +2102,15 @@ void mapeditorexecutable_loop(void)
 			{
 				iLaunchAfterSync = 0;
 				void AddRemoteProjectFonts(void);
+				AddRemoteProjectFonts();
+				break;
+			}
+			case 698:
+			{
+				//PE: Reload all fonts.
+				iLaunchAfterSync = 0;
+				void AddRemoteProjectFonts(void);
+				ChangeGGFont("editors\\uiv3\\Roboto-Medium.ttf", 15);
 				AddRemoteProjectFonts();
 				break;
 			}

@@ -511,6 +511,9 @@ extern int g_iAbortedAsEntityIsGroupCreate;
 extern bool bPreviewWPE;
 extern uint32_t PreviewWPERoot;
 
+extern ImFont* customfont;
+extern ImFont* customfontlarge;
+
 
 bool bDigAHoleToHWND = false;
 bool g_bSelectedMapImageTypeSpecialHelp = false;
@@ -39015,6 +39018,174 @@ void process_storeboard(bool bInitOnly)
 					}
 
 					tabflags = 0;
+					if (iChangeTab == 7)
+					{
+						iChangeTab = 0;
+						tabflags = ImGuiTabItemFlags_SetSelected;
+					}
+					if (ImGui::BeginTabItem(" Fonts ", NULL, tabflags))
+					{
+
+						ImGui::SetWindowFontScale(1.4);
+						ImGui::Text("");
+						ImGui::TextCenter("Fonts");
+						ImGui::Text("");
+
+						ImGui::PushItemWidth(-10);
+						ImGui::PushFont(customfontlarge);  //defaultfont
+						ImGui::SetWindowFontScale(0.75);
+
+						static char myFontSelected[MAX_PATH] = "Default Font";
+						float childwide = 350.0f;
+						float winsize = ImGui::GetContentRegionAvailWidth();
+						ImGui::SetCursorPosX( (winsize * 0.5f) - (childwide * 0.5f));
+
+						ImVec4* style_colors = ImGui::GetStyle().Colors;
+						ImVec4 oldBgColor = style_colors[ImGuiCol_ChildBg];
+						float alpha =  ImMax(oldBgColor.w * 1.5f,1.0f);
+						//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(oldBgColor.x, oldBgColor.y, oldBgColor.z, alpha));
+						ImGui::PushStyleColor(ImGuiCol_ChildBg, style_back);
+						
+						ImGui::BeginChild("##Fonts", ImVec2(childwide, 300), true);
+						bool bIsSelected = false;
+						if (stricmp(myFontSelected, "Default Font") == NULL) bIsSelected = true;
+						ImGui::PushFont(customfontlarge);  //defaultfont
+						if (ImGui::Selectable("Default Font", bIsSelected))
+						{
+							strcpy(myFontSelected, "Default Font");
+						}
+						ImGui::PopFont();
+						for (int i = 0; i < StoryboardFonts.size(); i++)
+						{
+							bool bIsSelected = false;
+							if (stricmp(StoryboardFonts[i].second.c_str(), myFontSelected) == NULL) bIsSelected = true;
+
+							ImGui::PushFont(StoryboardFonts[i].first);  //defaultfont
+							if (ImGui::Selectable(StoryboardFonts[i].second.c_str(), bIsSelected))
+							{
+								strcpy(myFontSelected, StoryboardFonts[i].second.c_str());
+							}
+							ImGui::PopFont();
+						}
+						ImGui::EndChild();
+
+						ImGui::PopStyleColor();
+
+						ImGui::PopItemWidth();
+
+						ImGui::SetWindowFontScale(1.0);
+						ImGui::PopFont();
+						
+						ImGui::Text("");
+						ImVec2 cPos = ImVec2(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+						ImGui::SetCursorPos(cPos);
+
+						if (ImGui::StyleButton("Delete Project Font", ImVec2(buttonwide, 0.0f)))
+						{
+							//DefaultStoryboardFonts
+							extern std::vector< std::pair<ImFont*, std::string>> DefaultStoryboardFonts;
+							const char* pestrcasestr(const char* arg1, const char* arg2);
+							bool bAlreadyThere = false;
+							for (int i = 0; i < DefaultStoryboardFonts.size(); i++)
+							{
+								if (pestrcasestr(myFontSelected, DefaultStoryboardFonts[i].second.c_str()))
+								{
+									bAlreadyThere = true;
+									break;
+								}
+							}
+							if (pestrcasestr(myFontSelected, "Default Font"))
+							{
+								bAlreadyThere = true;
+							}
+							if (!bAlreadyThere)
+							{
+								int iAction = askBoxCancel("This will delete the font, are you sure?", "Confirmation"); //1==Yes 2=Cancel 0=No
+								if (iAction == 1)
+								{
+									//PE: Delete Font
+									extern char szWriteDir[MAX_PATH];
+									char destination[MAX_PATH];
+									strcpy(destination, szWriteDir);
+									strcat(destination, "Files\\editors\\templates\\fonts\\");
+									strcat(destination, myFontSelected);
+									DeleteFileA(destination);
+									if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+									{
+										strcpy(destination, Storyboard.customprojectfolder);
+										strcat(destination, Storyboard.gamename);
+										strcat(destination, "\\files\\editors\\templates\\fonts\\");
+										strcat(destination, myFontSelected);
+										DeleteFileA(destination);
+									}
+									iLaunchAfterSync = 698; //PE: Reload fonts.
+									strcpy(myFontSelected, "Default Font");
+								}
+							}
+							else
+							{
+								BoxerInfo("Only custom installed fonts can be deleted.", "Information");
+							}
+						}
+
+						cPos = ImVec2(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+						ImGui::SetCursorPos(cPos);
+
+						if (ImGui::StyleButton("Add Project Font", ImVec2(buttonwide, 0.0f)))
+						{
+							cStr tOldDir = GetDir();
+							cStr fulldir = pref.cDefaultImportPath;
+							char* cFileSelected = (char*)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "All\0*.*\0ttf\0*.ttf\otf\0*.otf\0", fulldir.Get(), NULL, true);
+							SetDir(tOldDir.Get());
+							if (cFileSelected && strlen(cFileSelected) > 0)
+							{
+								char destination[MAX_PATH];
+								strcpy(destination, cFileSelected);
+								cStr importer_getfilenameonly(LPSTR pFileAndPossiblePath);
+								cStr filename_only = importer_getfilenameonly(destination);
+
+								char* pExtension = strrchr(destination, '.');
+								bool bExtOK = false;
+								if (pExtension)
+								{
+									if (stricmp(pExtension, ".ttf") == NULL || stricmp(pExtension, ".otf") == NULL)
+									{
+										bExtOK = true;
+									}
+								}
+
+								if (!bExtOK)
+								{
+									BoxerInfo("Only TTF and OTF fonts supported.", "Information");
+								}
+								else
+								{
+									if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+									{
+										strcpy(destination, Storyboard.customprojectfolder);
+										strcat(destination, Storyboard.gamename);
+										strcat(destination, "\\files\\editors\\templates\\fonts\\");
+										strcat(destination, filename_only.Get());
+										CopyFileA(cFileSelected, destination, TRUE);
+									}
+									else
+									{
+										extern char szWriteDir[MAX_PATH];
+										strcpy(destination, szWriteDir);
+										strcat(destination, "Files\\editors\\templates\\fonts\\");
+										strcat(destination, filename_only.Get());
+										CopyFileA(cFileSelected, destination, TRUE);
+									}
+									iLaunchAfterSync = 698; //PE: Reload fonts.
+									strcpy(myFontSelected, "Default Font");
+								}
+							}
+						}
+
+						ImGui::EndTabItem();
+					}
+
+					tabflags = 0;
 					if (iChangeTab == 4)
 					{
 						iChangeTab = 0;
@@ -39264,6 +39435,11 @@ void process_storeboard(bool bInitOnly)
 					if (ImGui::StyleButton("Key Bindings", ImVec2(buttonwide, 0.0f)))
 					{
 						iChangeTab = 6;
+					}
+					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+					if (ImGui::StyleButton("Fonts", ImVec2(buttonwide, 0.0f)))
+					{
+						iChangeTab = 7;
 					}
 					ImGui::Indent(-10);
 				}
@@ -45067,8 +45243,6 @@ void storyboard_control_widget(int nodeid, int index, ImVec2 pos, ImVec2 size, I
 	ImGui::SetCursorPos(ocpos);
 }
 
-extern ImFont* customfont;
-extern ImFont* customfontlarge;
 float WidgetSelectUsedFont(int nodeid, int index)
 {
 	
