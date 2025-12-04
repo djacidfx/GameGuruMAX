@@ -7852,6 +7852,35 @@ void entity_addentitytomap_core ( void )
 		t.e = t.gridentityoverwritemode;
 	}
 
+	//PE: Any newly added object should be unlocked.
+	if (t.gridentityoverwritemode == 0)
+	{
+		extern std::vector<sRubberBandType> vEntityLockedList;
+		t.entityelement[t.e].editorlock = 0;
+		for (int i = 0; i < vEntityLockedList.size(); i++)
+		{
+			if (vEntityLockedList[i].e == t.e)
+			{
+				vEntityLockedList.erase(vEntityLockedList.begin() + i);
+				sObject* pObject;
+				if (t.entityelement[t.e].obj > 0)
+				{
+					if (t.entityelement[t.e].obj < g_iObjectListCount)
+					{
+						pObject = g_ObjectList[t.entityelement[t.e].obj];
+						if (pObject)
+						{
+							WickedCall_SetObjectRenderLayer(pObject, GGRENDERLAYERS_NORMAL);
+							WickedCall_SetObjectHighlightRed(pObject, false);
+						}
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
 	// noticed newly created can have old garbage in them, clear to be safe
 	t.entityelement[t.e].collected = 0;
 
