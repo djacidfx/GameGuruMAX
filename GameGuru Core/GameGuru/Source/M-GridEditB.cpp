@@ -51384,7 +51384,7 @@ bool PostProcess_Settings(float fTabColumnWidth, bool bVisualUpdated)
 		{
 			tab_tab_Column_text("AO Power", fTabColumnWidth);
 			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##setAmbientOcclusionPower", &t.visuals.fMSAOPower, 0.01f, 8.0f, "%.2f", 2.0f))
+			if (ImGui::SliderFloat("##setAmbientOcclusionPower", &t.visuals.fMSAOPower, -5.0f, 5.0f, "%.2f", 2.0f))
 			{
 				t.gamevisuals.fMSAOPower = master.fAOPower = t.visuals.fMSAOPower;
 				master.masterrenderer.setAOPower(master.fAOPower);
@@ -52330,8 +52330,10 @@ void RenderPreviewEmitter(void)
 		if (iEntityIndex > 0 && PreviewWPERoot > 0)
 		{
 			extern float fPreviewYOffset;
+			extern float fPreviewXOffset;
+			extern float fPreviewZOffset;
 			bool WickedCall_ParticleEffectPositionRotation(uint32_t root, float fX, float fY, float fZ, float fXa, float fYa, float fZa);
-			WickedCall_ParticleEffectPositionRotation(PreviewWPERoot, posx, posy + fPreviewYOffset, posz, 0, posya, 0);
+			WickedCall_ParticleEffectPositionRotation(PreviewWPERoot, posx + fPreviewXOffset, posy + fPreviewYOffset, posz + fPreviewZOffset, 0, posya, 0);
 		}
 	}
 }
