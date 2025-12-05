@@ -2411,7 +2411,17 @@ luaMessage** ppLuaMessages = NULL;
 				t.entityelement[ iEntityIndex ].soundset3 =	loadinternalsoundcore( t.entityelement[ iEntityIndex ].eleprof.soundset3_s.Get(), 1 );
 			}
 		}
-		t.entityelement[iEntityIndex].soundset4 = 0;
+		//t.entityelement[iEntityIndex].soundset4 = 0;
+		if (iSlotIndex == 4)
+		{
+			t.entityelement[iEntityIndex].eleprof.soundset4a_s = pString;
+			if (setSound)
+			{
+				if (t.entityelement[iEntityIndex].soundset4 > 0) deleteinternalsound(t.entityelement[iEntityIndex].soundset4);
+				t.entityelement[iEntityIndex].soundset4 = loadinternalsoundcore(t.entityelement[iEntityIndex].eleprof.soundset4a_s.Get(), 1);
+			}
+		}
+
 		if (iSlotIndex == 5)
 		{
 			t.entityelement[iEntityIndex].eleprof.soundset5_s = pString;
@@ -2448,7 +2458,7 @@ luaMessage** ppLuaMessages = NULL;
 		if ( iSlotIndex == 1 ) pString = t.entityelement[iEntityIndex].eleprof.soundset1_s.Get();
 		if ( iSlotIndex == 2 ) pString = t.entityelement[iEntityIndex].eleprof.soundset2_s.Get();
 		if ( iSlotIndex == 3 ) pString = t.entityelement[iEntityIndex].eleprof.soundset3_s.Get();
-		if ( iSlotIndex == 4 ) pString = t.entityelement[iEntityIndex].eleprof.soundset5_s.Get();
+		if ( iSlotIndex == 4 ) pString = t.entityelement[iEntityIndex].eleprof.soundset4a_s.Get();
 		if ( iSlotIndex == 5 ) pString = t.entityelement[iEntityIndex].eleprof.soundset5_s.Get();
 		if ( iSlotIndex == 6 ) pString = t.entityelement[iEntityIndex].eleprof.soundset6_s.Get();
 	}
@@ -5254,7 +5264,7 @@ int GetSoundPlaying(lua_State* L)
 	if (v == 1) tsnd = t.entityelement[e].soundset1;
 	if (v == 2) tsnd = t.entityelement[e].soundset2;
 	if (v == 3) tsnd = t.entityelement[e].soundset3;
-	if (v == 4) tsnd = t.entityelement[e].soundset5;
+	if (v == 4) tsnd = t.entityelement[e].soundset4;
 	if (v == 5) tsnd = t.entityelement[e].soundset5;
 	if (v == 6) tsnd = t.entityelement[e].soundset6;
 	int iPlaying = 0;
@@ -5337,7 +5347,7 @@ int GetEntityRawSound(lua_State *L)
 	if (iSoundSlot == 1) iRawSoundIndex = t.entityelement[iE].soundset1;
 	if (iSoundSlot == 2) iRawSoundIndex = t.entityelement[iE].soundset2;
 	if (iSoundSlot == 3) iRawSoundIndex = t.entityelement[iE].soundset3;
-	if (iSoundSlot == 4) iRawSoundIndex = t.entityelement[iE].soundset5;
+	if (iSoundSlot == 4) iRawSoundIndex = t.entityelement[iE].soundset4;
 	if (iSoundSlot == 5) iRawSoundIndex = t.entityelement[iE].soundset5;
 	if (iSoundSlot == 6) iRawSoundIndex = t.entityelement[iE].soundset6;
 	lua_pushnumber ( L , iRawSoundIndex );

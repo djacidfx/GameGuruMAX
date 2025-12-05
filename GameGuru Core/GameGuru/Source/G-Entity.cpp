@@ -556,11 +556,13 @@ void entity_free ( void )
 		t.entityelement[t.e].soundset2=0;
 		if ( t.entityelement[t.e].soundset3>0  )  deleteinternalsound(t.entityelement[t.e].soundset3);
 		t.entityelement[t.e].soundset3 = 0;
+		if (t.entityelement[t.e].soundset4 > 0)  deleteinternalsound(t.entityelement[t.e].soundset4);
 		t.entityelement[t.e].soundset4 = 0;
 		if (t.entityelement[t.e].soundset5 > 0)  deleteinternalsound(t.entityelement[t.e].soundset5);
 		t.entityelement[t.e].soundset5 = 0;
 		if (t.entityelement[t.e].soundset6 > 0)  deleteinternalsound(t.entityelement[t.e].soundset6);
 		t.entityelement[t.e].soundset6 = 0;
+
 		// reset any animation motion within the object
 		sObject* pObject = GetObjectData(t.obj);
 		entity_resetlimbtwists(pObject, t.e);
@@ -1780,6 +1782,14 @@ void entity_loop ( void )
 					if (  SoundPlaying(t.entityelement[t.e].soundset3) == 1 ) 
 					{
 						t.entityelement[t.e].soundisnonthreedee=1;
+					}
+				}
+				if (t.entityelement[t.e].soundset4 > 0)
+				{
+					PositionSound(t.entityelement[t.e].soundset4, CameraPositionX(0), CameraPositionY(0), CameraPositionZ(0));
+					if (SoundPlaying(t.entityelement[t.e].soundset4) == 1)
+					{
+						t.entityelement[t.e].soundisnonthreedee = 1;
 					}
 				}
 				if (t.entityelement[t.e].soundset5 > 0)
