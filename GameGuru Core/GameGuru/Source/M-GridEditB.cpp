@@ -511,6 +511,9 @@ extern int g_iAbortedAsEntityIsGroupCreate;
 extern bool bPreviewWPE;
 extern uint32_t PreviewWPERoot;
 
+extern ImFont* customfont;
+extern ImFont* customfontlarge;
+
 
 bool bDigAHoleToHWND = false;
 bool g_bSelectedMapImageTypeSpecialHelp = false;
@@ -35522,6 +35525,14 @@ int get_output_linkindex(int node, int index)
 			return outlinknum;
 		if (Storyboard.Nodes[i].widget_used[ll])
 		{
+			if (Storyboard.Nodes[node].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+			{
+				if (Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+				{
+					outlinknum++;
+					outlinknum++;
+				}
+			}
 			if (Storyboard.Nodes[node].widget_type[ll] == STORYBOARD_WIDGET_BUTTON)
 			{
 				if (Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_STARTGAME || Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_GOTOLEVEL)
@@ -35569,6 +35580,29 @@ void setup_output_links(int node)
 	{
 		if (Storyboard.Nodes[node].widget_used[ll])
 		{
+			if (Storyboard.Nodes[node].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+			{
+				if (Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+				{
+					//strcpy(chr, Storyboard.Nodes[node].widget_label[ll]);
+					strcpy(chr, "Video");
+					strcat(chr, " ->  Connect to Scene ");
+					strcpy(Storyboard.Nodes[node].output_title[outlinknum], chr);
+					strcpy(Storyboard.Nodes[node].output_action[outlinknum], "loadscene"); //Not defined this yet.
+					Storyboard.Nodes[node].output_can_link_to_type[outlinknum] = STORYBOARD_TYPE_SCREEN;
+					outlinknum++;
+
+					//strcpy(chr, Storyboard.Nodes[node].widget_label[ll]);
+					strcpy(chr, "Video");
+					strcat(chr, " -> Connect to Level");
+					strcpy(Storyboard.Nodes[node].output_title[outlinknum], chr);
+					strcpy(Storyboard.Nodes[node].output_action[outlinknum], "loadlevel"); //Not defined this yet.
+					Storyboard.Nodes[node].output_can_link_to_type[outlinknum] = STORYBOARD_TYPE_LEVEL;
+					outlinknum++;
+
+				}
+			}
+
 			if (Storyboard.Nodes[node].widget_type[ll] == STORYBOARD_WIDGET_BUTTON)
 			{
 				if (Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_STARTGAME || Storyboard.Nodes[node].widget_action[ll] == STORYBOARD_ACTIONS_GOTOLEVEL)
@@ -39033,6 +39067,174 @@ void process_storeboard(bool bInitOnly)
 					}
 
 					tabflags = 0;
+					if (iChangeTab == 7)
+					{
+						iChangeTab = 0;
+						tabflags = ImGuiTabItemFlags_SetSelected;
+					}
+					if (ImGui::BeginTabItem(" Fonts ", NULL, tabflags))
+					{
+
+						ImGui::SetWindowFontScale(1.4);
+						ImGui::Text("");
+						ImGui::TextCenter("Fonts");
+						ImGui::Text("");
+
+						ImGui::PushItemWidth(-10);
+						ImGui::PushFont(customfontlarge);  //defaultfont
+						ImGui::SetWindowFontScale(0.75);
+
+						static char myFontSelected[MAX_PATH] = "Default Font";
+						float childwide = 350.0f;
+						float winsize = ImGui::GetContentRegionAvailWidth();
+						ImGui::SetCursorPosX( (winsize * 0.5f) - (childwide * 0.5f));
+
+						ImVec4* style_colors = ImGui::GetStyle().Colors;
+						ImVec4 oldBgColor = style_colors[ImGuiCol_ChildBg];
+						float alpha =  ImMax(oldBgColor.w * 1.5f,1.0f);
+						//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(oldBgColor.x, oldBgColor.y, oldBgColor.z, alpha));
+						ImGui::PushStyleColor(ImGuiCol_ChildBg, style_back);
+						
+						ImGui::BeginChild("##Fonts", ImVec2(childwide, 300), true);
+						bool bIsSelected = false;
+						if (stricmp(myFontSelected, "Default Font") == NULL) bIsSelected = true;
+						ImGui::PushFont(customfontlarge);  //defaultfont
+						if (ImGui::Selectable("Default Font", bIsSelected))
+						{
+							strcpy(myFontSelected, "Default Font");
+						}
+						ImGui::PopFont();
+						for (int i = 0; i < StoryboardFonts.size(); i++)
+						{
+							bool bIsSelected = false;
+							if (stricmp(StoryboardFonts[i].second.c_str(), myFontSelected) == NULL) bIsSelected = true;
+
+							ImGui::PushFont(StoryboardFonts[i].first);  //defaultfont
+							if (ImGui::Selectable(StoryboardFonts[i].second.c_str(), bIsSelected))
+							{
+								strcpy(myFontSelected, StoryboardFonts[i].second.c_str());
+							}
+							ImGui::PopFont();
+						}
+						ImGui::EndChild();
+
+						ImGui::PopStyleColor();
+
+						ImGui::PopItemWidth();
+
+						ImGui::SetWindowFontScale(1.0);
+						ImGui::PopFont();
+						
+						ImGui::Text("");
+						ImVec2 cPos = ImVec2(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+						ImGui::SetCursorPos(cPos);
+
+						if (ImGui::StyleButton("Delete Project Font", ImVec2(buttonwide, 0.0f)))
+						{
+							//DefaultStoryboardFonts
+							extern std::vector< std::pair<ImFont*, std::string>> DefaultStoryboardFonts;
+							const char* pestrcasestr(const char* arg1, const char* arg2);
+							bool bAlreadyThere = false;
+							for (int i = 0; i < DefaultStoryboardFonts.size(); i++)
+							{
+								if (pestrcasestr(myFontSelected, DefaultStoryboardFonts[i].second.c_str()))
+								{
+									bAlreadyThere = true;
+									break;
+								}
+							}
+							if (pestrcasestr(myFontSelected, "Default Font"))
+							{
+								bAlreadyThere = true;
+							}
+							if (!bAlreadyThere)
+							{
+								int iAction = askBoxCancel("This will delete the font, are you sure?", "Confirmation"); //1==Yes 2=Cancel 0=No
+								if (iAction == 1)
+								{
+									//PE: Delete Font
+									extern char szWriteDir[MAX_PATH];
+									char destination[MAX_PATH];
+									strcpy(destination, szWriteDir);
+									strcat(destination, "Files\\editors\\templates\\fonts\\");
+									strcat(destination, myFontSelected);
+									DeleteFileA(destination);
+									if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+									{
+										strcpy(destination, Storyboard.customprojectfolder);
+										strcat(destination, Storyboard.gamename);
+										strcat(destination, "\\files\\editors\\templates\\fonts\\");
+										strcat(destination, myFontSelected);
+										DeleteFileA(destination);
+									}
+									iLaunchAfterSync = 698; //PE: Reload fonts.
+									strcpy(myFontSelected, "Default Font");
+								}
+							}
+							else
+							{
+								BoxerInfo("Only custom installed fonts can be deleted.", "Information");
+							}
+						}
+
+						cPos = ImVec2(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+						ImGui::SetCursorPos(cPos);
+
+						if (ImGui::StyleButton("Add Project Font", ImVec2(buttonwide, 0.0f)))
+						{
+							cStr tOldDir = GetDir();
+							cStr fulldir = pref.cDefaultImportPath;
+							char* cFileSelected = (char*)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "All\0*.*\0ttf\0*.ttf\otf\0*.otf\0", fulldir.Get(), NULL, true);
+							SetDir(tOldDir.Get());
+							if (cFileSelected && strlen(cFileSelected) > 0)
+							{
+								char destination[MAX_PATH];
+								strcpy(destination, cFileSelected);
+								cStr importer_getfilenameonly(LPSTR pFileAndPossiblePath);
+								cStr filename_only = importer_getfilenameonly(destination);
+
+								char* pExtension = strrchr(destination, '.');
+								bool bExtOK = false;
+								if (pExtension)
+								{
+									if (stricmp(pExtension, ".ttf") == NULL || stricmp(pExtension, ".otf") == NULL)
+									{
+										bExtOK = true;
+									}
+								}
+
+								if (!bExtOK)
+								{
+									BoxerInfo("Only TTF and OTF fonts supported.", "Information");
+								}
+								else
+								{
+									if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+									{
+										strcpy(destination, Storyboard.customprojectfolder);
+										strcat(destination, Storyboard.gamename);
+										strcat(destination, "\\files\\editors\\templates\\fonts\\");
+										strcat(destination, filename_only.Get());
+										CopyFileA(cFileSelected, destination, TRUE);
+									}
+									else
+									{
+										extern char szWriteDir[MAX_PATH];
+										strcpy(destination, szWriteDir);
+										strcat(destination, "Files\\editors\\templates\\fonts\\");
+										strcat(destination, filename_only.Get());
+										CopyFileA(cFileSelected, destination, TRUE);
+									}
+									iLaunchAfterSync = 698; //PE: Reload fonts.
+									strcpy(myFontSelected, "Default Font");
+								}
+							}
+						}
+
+						ImGui::EndTabItem();
+					}
+
+					tabflags = 0;
 					if (iChangeTab == 4)
 					{
 						iChangeTab = 0;
@@ -39282,6 +39484,11 @@ void process_storeboard(bool bInitOnly)
 					if (ImGui::StyleButton("Key Bindings", ImVec2(buttonwide, 0.0f)))
 					{
 						iChangeTab = 6;
+					}
+					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x * 0.5) - (buttonwide * 0.5), 0.0f));
+					if (ImGui::StyleButton("Fonts", ImVec2(buttonwide, 0.0f)))
+					{
+						iChangeTab = 7;
 					}
 					ImGui::Indent(-10);
 				}
@@ -40511,6 +40718,34 @@ void process_storeboard(bool bInitOnly)
 						if (Storyboard.Nodes[iOutNode].type == Storyboard.Nodes[iInNode].output_can_link_to_type[iInAttr])
 						{
 							valid_link = true;
+						}
+						//if (!valid_link && Storyboard.Nodes[iInNode].widget_type[iInAttr] == STORYBOARD_WIDGET_VIDEO)
+						//{
+						//	if (Storyboard.Nodes[iInNode].widget_action[iInAttr] == STORYBOARD_ACTIONS_GOTOSCREEN)
+						//	{
+						//		if(Storyboard.Nodes[iOutNode].type == STORYBOARD_TYPE_LEVEL)
+						//			valid_link = true;
+						//	}
+						//}
+						if (!valid_link)
+						{
+							for (int ll = 0; ll < STORYBOARD_MAXWIDGETS; ll++)
+							{
+								//PE: From STORYBOARD_ACTIONS_GOTOLEVEL
+								//PE: If input screen got video allow STORYBOARD_TYPE_LEVEL
+								if (Storyboard.Nodes[iOutNode].widget_used[ll])
+								{
+									if (Storyboard.Nodes[iOutNode].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+									{
+										if (Storyboard.Nodes[iOutNode].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+										{
+											if (Storyboard.Nodes[iOutNode].type == STORYBOARD_TYPE_SCREEN)
+												valid_link = true;
+											break;
+										}
+									}
+								}
+							}
 						}
 					}
 
@@ -43246,6 +43481,24 @@ int FindNextLevel(int &iNextLevelNode, char *level_name, int action)
 	return(2); //Goto next lua script.
 }
 
+int FindFirstSplashNode(void)
+{
+	for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+	{
+		if (Storyboard.Nodes[i].used)
+		{
+			if (Storyboard.Nodes[i].type == STORYBOARD_TYPE_SPLASH)
+			{
+				if (strlen(Storyboard.Nodes[i].thumb) > 0)
+				{
+					// replace stock splash with custom one specified by storybaord game project
+					return i;
+				}
+			}
+		}
+	}
+	return -1;
+}
 void FindFirstSplash(char *splash_name)
 {
 	for (int i = 0; i < STORYBOARD_MAXNODES; i++)
@@ -45050,8 +45303,6 @@ void storyboard_control_widget(int nodeid, int index, ImVec2 pos, ImVec2 size, I
 	ImGui::SetCursorPos(ocpos);
 }
 
-extern ImFont* customfont;
-extern ImFont* customfontlarge;
 float WidgetSelectUsedFont(int nodeid, int index)
 {
 	
@@ -46606,7 +46857,9 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 
 		ImVec2 fGlobalScale = ImVec2(screen_editor_scalemod(vViewportSize.x / 1920.0f), screen_editor_scalemod(vViewportSize.x / 1920.0f));
 		ImVec2 vScale = vMonitorSize / vViewportSize;
-		float fFontScale = screen_editor_scalemod(1080.0f / monitor_size_y);
+		//float fFontScale = screen_editor_scalemod(1080.0f / monitor_size_y); // 0.75
+		//PE: fFontScale = 1.0 Gives the best overall result on all different resolutions.
+		float fFontScale = 1.0f;
 
 		ImVec2 vUniversalScale = ImVec2(vMonitorSize.x / monitor_size_x, vMonitorSize.x / monitor_size_x);
 		ImVec2 fUniversalGlobalScale = ImVec2(screen_editor_scalemod(monitor_size_y / 1080.0f), screen_editor_scalemod(monitor_size_y / 1080.0f)); //Fit by y resolution.
@@ -46712,6 +46965,7 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 		// Draw all widgets (early and regular)
 		int iMinDraw = -1;
 		int iMaxDraw =  1;
+		bool bTriggerVideoNextScreen = false;
 		for(int early = iMinDraw; early <= iMaxDraw; early++ )
 		{
 			for (int i = 0; i < Storyboard_ActiveWidgets.size(); i++)
@@ -47319,6 +47573,40 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 											ImVec2 uv1 = ImVec2(animU, animV);
 											window->DrawList->AddImage((ImTextureID)lpVideoTexture, image_bb.Min, image_bb.Max, uv0, uv1, ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
 										}
+
+										if (Storyboard.Nodes[nodeid].widget_action[index] == STORYBOARD_ACTIONS_GOTOSCREEN)
+										{
+											int GetVideoPlaying();
+											if (!GetVideoPlaying())
+											{
+												bTriggerVideoNextScreen = true;
+											}
+											if (GetAnimDone(g_iStoryboardScreenVideoID))
+											{
+												bTriggerVideoNextScreen = true;
+											}
+
+											bool bControllerEscape = false;
+											if (g.gxbox > 0 && JoystickFireXL(9) == 1) bControllerEscape = true;
+											extern int g_iActivelyUsingVRNow;
+											if (g.vrglobals.GGVREnabled > 0 && g_iActivelyUsingVRNow == 1)
+											{
+												if (GGVR_RightController_Button1() == 1) bControllerEscape == true;
+											}
+											if (EscapeKey() == 1 || bControllerEscape == true)
+											{
+												bTriggerVideoNextScreen = true;
+											}
+										}
+									}
+									else if (AnimationExist(g_iStoryboardScreenVideoID) && !AnimationPlaying(g_iStoryboardScreenVideoID))
+									{
+										//PE: Video done.
+										if (Storyboard.Nodes[nodeid].widget_action[index] == STORYBOARD_ACTIONS_GOTOSCREEN)
+										{
+											//PE: Goto next screen.
+											bTriggerVideoNextScreen = true;
+										}
 									}
 								}
 								else
@@ -47379,7 +47667,7 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 				cstr cTriggerButtonClickSound = "";
 				if (standalone)
 				{
-					if (Storyboard.Nodes[nodeid].widget_type[index] == STORYBOARD_WIDGET_BUTTON)
+					if (bTriggerVideoNextScreen || Storyboard.Nodes[nodeid].widget_type[index] == STORYBOARD_WIDGET_BUTTON)
 					{
 						ImVec2 vLargerGrabArea = ImVec2(10.0, 10.0);
 						bool bIsPointerHoveringOver = false;
@@ -47387,42 +47675,48 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 
 						//if (g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1)
 						extern int g_iActivelyUsingVRNow;
-						if (g.vrglobals.GGVREnabled > 0 && g_iActivelyUsingVRNow == 1)
+						if (!bTriggerVideoNextScreen)
 						{
-							// VR support
-							int iObjToHit = 5997;
-							float fX = 0, fY = 0, fZ = 0;
-							int iHitIt = GGVR_GetLaserGuidedHit (iObjToHit, &fX, &fY, &fZ);
-							float fptrrealX = ((fX + 19.0f) / 38.0f) * (rMonitorArea.Max.x - rMonitorArea.Min.x);
-							float fptrrealY = ((11.0f - fY) / 22.0f) * (rMonitorArea.Max.y - rMonitorArea.Min.y);
-							if (GGVR_RightController_Trigger() > 0.5f)
+							if (g.vrglobals.GGVREnabled > 0 && g_iActivelyUsingVRNow == 1)
 							{
-								bIsPointerReleased = true;
-								ImVec2 topLeft = rMonitorArea.Min + widget_pos - vLargerGrabArea;
-								ImVec2 bottomRight = rMonitorArea.Min + widget_pos + widget_size + vLargerGrabArea;
-								if (fptrrealX > topLeft.x && fptrrealX < bottomRight.x)
+								// VR support
+								int iObjToHit = 5997;
+								float fX = 0, fY = 0, fZ = 0;
+								int iHitIt = GGVR_GetLaserGuidedHit(iObjToHit, &fX, &fY, &fZ);
+								float fptrrealX = ((fX + 19.0f) / 38.0f) * (rMonitorArea.Max.x - rMonitorArea.Min.x);
+								float fptrrealY = ((11.0f - fY) / 22.0f) * (rMonitorArea.Max.y - rMonitorArea.Min.y);
+								if (GGVR_RightController_Trigger() > 0.5f)
 								{
-									if (fptrrealY > topLeft.y && fptrrealY < bottomRight.y)
+									bIsPointerReleased = true;
+									ImVec2 topLeft = rMonitorArea.Min + widget_pos - vLargerGrabArea;
+									ImVec2 bottomRight = rMonitorArea.Min + widget_pos + widget_size + vLargerGrabArea;
+									if (fptrrealX > topLeft.x && fptrrealX < bottomRight.x)
 									{
-										bIsPointerHoveringOver = true;
+										if (fptrrealY > topLeft.y && fptrrealY < bottomRight.y)
+										{
+											bIsPointerHoveringOver = true;
+										}
 									}
 								}
 							}
+							else
+							{
+								// non VR
+								if (ImGui::IsMouseHoveringRect(rMonitorArea.Min + widget_pos - vLargerGrabArea, rMonitorArea.Min + widget_pos + widget_size + vLargerGrabArea)) bIsPointerHoveringOver = true;
+								if (ImGui::IsMouseReleased(0)) bIsPointerReleased = true;
+							}
 						}
-						else
-						{
-							// non VR
-							if (ImGui::IsMouseHoveringRect(rMonitorArea.Min + widget_pos - vLargerGrabArea, rMonitorArea.Min + widget_pos + widget_size + vLargerGrabArea)) bIsPointerHoveringOver = true;
-							if (ImGui::IsMouseReleased(0)) bIsPointerReleased = true;
-						}
-						if (bIsPointerHoveringOver)
+						if (bIsPointerHoveringOver || bTriggerVideoNextScreen)
 						{
 							//if mouse release.
-							if (bIsPointerReleased)
+							if (bIsPointerReleased || bTriggerVideoNextScreen)
 							{
-								if (strlen(Storyboard.Nodes[nodeid].widget_click_sound[index]) > 0)
+								if (!bTriggerVideoNextScreen)
 								{
-									cTriggerButtonClickSound = Storyboard.Nodes[nodeid].widget_click_sound[index];
+									if (strlen(Storyboard.Nodes[nodeid].widget_click_sound[index]) > 0)
+									{
+										cTriggerButtonClickSound = Storyboard.Nodes[nodeid].widget_click_sound[index];
+									}
 								}
 
 								if (Storyboard.Nodes[nodeid].widget_action[index] == STORYBOARD_ACTIONS_NONE)
@@ -47549,25 +47843,113 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 								}
 								if (Storyboard.Nodes[nodeid].widget_action[index] == STORYBOARD_ACTIONS_STARTGAME)
 								{
-									t.s_s = "";
-									lua_switchpage();
-									bLuaPageClosing = true;
-									iRet = STORYBOARD_ACTIONS_STARTGAME;
+									//PE: Check if destination is a screen with a input video.
+									bool bValid = true;
+									int iNewNode = FindOutputScreenNode(nodeid, index);
+									if (iNewNode >= 0)
+									{
+										if (Storyboard.Nodes[iNewNode].type == STORYBOARD_TYPE_SCREEN)
+										{
+											//PE: Find Video
+											bool bIsVideoLevelOut = false;
+											int iVideoOuputID = -1;
 
-									//PE: Always use first level.
-									FindFirstLevel(g_Storyboard_First_Level_Node, g_Storyboard_First_fpm);
-									g_Storyboard_Current_Level = g_Storyboard_First_Level_Node;
-									strcpy(g_Storyboard_Current_fpm, g_Storyboard_First_fpm);
-									//Clean name.
-									std::string sLevelTitle = g_Storyboard_First_fpm;
-									replaceAll(sLevelTitle, ".fpm", "");
-									replaceAll(sLevelTitle, "mapbank\\", "");
-									t.game.jumplevel_s = sLevelTitle.c_str();
-									extern bool g_Storyboard_Starting_New_Level;
-									g_Storyboard_Starting_New_Level = true; //PE: Start a fresh game.
-									// reset 'specified' loading screen
-									extern cstr g_Storyboard_LoaderScreen_Name;
-									g_Storyboard_LoaderScreen_Name = "loading";
+											for (int a = 0; a < STORYBOARD_MAXOUTPUTS; a++)
+											{
+												if (Storyboard.Nodes[iNewNode].output_linkto[a] > 0)
+												{
+													if (pestrcasestr(Storyboard.Nodes[iNewNode].output_title[a], "Video -> Connect to Level"))
+													{
+														iVideoOuputID = a;
+														bIsVideoLevelOut = true;
+														break;
+													}
+												}
+											}
+											if (bIsVideoLevelOut)
+											{
+												int iLevelNode = FindOutputScreenNode(iNewNode, iVideoOuputID);
+												if (iLevelNode >= 0)
+												{
+													t.s_s = "";
+													lua_switchpage();
+													bLuaPageClosing = true;
+
+													// may have linked to loading screen
+													if (strlen(Storyboard.Nodes[iLevelNode].level_name) == 0)
+													{
+														// will use last 'specified' loading screen
+														extern cstr g_Storyboard_LoaderScreen_Name;
+														g_Storyboard_LoaderScreen_Name = Storyboard.Nodes[iLevelNode].lua_name;
+
+														// if so, find out which level it goes to
+														int input_id_of_level = Storyboard.Nodes[iLevelNode].output_linkto[0];
+														for (int findnode = 0; findnode < STORYBOARD_MAXNODES; findnode++)
+														{
+															if (Storyboard.Nodes[findnode].input_id[0] == input_id_of_level)
+															{
+																// change from loading node to level node
+																iLevelNode = findnode;
+																break;
+															}
+														}
+													}
+
+													// must ultimately link to a level node!
+													if (strlen(Storyboard.Nodes[iLevelNode].level_name) > 0)
+													{
+														iRet = STORYBOARD_ACTIONS_GOTOLEVEL;
+														g_Storyboard_Current_Level = iLevelNode;
+														strcpy(g_Storyboard_Current_fpm, Storyboard.Nodes[iLevelNode].level_name);
+
+														//Clean name.
+														std::string sLevelTitle = g_Storyboard_Current_fpm;
+														replaceAll(sLevelTitle, ".fpm", "");
+														replaceAll(sLevelTitle, "mapbank\\", "");
+														t.game.jumplevel_s = sLevelTitle.c_str();
+														extern bool g_Storyboard_Starting_New_Level;
+														g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
+														bValid = false;
+													}
+												}
+											}
+											else if (strlen(Storyboard.Nodes[iNewNode].lua_name) > 0)
+											{
+												// screens can have same name (old corruption issue), so new method to identify screen by node
+												std::string node_ident_name = ":node:";
+												node_ident_name += std::to_string(iNewNode);
+												t.s_s = node_ident_name.c_str();
+												lua_switchpage();
+												if (strlen(Storyboard.Nodes[iNewNode].screen_music) > 0) //PE: Only stop music if new swcreen have its own.
+													bLuaPageClosing = true;
+												iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+												bValid = false;
+											}
+										}
+									}
+
+									if (bValid)
+									{
+										t.s_s = "";
+										lua_switchpage();
+										bLuaPageClosing = true;
+										iRet = STORYBOARD_ACTIONS_STARTGAME;
+
+										//PE: Always use first level.
+										FindFirstLevel(g_Storyboard_First_Level_Node, g_Storyboard_First_fpm);
+										g_Storyboard_Current_Level = g_Storyboard_First_Level_Node;
+										strcpy(g_Storyboard_Current_fpm, g_Storyboard_First_fpm);
+										//Clean name.
+										std::string sLevelTitle = g_Storyboard_First_fpm;
+										replaceAll(sLevelTitle, ".fpm", "");
+										replaceAll(sLevelTitle, "mapbank\\", "");
+										t.game.jumplevel_s = sLevelTitle.c_str();
+										extern bool g_Storyboard_Starting_New_Level;
+										g_Storyboard_Starting_New_Level = true; //PE: Start a fresh game.
+										// reset 'specified' loading screen
+										extern cstr g_Storyboard_LoaderScreen_Name;
+										g_Storyboard_LoaderScreen_Name = "loading";
+									}
 								}
 								if (Storyboard.Nodes[nodeid].widget_action[index] == STORYBOARD_ACTIONS_LEAVEGAME)
 								{
@@ -47671,52 +48053,130 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 									}
 									else
 									{
+										//PE: If current is a video linkout to a level , start level.
 										int iNewNode = FindOutputScreenNode(nodeid, index);
-										if (iNewNode >= 0)
+										bool bIsVideoLevelOut = false;
+										if (iNewNode < 0)
 										{
-											//Connected.
+											iNewNode = nodeid;
+											//PE: Check if this is a video out link.
 											if (Storyboard.Nodes[iNewNode].type == STORYBOARD_TYPE_SCREEN)
 											{
-												if (strlen(Storyboard.Nodes[iNewNode].lua_name) > 0)
+												//PE: Find Video
+												int iVideoOuputID = -1;
+
+												for (int a = 0; a < STORYBOARD_MAXOUTPUTS; a++)
 												{
-													// screens can have same name (old corruption issue), so new method to identify screen by node
-													std::string node_ident_name = ":node:"; 
-													node_ident_name += std::to_string(iNewNode);
-													t.s_s = node_ident_name.c_str();
-													lua_switchpage();
-													if (strlen(Storyboard.Nodes[iNewNode].screen_music) > 0) //PE: Only stop music if new swcreen have its own.
-														bLuaPageClosing = true;
-													iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+													if (Storyboard.Nodes[iNewNode].output_linkto[a] > 0)
+													{
+														if (pestrcasestr(Storyboard.Nodes[iNewNode].output_title[a], "Video -> Connect to Level"))
+														{
+															iVideoOuputID = a;
+															bIsVideoLevelOut = true;
+															break;
+														}
+													}
 												}
+												if (bIsVideoLevelOut)
+												{
+													int iLevelNode = FindOutputScreenNode(iNewNode, iVideoOuputID);
+													if (iLevelNode >= 0)
+													{
+														t.s_s = "";
+														lua_switchpage();
+														bLuaPageClosing = true;
+
+														// may have linked to loading screen
+														if (strlen(Storyboard.Nodes[iLevelNode].level_name) == 0)
+														{
+															// will use last 'specified' loading screen
+															extern cstr g_Storyboard_LoaderScreen_Name;
+															g_Storyboard_LoaderScreen_Name = Storyboard.Nodes[iLevelNode].lua_name;
+
+															// if so, find out which level it goes to
+															int input_id_of_level = Storyboard.Nodes[iLevelNode].output_linkto[0];
+															for (int findnode = 0; findnode < STORYBOARD_MAXNODES; findnode++)
+															{
+																if (Storyboard.Nodes[findnode].input_id[0] == input_id_of_level)
+																{
+																	// change from loading node to level node
+																	iLevelNode = findnode;
+																	break;
+																}
+															}
+														}
+														// must ultimately link to a level node!
+														if (strlen(Storyboard.Nodes[iLevelNode].level_name) > 0)
+														{
+															iRet = STORYBOARD_ACTIONS_GOTOLEVEL;
+															g_Storyboard_Current_Level = iLevelNode;
+															strcpy(g_Storyboard_Current_fpm, Storyboard.Nodes[iLevelNode].level_name);
+
+															//Clean name.
+															std::string sLevelTitle = g_Storyboard_Current_fpm;
+															replaceAll(sLevelTitle, ".fpm", "");
+															replaceAll(sLevelTitle, "mapbank\\", "");
+															t.game.jumplevel_s = sLevelTitle.c_str();
+															extern bool g_Storyboard_Starting_New_Level;
+															g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
+														}
+														else
+															bIsVideoLevelOut = false;
+													}
+													else
+														bIsVideoLevelOut = false;
+												}
+												else
+													bIsVideoLevelOut = false;
 											}
 										}
-										else
+										if (!bIsVideoLevelOut)
 										{
-											//PE: Not linked, check if we have a direct link to screen without a pin connection.
-											if (index < STORYBOARD_MAXOUTPUTS)
+											if (iNewNode >= 0)
 											{
-												if (strlen(Storyboard.Nodes[nodeid].output_title[index]) <= 0) //Empty no output pin.
+												//Connected.
+												if (Storyboard.Nodes[iNewNode].type == STORYBOARD_TYPE_SCREEN)
 												{
-													if (Storyboard.Nodes[nodeid].output_can_link_to_type[index] == STORYBOARD_TYPE_SCREEN)
+													if (strlen(Storyboard.Nodes[iNewNode].lua_name) > 0)
 													{
-														if (strlen(Storyboard.Nodes[nodeid].output_action[index]) > 0)
+														// screens can have same name (old corruption issue), so new method to identify screen by node
+														std::string node_ident_name = ":node:";
+														node_ident_name += std::to_string(iNewNode);
+														t.s_s = node_ident_name.c_str();
+														lua_switchpage();
+														if (strlen(Storyboard.Nodes[iNewNode].screen_music) > 0) //PE: Only stop music if new swcreen have its own.
+															bLuaPageClosing = true;
+														iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+													}
+												}
+											}
+											else
+											{
+												//PE: Not linked, check if we have a direct link to screen without a pin connection.
+												if (index < STORYBOARD_MAXOUTPUTS)
+												{
+													if (strlen(Storyboard.Nodes[nodeid].output_title[index]) <= 0) //Empty no output pin.
+													{
+														if (Storyboard.Nodes[nodeid].output_can_link_to_type[index] == STORYBOARD_TYPE_SCREEN)
 														{
-															if (Storyboard.Nodes[nodeid].output_linkto[index] == 0)
+															if (strlen(Storyboard.Nodes[nodeid].output_action[index]) > 0)
 															{
-																// screens can have same name (old corruption issue), so new method to identify screen by node
-																std::string node_ident_name = ":node:";
-																node_ident_name += std::to_string(nodeid);
-																t.s_s = node_ident_name.c_str();
-																lua_switchpage();
+																if (Storyboard.Nodes[nodeid].output_linkto[index] == 0)
+																{
+																	// screens can have same name (old corruption issue), so new method to identify screen by node
+																	std::string node_ident_name = ":node:";
+																	node_ident_name += std::to_string(nodeid);
+																	t.s_s = node_ident_name.c_str();
+																	lua_switchpage();
 
-																bLuaPageClosing = true; //always stop music.
-																iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+																	bLuaPageClosing = true; //always stop music.
+																	iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+																}
 															}
 														}
 													}
 												}
 											}
-
 										}
 									}
 								}
@@ -48806,6 +49266,20 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 						if (ImGui::Checkbox("Loop Video Animation", &g_bVideoLooping))
 						{
 							Storyboard.Nodes[nodeid].widget_font_size[iCurrentSelectedWidget] = (int)g_bVideoLooping;
+						}
+						if (!g_bVideoLooping)
+						{
+							//PE: Goto next screen
+							bool bVideoAction = false;
+							if (Storyboard.Nodes[nodeid].widget_action[iCurrentSelectedWidget] == STORYBOARD_ACTIONS_GOTOSCREEN)
+								bVideoAction = true;
+							if (ImGui::Checkbox("When Video Stop Goto Next Screen", &bVideoAction))
+							{
+								if (bVideoAction)
+									Storyboard.Nodes[nodeid].widget_action[iCurrentSelectedWidget] = STORYBOARD_ACTIONS_GOTOSCREEN;
+								else
+									Storyboard.Nodes[nodeid].widget_action[iCurrentSelectedWidget] = STORYBOARD_ACTIONS_NONE;
+							}
 						}
 					}
 
@@ -51444,7 +51918,7 @@ bool PostProcess_Settings(float fTabColumnWidth, bool bVisualUpdated)
 		{
 			tab_tab_Column_text("AO Power", fTabColumnWidth);
 			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##setAmbientOcclusionPower", &t.visuals.fMSAOPower, 0.01f, 8.0f, "%.2f", 2.0f))
+			if (ImGui::SliderFloat("##setAmbientOcclusionPower", &t.visuals.fMSAOPower, -5.0f, 5.0f, "%.2f", 2.0f))
 			{
 				t.gamevisuals.fMSAOPower = master.fAOPower = t.visuals.fMSAOPower;
 				master.masterrenderer.setAOPower(master.fAOPower);
@@ -52390,8 +52864,10 @@ void RenderPreviewEmitter(void)
 		if (iEntityIndex > 0 && PreviewWPERoot > 0)
 		{
 			extern float fPreviewYOffset;
+			extern float fPreviewXOffset;
+			extern float fPreviewZOffset;
 			bool WickedCall_ParticleEffectPositionRotation(uint32_t root, float fX, float fY, float fZ, float fXa, float fYa, float fZa);
-			WickedCall_ParticleEffectPositionRotation(PreviewWPERoot, posx, posy + fPreviewYOffset, posz, 0, posya, 0);
+			WickedCall_ParticleEffectPositionRotation(PreviewWPERoot, posx + fPreviewXOffset, posy + fPreviewYOffset, posz + fPreviewZOffset, 0, posya, 0);
 		}
 	}
 }

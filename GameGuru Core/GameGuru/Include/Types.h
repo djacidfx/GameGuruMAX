@@ -3338,7 +3338,7 @@ struct globalstype
 	// Constructor
 	globalstype ( )
 	{
-		DisableMessagePump = 0;
+		DisableMessagePump = 1; //PE: Default off
 		ConvertToDDS = 0;
 		ConvertToDDSMaxSize = 2048;
 

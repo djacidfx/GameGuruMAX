@@ -818,7 +818,17 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		extern bool g_bNoSwapchainPresent;
 		//PE: Why was we doing this, this will make a 10 sec blackscreen delay until loading screen is displayed ?????
 		//PE: Removed for now TODO check why it was added.
-		t.game.levelloadprogress=0  ; titles_loadingpageupdate ( );
+		
+		//PE: This was to prevent old loadingscreen is displayed.
+		//g_Storyboard_Current_Loading_Page
+		extern char g_Storyboard_Current_Loading_Page[256];
+		void FindLoadingScreen(void);
+		FindLoadingScreen();
+		//PE: If using cuatom loading screen delay rendering, TODO: find another way to speed up the 10 sec delay before the screen. (mapfile_loadproject_fpm)
+		if( stricmp(g_Storyboard_Current_Loading_Page , "loading.lua") != NULL)
+			g_bNoSwapchainPresent = true;
+		t.game.levelloadprogress=0  ;
+		titles_loadingpageupdate ( );
 		g_bNoSwapchainPresent = false;
 
 	}
@@ -2677,6 +2687,9 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							timestampactivity(0, tmp);
 							if (script != "title")
 							{
+								//PE: Block for one frame so we do not see old screens.
+								extern bool bBlockImGuiUntilNewFrame;
+								bBlockImGuiUntilNewFrame = true;
 								sky_hide();
 								titleslua_init();
 								titleslua_main((char *)script.c_str());
@@ -2920,8 +2933,68 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 		}
 		else
 		{
-			// start title system loop
-			titleslua_main("title");
+			bool bValid = false;
+			int FindFirstSplashNode(void);
+			int nodeid = FindFirstSplashNode();
+			if (nodeid >= 0)
+			{
+				int index = 1;
+
+				int iLinkTo = Storyboard.Nodes[nodeid].output_linkto[0];
+				int iLinkScreen = -1;
+				for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+				{
+					if (Storyboard.Nodes[i].used)
+					{
+						for (int l = 0; l < STORYBOARD_MAXOUTPUTS; l++)
+						{
+							if (iLinkTo > 0 && iLinkTo == Storyboard.Nodes[i].input_id[l])
+							{
+								iLinkScreen = i;
+								break;
+							}
+						}
+					}
+				}
+				if (iLinkScreen >= 0)
+				{
+					//PE: Check if we got a video outlink.
+					for (int ll = 0; ll < STORYBOARD_MAXWIDGETS; ll++)
+					{
+						if (Storyboard.Nodes[iLinkScreen].widget_used[ll])
+						{
+							if (Storyboard.Nodes[iLinkScreen].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+							{
+								if (Storyboard.Nodes[iLinkScreen].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+								{
+									bValid = true;
+									break;
+								}
+							}
+						}
+					}
+					if (bValid)
+					{
+						// screens can have same name (old corruption issue), so new method to identify screen by node
+						std::string node_ident_name = ":node:";
+						node_ident_name += std::to_string(iLinkScreen);
+						t.s_s = node_ident_name.c_str();
+						lua_switchpage();
+						//bLuaPageClosing = true; //always stop music.
+						//iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+					}
+				}
+			}
+			if (bValid)
+			{
+				titleslua_main(t.s_s.Get());
+				strcpy(t.game.pSwitchToLastPage, "title");
+			}
+			else
+			{
+				// start title system loop
+				titleslua_main("title");
+			}
 			return true;
 		}
 	}

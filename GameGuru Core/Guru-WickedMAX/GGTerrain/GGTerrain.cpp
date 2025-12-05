@@ -9028,7 +9028,8 @@ void GGTerrain_AddEnvProbeList(float x, float y, float z, float range, float qua
 }
 
 #ifdef TERRAINTHREADSAFE
-std::mutex terrainlock = {};
+//std::mutex terrainlock = {};
+std::recursive_mutex terrainlock = {};
 #else
 class terrainlockclass
 {

@@ -1,3 +1,5 @@
+#pragma optimize("", off)
+
 //----------------------------------------------------
 //--- GAMEGURU - G-Gun
 //----------------------------------------------------
@@ -5673,6 +5675,8 @@ void gun_load ( void )
 		}
 		else
 		{
+			//PE: Get a heap block suffix corruption here. (Was loadbrass change t.brass_s and corrupt the heap).
+
 			// regular brass
 			if (t.num == 0)  t.num = 1;
 			t.brass_s = "";
@@ -6382,23 +6386,26 @@ int loadbrass ( char* tfile_s )
 		}
 		// brass only DBO in MAX
 		tdbofile_s = ttexdiff_s + ".dbo";
-		strcpy (tfile_s, tdbofile_s.Get());
+		//PE: tfile_s is a cStr only allocated with the size needed, so adding to it will corrupt the heap.
+		//PE: strcpy (tfile_s, tdbofile_s.Get());
+		char cfile[MAX_PATH];
+		strcpy(cfile, tdbofile_s.Get());
 		tdbofile_s = "";
-		if ( FileExist(tfile_s) == 1 || FileExist(tdbofile_s.Get()) == 1 ) 
+		if ( FileExist(cfile) == 1 || FileExist(tdbofile_s.Get()) == 1 )
 		{
 			++g.brassbankmax;
 			index=g.brassbankoffset+g.brassbankmax;
-			t.brassbank_s[g.brassbankmax]=tfile_s;
+			t.brassbank_s[g.brassbankmax]= cfile;
 			if ( FileExist(tdbofile_s.Get()) == 1 ) 
 			{
-				strcpy ( tfile_s, tdbofile_s.Get() );
+				strcpy (cfile, tdbofile_s.Get() );
 				tdbofile_s="";
 			}
 			else
 			{
 				// allowed to save DBO (once only)
 			}
-			LoadObject ( tfile_s, index );
+			LoadObject (cfile, index );
 			// no DBO saves in MAX
 
 			// Determine if PBR or non-PBR

@@ -69,6 +69,8 @@ int ImGuiStatusBar_Size = 0;
 bool bPreviewWPE = false;
 uint32_t PreviewWPERoot = 0;
 float fPreviewYOffset = 0;
+float fPreviewXOffset = 0;
+float fPreviewZOffset = 0;
 
 preferences pref;
 bool g_bEnableAutoFlattenSystem = true;
@@ -5067,37 +5069,75 @@ void ChangeGGFont(const char *cpcustomfont, int iIDEFontSize)
 	defaultfont = io.Fonts->AddFontDefault();
 
 	//Add all fonts from:
-
+	extern std::vector< std::pair<ImFont*, std::string>> DefaultStoryboardFonts;
 	extern std::vector< std::pair<ImFont*, std::string>> StoryboardFonts;
+
+	StoryboardFonts.clear();
+	DefaultStoryboardFonts.clear();
 
 	cstr pOldDir = GetDir();
 
-	char destination[MAX_PATH];
-	strcpy(destination, "editors\\templates\\fonts\\");
-	SetDir(destination);
-	ChecklistForFiles();
-	SetDir(pOldDir.Get());
-	DARKSDK LPSTR ChecklistString(int iIndex);
-	DARKSDK int ChecklistQuantity(void);
-	for (int c = 1; c <= ChecklistQuantity(); c++)
+	for (int a = 0; a < 2; a++)
 	{
-		char *file = ChecklistString(c);
-		if (file)
+		char destination[MAX_PATH];
+		strcpy(destination, "editors\\templates\\fonts\\");
+		if (a == 1)
 		{
-			if (strlen(file) > 4)
+			//PE: DocWrite folder.
+			extern char szWriteDir[MAX_PATH];
+			strcpy(destination, szWriteDir);
+			strcat(destination, "Files\\editors\\");
+			CreateDirectoryA(destination, NULL);
+			strcat(destination, "templates\\");
+			CreateDirectoryA(destination, NULL);
+			strcat(destination, "fonts\\");
+			CreateDirectoryA(destination, NULL);
+		}
+		if (PathExist(destination))
+		{
+			SetDir(destination);
+			ChecklistForFiles();
+			SetDir(pOldDir.Get());
+			DARKSDK LPSTR ChecklistString(int iIndex);
+			DARKSDK int ChecklistQuantity(void);
+			for (int c = 1; c <= ChecklistQuantity(); c++)
 			{
-				if (strnicmp(file + strlen(file) - 4, ".ttf", 4) == NULL || strnicmp(file + strlen(file) - 4, ".otf", 4) == NULL)
+				char* file = ChecklistString(c);
+				if (file)
 				{
-					//Add font.
-					char path[MAX_PATH];
-					strcpy(path, destination);
-					strcat(path, file);
-					const char *pestrcasestr(const char *arg1, const char *arg2);
-					if( pestrcasestr(file,"arial"))
-						tmpfont = io.Fonts->AddFontFromFileTTF(path, 60, NULL, &Generic_ranges_everything[0]); //Add font
-					else
-						tmpfont = io.Fonts->AddFontFromFileTTF(path, 60 , NULL, &Generic_ranges_all[0]); //Add font
-					StoryboardFonts.push_back(std::make_pair(tmpfont,file));
+					if (strlen(file) > 4)
+					{
+						if (strnicmp(file + strlen(file) - 4, ".ttf", 4) == NULL || strnicmp(file + strlen(file) - 4, ".otf", 4) == NULL)
+						{
+							const char* pestrcasestr(const char* arg1, const char* arg2);
+							bool bAlreadyThere = false;
+							for (int i = 0; i < StoryboardFonts.size(); i++)
+							{
+								if (pestrcasestr(file, StoryboardFonts[i].second.c_str()))
+								{
+									bAlreadyThere = true;
+									break;
+								}
+							}
+							//Add font.
+							if (!bAlreadyThere)
+							{
+								//Add font.
+								char path[MAX_PATH];
+								strcpy(path, destination);
+								strcat(path, file);
+								if (pestrcasestr(file, "arial"))
+									tmpfont = io.Fonts->AddFontFromFileTTF(path, 60, NULL, &Generic_ranges_everything[0]); //Add font
+								else
+									tmpfont = io.Fonts->AddFontFromFileTTF(path, 60, NULL, &Generic_ranges_all[0]); //Add font
+								StoryboardFonts.push_back(std::make_pair(tmpfont, file));
+								if (a == 0)
+								{
+									DefaultStoryboardFonts.push_back(std::make_pair(tmpfont, file));
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -7602,7 +7642,6 @@ int DisplayLuaDescription(entityeleproftype *tmpeleprof)
 
 	int imageindexi = 0; // can have eight images indexed this way
 	bool bwpefile = false;
-	bool bwpeyoffet = false;
 
 	for (int i = 0; i < tmpeleprof->PropertiesVariable.iVariables; i++) 
 	{
@@ -8421,9 +8460,41 @@ int DisplayLuaDescription(entityeleproftype *tmpeleprof)
 				if (stricmp (tmpeleprof->PropertiesVariable.Variable[i], "ChaseModes") == NULL) pTooltipForIntegerSlider = "The first three modes are slow walkers and the last two are fast walkers";
 				cstr id = cstr("##") + tmpeleprof->PropertiesVariable.VariableScript/*tmpeleprof->name_s*/ + cstr(tmpeleprof->PropertiesVariable.Variable[i]);
 
+				bool bwpeyoffet = false;
+				bool bwpexoffet = false;
+				bool bwpezoffet = false;
+
+				if (bwpefile)
+				{
+					if (pestrcasestr(tmpeleprof->PropertiesVariable.Variable[i], "offsety"))
+					{
+						bwpeyoffet = true;
+						fPreviewYOffset = 0;
+						fPreviewXOffset = 0;
+						fPreviewZOffset = 0;
+					}
+					if (pestrcasestr(tmpeleprof->PropertiesVariable.Variable[i], "offsetx"))
+					{
+						bwpexoffet = true;
+					}
+					if (pestrcasestr(tmpeleprof->PropertiesVariable.Variable[i], "offsetz"))
+					{
+						bwpezoffet = true;
+					}
+				}
+
 				// strange condition to enable correct integer slider - from can be zero just fine
 				//if (tmpeleprof->PropertiesVariable.VariableValueFrom[i] != 0 && tmpeleprof->PropertiesVariable.VariableValueTo[i] != 0 && tmpeleprof->PropertiesVariable.VariableValueTo[i] > tmpeleprof->PropertiesVariable.VariableValueFrom[i])
-				if (tmpeleprof->PropertiesVariable.VariableValueTo[i] != 0 && tmpeleprof->PropertiesVariable.VariableValueTo[i] > tmpeleprof->PropertiesVariable.VariableValueFrom[i])
+				if (bwpefile && (bwpeyoffet || bwpexoffet || bwpezoffet))
+				{
+					if (ImGui::MaxSliderInputInt(id.Get(), &tmpint, -100.0F, 100.0f, pTooltipForIntegerSlider))
+					{
+						sprintf(tmp, "%d", tmpint);
+						strcpy(tmpeleprof->PropertiesVariable.VariableValue[i], tmp);
+						bUpdateMainString = true;
+					}
+				}
+				else if (tmpeleprof->PropertiesVariable.VariableValueTo[i] != 0 && tmpeleprof->PropertiesVariable.VariableValueTo[i] > tmpeleprof->PropertiesVariable.VariableValueFrom[i])
 				{
 					if (ImGui::MaxSliderInputInt(id.Get(), &tmpint, (int)tmpeleprof->PropertiesVariable.VariableValueFrom[i], (int)tmpeleprof->PropertiesVariable.VariableValueTo[i], pTooltipForIntegerSlider))
 					{
@@ -8441,12 +8512,20 @@ int DisplayLuaDescription(entityeleproftype *tmpeleprof)
 						bUpdateMainString = true;
 					}
 				}
+
 				if (bwpefile)
 				{
-					if (pestrcasestr(tmpeleprof->PropertiesVariable.Variable[i], "offsety"))
+					if (bwpeyoffet)
 					{
-						bwpeyoffet = true;
 						fPreviewYOffset = tmpint;
+					}
+					if (bwpexoffet)
+					{
+						fPreviewXOffset = tmpint;
+					}
+					if (bwpezoffet)
+					{
+						fPreviewZOffset = tmpint;
 					}
 				}
 
@@ -8456,9 +8535,6 @@ int DisplayLuaDescription(entityeleproftype *tmpeleprof)
 		}
 	}
 	
-	if(!bwpeyoffet)
-		fPreviewYOffset = 0;
-
 	//Update soundset4_s when we have changes.
 	if (bUpdateMainString) 
 	{

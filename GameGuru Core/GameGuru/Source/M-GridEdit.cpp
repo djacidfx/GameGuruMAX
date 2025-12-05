@@ -40,6 +40,7 @@ StoryboardStruct Storyboard;
 StoryboardStruct checkproject;
 StoryboardStruct202 updateproject202;
 std::vector< std::pair<ImFont*, std::string>> StoryboardFonts;
+std::vector< std::pair<ImFont*, std::string>> DefaultStoryboardFonts;
 bool bScreen_Editor_Window = false;
 int iScreen_Editor_Node = -1;
 int iStoryboardExecuteKey = 0;
@@ -2102,6 +2103,15 @@ void mapeditorexecutable_loop(void)
 			{
 				iLaunchAfterSync = 0;
 				void AddRemoteProjectFonts(void);
+				AddRemoteProjectFonts();
+				break;
+			}
+			case 698:
+			{
+				//PE: Reload all fonts.
+				iLaunchAfterSync = 0;
+				void AddRemoteProjectFonts(void);
+				ChangeGGFont("editors\\uiv3\\Roboto-Medium.ttf", 15);
 				AddRemoteProjectFonts();
 				break;
 			}
@@ -8553,7 +8563,7 @@ void mapeditorexecutable_loop(void)
 					// Default to tutorial panel if no object is selected.
 					// if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 20)
 					//LB: can keep tutorial closed now even if no object selected 
-					if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 15 && iLastOpenHeader != 20 && sGotoPreviewWithFile.Len() == 0) // 20 is keyboard shortcxuts, 15 is grid component
+					if (Entity_Tools_Window && !g_selected_editor_object && !Visuals_Tools_Window && iLastOpenHeader != 15 && iLastOpenHeader != 16 && iLastOpenHeader != 8 && iLastOpenHeader != 9 && iLastOpenHeader != 20 && sGotoPreviewWithFile.Len() == 0) // 20 is keyboard shortcxuts, 15 is grid component
 						iLastOpenHeader = 19;
 
 					if (pref.bAutoClosePropertySections && iLastOpenHeader != 19)
