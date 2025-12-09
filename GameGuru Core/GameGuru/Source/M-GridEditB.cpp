@@ -544,11 +544,12 @@ char g_pRenameHUDScreenError[256] = "\0";
 bool g_bMappingKeyWindow = false;
 int g_iMappingKeyToChange = -1;
 
+// for special case where a "current objects drag in" would prefer to keep its Y adjustment relative to the original objects ground position (for when dragging in floor objects that where made walls by rotating and offsetting them)
+float g_fSpecialDragInYAdjustment = 0.0f;
+
 bool bIncludeDocumentFolderInRemoteProject = false;
 int CurrentMonitorResolutionX, CurrentMonitorResolutionY;
 void GetActiveMonitorResolution( void );
-
-
 
 void imgui_set_openproperty_flags(int iMasterID)
 {
@@ -3506,6 +3507,7 @@ void AddPayLoad(ImGuiPayload* payload, bool addtocursor)
 						fHitOffsetX = 0;
 						fHitOffsetY = 0;
 						fHitOffsetZ = 0;
+						g_fSpecialDragInYAdjustment = 0.0f;
 
 						g_bHoldGridEntityPosWhenManaged = true;
 						g_fHoldGridEntityPosX = t.gridentityposx_f;
@@ -3548,6 +3550,7 @@ void AddPayLoad(ImGuiPayload* payload, bool addtocursor)
 					fHitOffsetX = 0;
 					fHitOffsetY = 0;
 					fHitOffsetZ = 0;
+					g_fSpecialDragInYAdjustment = 0.0f;
 
 					g_bHoldGridEntityPosWhenManaged = true;
 					g_fHoldGridEntityPosX = t.gridentityposx_f;
@@ -7999,6 +8002,7 @@ void Add_Grid_Snap_To_Position ( bool bFromWidgetMode )
 				fHitOffsetX = 0; 
 				fHitOffsetZ = 0;
 				fHitOffsetY = 0;
+				g_fSpecialDragInYAdjustment = 0.0f;
 				fGripX = t.gridentityposx_f + fHitOffsetX + (pref.fEditorGridSizeX / 2);
 				fGripY = t.gridentityposy_f + fHitOffsetY + (pref.fEditorGridSizeY / 2);
 				fGripZ = t.gridentityposz_f + fHitOffsetZ + (pref.fEditorGridSizeZ / 2);
@@ -22081,6 +22085,7 @@ int DuplicateFromListToCursor(std::vector<sRubberBandType> vEntityDuplicateList,
 			fHitOffsetX = 0;
 			fHitOffsetY = 0;
 			fHitOffsetZ = 0;
+			g_fSpecialDragInYAdjustment = 0.0f;
 
 			g_bHoldGridEntityPosWhenManaged = true;
 			g_fHoldGridEntityPosX = t.gridentityposx_f;
@@ -23275,6 +23280,7 @@ void AddEntityToCursor(int e, bool bDuplicate)
 			fHitOffsetX = 0;
 			fHitOffsetY = 0;
 			fHitOffsetZ = 0;
+			g_fSpecialDragInYAdjustment = 0.0f;
 			iStartMouseX = (int)ImGui::GetMousePos().x;
 			iStartMouseY = (int)ImGui::GetMousePos().y;
 			iLastHitObjectID = 0;
@@ -23309,7 +23315,19 @@ void AddEntityToCursor(int e, bool bDuplicate)
 			}
 			else
 			{
+				// for duplicates, reset hit offsets so duplicate appears directly under mouse
 				g.entityrubberbandlist.clear();
+
+				// additionally, to help with rapid use of current objects drag in, retain relative Y from ground (ideal when dragging in a floor that has been rotated and realigned to become a wall)
+				float fTerrainAtThisPoint = BT_GetGroundHeight (0, t.gridentityposx_f, t.gridentityposz_f); // only handles terrain surface
+				float pOutX, pOutY = 0, pOutZ, pNormX, pNormY, pNormZ;
+				float fDistanceOfRay = 200;
+				DWORD dwObjectNumberHit = 0;
+				if ( WickedCall_SentRay4(t.gridentityposx_f, t.gridentityposy_f, t.gridentityposz_f, 0, -1, 0, fDistanceOfRay, &pOutX, &pOutY, &pOutZ, &pNormX, &pNormY, &pNormZ, &dwObjectNumberHit, true) == false )
+				{
+					pOutY = fTerrainAtThisPoint;
+				}
+				g_fSpecialDragInYAdjustment = t.gridentityposy_f - pOutY;
 			}
 
 			// get size of object selected, to determine if to use drop system (only used for larger objects)
@@ -25815,6 +25833,12 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 		ImGui::MaxSliderInputInt("##SwimSpeedSimpleInput", &edit_grideleprof->iSwimSpeed, 1, 100, "Modifies how much distance is travelled with each swimming stroke");
 		ImGui::PopItemWidth();
 	
+		//edit_grideleprof->lives = atol(imgui_setpropertystring2_v2(t.group, Str(edit_grideleprof->lives), t.strarr_s[452].Get(), "Specifies how many lives the player starts with. Enter zero for infinite lives.", readonly));
+		ImGui::TextCenter("Lives");
+		ImGui::PushItemWidth(-10);
+		ImGui::MaxSliderInputInt("##PlayerLivesSimpleInput", &edit_grideleprof->lives, 0, 10, "Specifies how many lives the player starts with. Enter zero for infinite lives");
+		ImGui::PopItemWidth();
+
 		ImGui::TextCenter("Health");
 		static int iPlayerNormalStrength = 500;
 		int iPlayerInvincible = 0;
@@ -25826,6 +25850,7 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Set Player Health");
 			ImGui::PopItemWidth();
 		}
+
 		int iLastPlayerInvincible = iPlayerInvincible;
 		iPlayerInvincible = imgui_setpropertylist2_v2(t.group, t.controlindex, Str(iPlayerInvincible), "Invulnerable", "Controls whether the player has infinite health", 0, readonly);
 		if (iLastPlayerInvincible != iPlayerInvincible)
@@ -27505,27 +27530,28 @@ void DisplayFPEAdvanced(bool readonly, int entid, entityeleproftype *edit_gridel
 			{
 				if (t.tflaglives == 1)
 				{
+					//LB: Decision here: https://github.com/Dark-Basic-Software-Limited/GameGuruRepo/issues/6007
 					// see if this level has any checkpoints to stave off lives logic
-					bool bUsingCheckpoint = false;
-					for ( int e = 1; e <= g.entityelementlist; e++)
-					{
-						int entid = t.entityelement[e].bankindex;
-						if (t.entityprofile[entid].ismarker == 6)
-						{
-							bUsingCheckpoint = true;
-							break;
-						}
-					}
-					if (bUsingCheckpoint==true)
-					{
-						ImGui::TextCenter("Lives");
-						ImGui::TextCenter("NOTE: Checkpoint detected, infinite retries");
-						edit_grideleprof->lives = 0;
-					}
-					else
-					{
-						edit_grideleprof->lives = atol(imgui_setpropertystring2_v2(t.group, Str(edit_grideleprof->lives), t.strarr_s[452].Get(), "Specifies how many lives the player starts with. Enter zero for infinite lives.", readonly));
-					}
+					//bool bUsingCheckpoint = false;
+					//for ( int e = 1; e <= g.entityelementlist; e++)
+					//{
+					//	int entid = t.entityelement[e].bankindex;
+					//	if (t.entityprofile[entid].ismarker == 6)
+					//	{
+					//		bUsingCheckpoint = true;
+					//		break;
+					//	}
+					//}
+					//if (bUsingCheckpoint==true)
+					//{
+					//	ImGui::TextCenter("Lives");
+					//	ImGui::TextCenter("NOTE: Checkpoint detected, infinite retries");
+					//	edit_grideleprof->lives = 0;
+					//}
+					//else
+					//{
+					edit_grideleprof->lives = atol(imgui_setpropertystring2_v2(t.group, Str(edit_grideleprof->lives), t.strarr_s[452].Get(), "Specifies how many lives the player starts with. Enter zero for infinite lives.", readonly));
+					//}
 				}
 				if (t.tflagvis == 1 || t.tflagstats == 1)
 				{
