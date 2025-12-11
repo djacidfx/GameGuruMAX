@@ -1211,8 +1211,9 @@ void interface_openpropertywindow ( void )
 							setpropertyfile2(t.group,t.grideleprof.soundset1_s.Get(),t.strarr_s[468].Get(),t.strarr_s[254].Get(),"audiobank\\")  ; ++t.controlindex; 
 							setpropertyfile2(t.group,t.grideleprof.soundset2_s.Get(),t.strarr_s[480].Get(),t.strarr_s[254].Get(),"audiobank\\")  ; ++t.controlindex; 
 							setpropertyfile2(t.group,t.grideleprof.soundset3_s.Get(),t.strarr_s[481].Get(),t.strarr_s[254].Get(),"audiobank\\")  ; ++t.controlindex; 
-							setpropertyfile2(t.group, t.grideleprof.soundset5_s.Get(), t.strarr_s[482].Get(), t.strarr_s[254].Get(), "audiobank\\"); ++t.controlindex;
-							setpropertyfile2(t.group, t.grideleprof.soundset6_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\"); ++t.controlindex;
+							setpropertyfile2(t.group, t.grideleprof.soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\"); ++t.controlindex;
+							setpropertyfile2(t.group, t.grideleprof.soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\"); ++t.controlindex;
+							setpropertyfile2(t.group, t.grideleprof.soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\"); ++t.controlindex;
 						}
 					}
 				}
@@ -1481,7 +1482,8 @@ void interface_copydatatoentity ( void )
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower(t.strarr_s[468].Get()) ) == 0 )  t.grideleprof.soundset1_s = t.tdataclipped_s;
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower(t.strarr_s[480].Get()) ) == 0 )  t.grideleprof.soundset2_s = t.tdataclipped_s;
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower(t.strarr_s[481].Get()) ) == 0 )  t.grideleprof.soundset3_s = t.tdataclipped_s;
-			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower("Sound5")) == 0)					t.grideleprof.soundset5_s = t.tdataclipped_s;
+			if (strcmp (Lower(t.tfield_s.Get()), Lower("Sound4")) == 0)					t.grideleprof.soundset4a_s = t.tdataclipped_s;
+			if (strcmp (Lower(t.tfield_s.Get()), Lower("Sound5")) == 0)					t.grideleprof.soundset5_s = t.tdataclipped_s;
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower("Sound6")) == 0)					t.grideleprof.soundset6_s = t.tdataclipped_s;
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower(t.strarr_s[469].Get()) ) == 0 )  t.grideleprof.soundset_s = t.tdataclipped_s;
 			if (  strcmp ( Lower(t.tfield_s.Get()) , Lower(t.strarr_s[598].Get()) ) == 0 )  t.grideleprof.soundset_s = t.tdataclipped_s;
@@ -23467,7 +23469,7 @@ void BeginDragDropFPE(char *fpe, int textureid, bool bToolTipActive, ImVec2 vISi
 void DisplayFPEMedia(bool readonly, int entid, entityeleproftype *edit_grideleprof)
 {
 	int tflagtext = 0, tflagimage = 0; //PE: These is not used in VRTECH ?
-	bool mediaactive[6] = { true,true,true,true,true,true };
+	bool mediaactive[7] = { true,true,true,true,true,true,true };
 	int iActiveMedia = 0;
 
 	if (!edit_grideleprof)
@@ -23503,14 +23505,19 @@ void DisplayFPEMedia(bool readonly, int entid, entityeleproftype *edit_gridelepr
 			mediaactive[3] = false;
 			iActiveMedia++;
 		}
-		if (edit_grideleprof->soundset5_s.Len() <= 0)
+		if (edit_grideleprof->soundset4a_s.Len() <= 0)
 		{
 			mediaactive[4] = false;
 			iActiveMedia++;
 		}
-		if (edit_grideleprof->soundset6_s.Len() <= 0)
+		if (edit_grideleprof->soundset5_s.Len() <= 0)
 		{
 			mediaactive[5] = false;
+			iActiveMedia++;
+		}
+		if (edit_grideleprof->soundset6_s.Len() <= 0)
+		{
+			mediaactive[6] = false;
 			iActiveMedia++;
 		}
 	}
@@ -23614,7 +23621,6 @@ void DisplayFPEMedia(bool readonly, int entid, entityeleproftype *edit_gridelepr
 					if (t.strarr_s[468] == "") t.strarr_s[468] = "Sound1";
 					if (t.strarr_s[480] == "") t.strarr_s[480] = "Sound2";
 					if (t.strarr_s[481] == "") t.strarr_s[481] = "Sound3";
-					if (t.strarr_s[482] == "") t.strarr_s[482] = "Sound4";
 					if (mediaactive[1])
 						edit_grideleprof->soundset1_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset1_s.Get(), t.strarr_s[468].Get(), t.strarr_s[254].Get(), "audiobank\\",readonly);
 					if (mediaactive[2])
@@ -23622,8 +23628,10 @@ void DisplayFPEMedia(bool readonly, int entid, entityeleproftype *edit_gridelepr
 					if (mediaactive[3])
 						edit_grideleprof->soundset3_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset3_s.Get(), t.strarr_s[481].Get(), t.strarr_s[254].Get(), "audiobank\\",readonly);
 					if (mediaactive[4])
-						edit_grideleprof->soundset6_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\", readonly);
+						edit_grideleprof->soundset4a_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\", readonly);
 					if (mediaactive[5])
+						edit_grideleprof->soundset5_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\", readonly);
+					if (mediaactive[6])
 						edit_grideleprof->soundset6_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\", readonly);
 				}
 			}
@@ -26375,6 +26383,7 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 		bool bSound3Mentioned = false;
 		bool bSound4Mentioned = false;
 		bool bSound5Mentioned = false;
+		bool bSound6Mentioned = false;
 		bool bVideoSlotMentioned = false;
 		bool bIfUsedMentioned = false;
 		bool bUseKeyMentioned = false;
@@ -26399,6 +26408,7 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 		if (strstr(pCaptureAnyScriptDesc, "<Sound3>") != 0) bSound3Mentioned = true;
 		if (strstr(pCaptureAnyScriptDesc, "<Sound4>") != 0) bSound4Mentioned = true;
 		if (strstr(pCaptureAnyScriptDesc, "<Sound5>") != 0) bSound5Mentioned = true;
+		if (strstr(pCaptureAnyScriptDesc, "<Sound6>") != 0) bSound6Mentioned = true;
 		if (strstr(pCaptureAnyScriptDesc, "<Video Slot>") != 0) bVideoSlotMentioned = true;
 		if (strstr(pCaptureAnyScriptDesc, "<If Used>") != 0) bIfUsedMentioned = true;
 		if (strstr(pCaptureAnyScriptDesc, "<Use Key>") != 0) bUseKeyMentioned = true;
@@ -26471,8 +26481,9 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 			if (bSound1Mentioned == true) edit_grideleprof->soundset1_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset1_s.Get(), "Sound1", t.strarr_s[254].Get(), "audiobank\\", readonly);
 			if (bSound2Mentioned == true) edit_grideleprof->soundset2_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset2_s.Get(), "Sound2", t.strarr_s[254].Get(), "audiobank\\", readonly);
 			if (bSound3Mentioned == true) edit_grideleprof->soundset3_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset3_s.Get(), "Sound3", t.strarr_s[254].Get(), "audiobank\\", readonly);
-			if (bSound4Mentioned == true) edit_grideleprof->soundset5_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset5_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\", readonly);
-			if (bSound5Mentioned == true) edit_grideleprof->soundset6_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset6_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\", readonly);
+			if (bSound4Mentioned == true) edit_grideleprof->soundset4a_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\", readonly);
+			if (bSound5Mentioned == true) edit_grideleprof->soundset5_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\", readonly);
+			if (bSound6Mentioned == true) edit_grideleprof->soundset6_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\", readonly);
 			if (bIfUsedMentioned == true)
 			{
 				if (t.entityprofile[entid].ischaracter != 1)
@@ -27825,8 +27836,9 @@ void DisplayFPEAdvanced(bool readonly, int entid, entityeleproftype *edit_gridel
 							edit_grideleprof->soundset1_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset1_s.Get(), t.strarr_s[468].Get(), t.strarr_s[254].Get(), "audiobank\\",readonly);
 							edit_grideleprof->soundset2_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset2_s.Get(), t.strarr_s[480].Get(), t.strarr_s[254].Get(), "audiobank\\",readonly);
 							edit_grideleprof->soundset3_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset3_s.Get(), t.strarr_s[481].Get(), t.strarr_s[254].Get(), "audiobank\\",readonly);
-							ImGui::TextCenter("Sound4");
-							ImGui::TextCenter("(repurposed)");
+							//ImGui::TextCenter("Sound4");
+							//ImGui::TextCenter("(repurposed)");
+							edit_grideleprof->soundset4a_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\", readonly);
 							edit_grideleprof->soundset5_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\", readonly);
 							edit_grideleprof->soundset6_s = imgui_setpropertyfile2_v2(t.group, edit_grideleprof->soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\", readonly);
 						}
@@ -41407,7 +41419,8 @@ void process_storeboard(bool bInitOnly)
 										}
 										if (t.entityelement[t.e].eleprof.aimain_s.Len() > 0)
 										{
-											t.entityelement[t.e].eleprof.soundset5_s = t.entityelement[t.e].eleprof.soundset4_s;
+											//t.entityelement[t.e].eleprof.soundset5_s = t.entityelement[t.e].eleprof.soundset4_s;
+											t.entityelement[t.e].eleprof.soundset4a_s = t.entityelement[t.e].eleprof.soundset4_s;
 											t.entityelement[t.e].eleprof.soundset4_s = "";
 
 											//PE: Map scripts.

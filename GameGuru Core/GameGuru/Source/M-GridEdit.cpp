@@ -5618,7 +5618,8 @@ void mapeditorexecutable_loop(void)
 		{
 			static char cStandalonePath[MAX_PATH] = "\0";
 			static int iStandaloneCycle = 0;
-			if (cStandalonePath[0] == 0) {
+			if (cStandalonePath[0] == 0) 
+			{
 				g.exedir_s = g.myownrootdir_s;
 				if(cstr(Right(g.myownrootdir_s.Get(), 1)) == "\\" )
 					g.exedir_s += "My Games\\";
@@ -5741,7 +5742,8 @@ void mapeditorexecutable_loop(void)
 
 						SetDir(tOldDir.Get());
 
-						if (cFileSelected && strlen(cFileSelected) > 0) {
+						if (cFileSelected && strlen(cFileSelected) > 0) 
+						{
 							strcpy(cStandalonePath, cFileSelected);
 							if (cStandalonePath[strlen(cStandalonePath) - 1] != '\\')
 								strcat(cStandalonePath, "\\");
@@ -5753,7 +5755,22 @@ void mapeditorexecutable_loop(void)
 				}
 
 				float fdone = (float)mapfile_savestandalone_getprogress() / 100.0f;
-				if (iStandaloneCycle == 1) fdone = 0.01f;
+				if (iStandaloneCycle == 1)
+				{
+					// check if destination export path exists
+					if (PathExist(cStandalonePath) == false)
+					{
+						iStandaloneCycle = 0;
+						strcpy(cTriggerMessage, "Save Standalone Aborted - Destination Path Not Exist");
+						bTriggerMessage = true;
+						bExport_Standalone_Window = false; //Close window.
+					}
+					else
+					{
+						// can proceed
+						fdone = 0.01f;
+					}
+				}
 
 				if (fdone > 0.0f) 
 				{
@@ -9712,6 +9729,7 @@ void mapeditorexecutable_loop(void)
 							bool bSound3Mentioned = false;
 							bool bSound4Mentioned = false;
 							bool bSound5Mentioned = false;
+							bool bSound6Mentioned = false;
 							bool bVideoSlotMentioned = false;
 							bool bIfUsedMentioned = false;
 							bool bUseKeyMentioned = false;
@@ -9737,6 +9755,7 @@ void mapeditorexecutable_loop(void)
 							if (strstr(pCaptureAnyScriptDesc, "<Sound3>") != 0) bSound3Mentioned = true;
 							if (strstr(pCaptureAnyScriptDesc, "<Sound4>") != 0) bSound4Mentioned = true;
 							if (strstr(pCaptureAnyScriptDesc, "<Sound5>") != 0) bSound5Mentioned = true;
+							if (strstr(pCaptureAnyScriptDesc, "<Sound6>") != 0) bSound6Mentioned = true;
 							if (strstr(pCaptureAnyScriptDesc, "<Video Slot>") != 0) bVideoSlotMentioned = true;
 							if (strstr(pCaptureAnyScriptDesc, "<If Used>") != 0) bIfUsedMentioned = true;
 							if (strstr(pCaptureAnyScriptDesc, "<Shooting Weapon>") != 0) bShootingWeaponMentioned = true;
@@ -9753,8 +9772,10 @@ void mapeditorexecutable_loop(void)
 							if (bSound1Mentioned == true) t.grideleprof.soundset1_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset1_s.Get(), "Sound1", t.strarr_s[254].Get(), "audiobank\\");
 							if (bSound2Mentioned == true) t.grideleprof.soundset2_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset2_s.Get(), "Sound2", t.strarr_s[254].Get(), "audiobank\\");
 							if (bSound3Mentioned == true) t.grideleprof.soundset3_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset3_s.Get(), "Sound3", t.strarr_s[254].Get(), "audiobank\\");
-							if (bSound4Mentioned == true) t.grideleprof.soundset5_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset5_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\");
-							if (bSound5Mentioned == true) t.grideleprof.soundset6_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset6_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\");
+							// LB: corrected bad decision to assign sound4 to 4, 5 to 6, etc (now 4,5,6 align with the introduction of a new 4a string)
+							if (bSound4Mentioned == true) t.grideleprof.soundset4a_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\");
+							if (bSound5Mentioned == true) t.grideleprof.soundset5_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\");
+							if (bSound6Mentioned == true) t.grideleprof.soundset6_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\");
 							if (bIfUsedMentioned == true) t.grideleprof.ifused_s = imgui_setpropertystring2(t.group, t.grideleprof.ifused_s.Get(), t.strarr_s[437].Get(), t.strarr_s[226].Get());
 							if (bUseKeyMentioned == true) t.grideleprof.usekey_s = imgui_setpropertystring2(t.group, t.grideleprof.usekey_s.Get(), t.strarr_s[436].Get(), t.strarr_s[225].Get());
 							bool readonly = false;
@@ -10300,8 +10321,9 @@ void mapeditorexecutable_loop(void)
 												t.grideleprof.soundset1_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset1_s.Get(), t.strarr_s[468].Get(), t.strarr_s[254].Get(), "audiobank\\");
 												t.grideleprof.soundset2_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset2_s.Get(), t.strarr_s[480].Get(), t.strarr_s[254].Get(), "audiobank\\");
 												t.grideleprof.soundset3_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset3_s.Get(), t.strarr_s[481].Get(), t.strarr_s[254].Get(), "audiobank\\");
-												ImGui::TextCenter("Sound4");
-												ImGui::TextCenter("(repurposed)");
+												//ImGui::TextCenter("Sound4");
+												//ImGui::TextCenter("(repurposed)");
+												t.grideleprof.soundset4a_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset4a_s.Get(), "Sound4", t.strarr_s[254].Get(), "audiobank\\");
 												t.grideleprof.soundset5_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset5_s.Get(), "Sound5", t.strarr_s[254].Get(), "audiobank\\");
 												t.grideleprof.soundset6_s = imgui_setpropertyfile2(t.group, t.grideleprof.soundset6_s.Get(), "Sound6", t.strarr_s[254].Get(), "audiobank\\");
 											}

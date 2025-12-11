@@ -1,4 +1,4 @@
--- Weapon v16 - Necrym and Lee
+-- Weapon v17 - Necrym and Lee
 -- DESCRIPTION: Assign to a weapon object to be collected, and play an optional pickup <Sound0>.
 -- DESCRIPTION: [PICKUP_RANGE=75(1,200)]
 -- DESCRIPTION: [@PICKUP_STYLE=2(1=Ranged, 2=Accurate)]
@@ -48,6 +48,7 @@ function weapon_init_name(e,name)
 	weapon_name[e] = name
 	
 	status[e] = "init"
+	g_tEnt = 0
 	hl_icon[e] = 0
 	hl_imgwidth[e] = 0
 	hl_imgheight[e] = 0
@@ -77,6 +78,9 @@ function weapon_main(e)
 			--pinpoint select object--
 			module_misclib.pinpoint(e,weapon[e].pickup_range,weapon[e].item_highlight,hl_icon[e])
 			--end pinpoint select object--
+			if g_tEnt == 0 and weapon_therecanbeonlyone==e then
+				weapon_therecanbeonlyone = 0
+			end
 		end
 	end
 

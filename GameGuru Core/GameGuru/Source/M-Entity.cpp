@@ -2187,6 +2187,8 @@ void entity_loaddata ( void )
 					if (  matched  )  t.entityprofile[t.entid].soundset2_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset3" );
 					if (  matched  )  t.entityprofile[t.entid].soundset3_s = t.value_s;
+					cmpStrConst( t_field_s, "soundset4");
+					if (  matched  )  t.entityprofile[t.entid].soundset4a_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset5");
 					if (  matched  )  t.entityprofile[t.entid].soundset5_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset6");
@@ -3761,6 +3763,7 @@ void entity_loadactivesoundsandvideo ( void )
 	char pSoundSet1[MAX_PATH];
 	char pSoundSet2[MAX_PATH];
 	char pSoundSet3[MAX_PATH];
+	char pSoundSet4[MAX_PATH];
 	char pSoundSet5[MAX_PATH];
 	char pSoundSet6[MAX_PATH];
 
@@ -3780,6 +3783,7 @@ void entity_loadactivesoundsandvideo ( void )
 				strcpy(pSoundSet1, t.entityelement[t.e].eleprof.soundset1_s.Get());
 				strcpy(pSoundSet2, t.entityelement[t.e].eleprof.soundset2_s.Get());
 				strcpy(pSoundSet3, t.entityelement[t.e].eleprof.soundset3_s.Get());
+				strcpy(pSoundSet4, t.entityelement[t.e].eleprof.soundset4a_s.Get());
 				strcpy(pSoundSet5, t.entityelement[t.e].eleprof.soundset5_s.Get());
 				strcpy(pSoundSet6, t.entityelement[t.e].eleprof.soundset6_s.Get());
 
@@ -3795,6 +3799,7 @@ void entity_loadactivesoundsandvideo ( void )
 						if (allfour == 1) pThisStr = pSoundSet1;
 						if (allfour == 2) pThisStr = pSoundSet2;
 						if (allfour == 3) pThisStr = pSoundSet3;
+						if (allfour == 4) pThisStr = pSoundSet4;
 						if (allfour == 5) pThisStr = pSoundSet5;
 						if (allfour == 6) pThisStr = pSoundSet6;
 						if (bMightHaveVariant == false && pThisStr && strnicmp (pThisStr + strlen(pThisStr) - 5, "1.wav", 5) == NULL) bMightHaveVariant = true;
@@ -3875,6 +3880,11 @@ void entity_loadactivesoundsandvideo ( void )
 				if (t.entityelement[t.e].soundset3 == 0)
 				{
 					t.entityelement[t.e].soundset3 = loadinternalsoundcore(pSoundSet3, 1);
+					if (t.game.runasmultiplayer == 1) mp_refresh ();
+				}
+				if (t.entityelement[t.e].soundset4 == 0)
+				{
+					t.entityelement[t.e].soundset4 = loadinternalsoundcore(pSoundSet4, 1);
 					if (t.game.runasmultiplayer == 1) mp_refresh ();
 				}
 				if (t.entityelement[t.e].soundset5 == 0)
@@ -4075,6 +4085,7 @@ void entity_fillgrideleproffromprofile ( void )
 	t.grideleprof.soundset4_s=t.entityprofile[t.entid].soundset4_s;
 	t.grideleprof.soundset5_s=t.entityprofile[t.entid].soundset5_s;
 	t.grideleprof.soundset6_s=t.entityprofile[t.entid].soundset6_s;
+	t.grideleprof.soundset4a_s = t.entityprofile[t.entid].soundset4a_s;
 	t.grideleprof.overrideanimset_s = "";
 
 	//  FPGC - 310710 - decal particle settings
@@ -4826,8 +4837,7 @@ void c_entity_loadelementsdata ( void )
 
 	// load entity element list
 	t.failedtoload=0;
-	//t.versionnumbersupported = 338;
-	t.versionnumbersupported = 341;
+	t.versionnumbersupported = 342;
 
 	if ( FileExist(t.elementsfilename_s.Get()) == 1 ) 
 	{
@@ -5554,6 +5564,10 @@ void c_entity_loadelementsdata ( void )
 					{
 						t.a = c_ReadLong(1); t.entityelement[t.e].eleprof.bUseFPESettings = t.a;
 					}
+					if (t.versionnumberload >= 342)
+					{
+						t.a_s = c_ReadString(1); t.entityelement[t.e].eleprof.soundset4a_s = t.a_s;
+					}
 
 					// get the index of the entity profile
 					t.ttentid=t.entityelement[t.e].bankindex;
@@ -5746,7 +5760,7 @@ void c_entity_loadelementsdata ( void )
 				// now go through ELEPROF enrties to update any SCRIPTBANK references and SOUNDSET references
 				for (t.e = 1; t.e <= g.entityelementlist; t.e++)
 				{
-					for (t.tcheck = 1; t.tcheck <= 8; t.tcheck++)
+					for (t.tcheck = 1; t.tcheck <= 9; t.tcheck++)
 					{
 						if (t.tcheck == 1)  t.tcheck_s = t.entityelement[t.e].eleprof.aimain_s;
 						if (t.tcheck == 2)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset_s;
@@ -5756,6 +5770,7 @@ void c_entity_loadelementsdata ( void )
 						if (t.tcheck == 6)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset4_s;
 						if (t.tcheck == 7)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset5_s;
 						if (t.tcheck == 8)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset6_s;
+						if (t.tcheck == 9)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset4a_s;
 						t.ttry_s = "";
 						for (t.nn = 1; t.nn <= Len(t.tcheck_s.Get()); t.nn++)
 						{
@@ -5779,6 +5794,7 @@ void c_entity_loadelementsdata ( void )
 								if (t.tcheck == 6) { t.entityelement[t.e].eleprof.soundset4_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 								if (t.tcheck == 7) { t.entityelement[t.e].eleprof.soundset5_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 								if (t.tcheck == 8) { t.entityelement[t.e].eleprof.soundset6_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
+								if (t.tcheck == 9) { t.entityelement[t.e].eleprof.soundset4a_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 							}
 						}
 					}
@@ -6588,7 +6604,7 @@ void entity_saveelementsdata (bool bForCollectionELE)
 	g.entityelementlist = temp;
 
 	//  Save entity element list
-	t.versionnumbersave = 341;
+	t.versionnumbersave = 342;
 
 	EntityWriter writer;
 
@@ -7160,6 +7176,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 				if (t.versionnumbersave >= 341)
 				{
 					writer.WriteLong(t.entityelement[ent].eleprof.bUseFPESettings);
+				}
+				if (t.versionnumbersave >= 342)
+				{
+					writer.WriteString(t.entityelement[ent].eleprof.soundset4a_s.Get());
 				}
 			}
 		} 
@@ -7932,8 +7952,6 @@ void entity_addentitytomap_core ( void )
 	t.entityelement[t.e].soundset6 = 0;
 	t.entityelement[t.e].underground=0;
 	t.entityelement[t.e].beenmoved=1;
-	t.entityelement[t.e].soundset5 = 0;
-	t.entityelement[t.e].soundset6 = 0;
 
 	//PE: Always false by default.
 	t.entityelement[t.e].eleprof.systemwide_lua = false;
@@ -8040,6 +8058,7 @@ void entity_addentitytomap ( void )
 					t.entityelement[t.te].eleprof.soundset4_s = t.entityelement[t.e].eleprof.soundset4_s;
 					t.entityelement[t.te].eleprof.soundset5_s = t.entityelement[t.e].eleprof.soundset5_s;
 					t.entityelement[t.te].eleprof.soundset6_s = t.entityelement[t.e].eleprof.soundset6_s;
+					t.entityelement[t.te].eleprof.soundset4a_s = t.entityelement[t.e].eleprof.soundset4a_s;
 					t.entityelement[t.te].eleprof.overrideanimset_s = t.entityelement[t.e].eleprof.overrideanimset_s;
 					t.entityelement[t.te].eleprof.strength=t.entityelement[t.e].eleprof.strength;
 					t.entityelement[t.te].eleprof.speed=t.entityelement[t.e].eleprof.speed;
@@ -8140,7 +8159,8 @@ void entity_deleteentityfrommap ( void )
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset) ; t.entityelement[t.tupdatee].soundset = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset1) ; t.entityelement[t.tupdatee].soundset1 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset2) ; t.entityelement[t.tupdatee].soundset2 = 0;
-	deleteinternalsound(t.entityelement[t.tupdatee].soundset3) ; t.entityelement[t.tupdatee].soundset3 = 0;
+	deleteinternalsound(t.entityelement[t.tupdatee].soundset3); t.entityelement[t.tupdatee].soundset3 = 0;
+	deleteinternalsound(t.entityelement[t.tupdatee].soundset4); t.entityelement[t.tupdatee].soundset4 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset5); t.entityelement[t.tupdatee].soundset5 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset6); t.entityelement[t.tupdatee].soundset6 = 0;
 

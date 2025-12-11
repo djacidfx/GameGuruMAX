@@ -1216,7 +1216,11 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 					sObject* pObject = g_ObjectList[tobj];
 					if (pObject)
 					{
-						WickedCall_SetDisableCollision(pObject, true);
+						// LB: Exception are objects that have is collectable set (need to detect these, even if no collision mode set)
+						if (t.entityelement[t.e].eleprof.iscollectable==0)
+						{
+							WickedCall_SetDisableCollision(pObject, true);
+						}
 					}
 				}
 			}
