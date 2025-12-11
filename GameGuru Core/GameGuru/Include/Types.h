@@ -6718,10 +6718,11 @@ struct entitytype
 	int iWasSpawnedInGame;
 	int iThumbnail;
 	int old_bankindex;
-
+	int iAllowBuletHole = 0;
 	// Constructor
 	entitytype ( )
 	{
+		 iAllowBuletHole = 0;
 		 old_bankindex = 0;
 		 iThumbnail = 0;
 		 iWasSpawnedInGame = 0;

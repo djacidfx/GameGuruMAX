@@ -27264,6 +27264,15 @@ void DisplayFPEGeneral(bool readonly, int entid, entityeleproftype *edit_gridele
 				g_bChangedGameCollectionList = false;
 			}
 
+			if (elementID > 0 && elementID < t.entityelement.size() )
+			{
+				bool bAllowBulletHole = t.entityelement[elementID].iAllowBuletHole;
+				if (ImGui::Checkbox("Allow Bullet Holes ?", &bAllowBulletHole))
+				{
+					t.entityelement[elementID].iAllowBuletHole = bAllowBulletHole;
+				}
+			}
+
 			ImGui::Indent(-10);
 		}
 	}
