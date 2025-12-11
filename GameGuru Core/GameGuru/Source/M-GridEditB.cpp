@@ -2,7 +2,7 @@
 // VS2017 (32bit) having trouble with large GridEdit.cpp file, so split into two
 //
 
-// Includes 
+// Includes
 #include "stdafx.h"
 #include "gameguru.h"
 #include "M-WelcomeSystem.h"
@@ -14,13 +14,8 @@
 #include <string>
 #include <time.h>
 #include <wininet.h>
-#include <mmsystem.h>
 #include "ShlObj.h"
-#include "sha1.h"
-#include "sha2.h"
-#include "miniz.h"
 #include "Nlohmann JSON/json.hpp"
-
 #include "M-RPG.h"
 #include "M-Workshop.h"
 
@@ -547,8 +542,6 @@ int g_iMappingKeyToChange = -1;
 bool bIncludeDocumentFolderInRemoteProject = false;
 int CurrentMonitorResolutionX, CurrentMonitorResolutionY;
 void GetActiveMonitorResolution( void );
-
-
 
 void imgui_set_openproperty_flags(int iMasterID)
 {

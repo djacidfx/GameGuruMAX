@@ -97,14 +97,6 @@ int g_iSuperTriggerFullGrassReveal = 0;
 
 #include <algorithm>
 #include <string>
-#include <time.h>
-
-#include <wininet.h>
-#include <mmsystem.h>
-#include "ShlObj.h"
-#include "sha1.h"
-#include "sha2.h"
-
 #include "miniz.h"
 
 int iGenralWindowsFlags = ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
