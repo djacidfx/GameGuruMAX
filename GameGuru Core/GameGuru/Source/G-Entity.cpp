@@ -3460,8 +3460,7 @@ void entity_hasbulletrayhit(void)
 	{
 		if (t.tttriggerdecalimpact >= 10 && t.tttriggerdecalimpact != 16 && t.bulletrayhite >= 0 )
 		{
-			if (t.bulletrayhite == 0 || t.entityelement[t.bulletrayhite].staticflag == 1 ||
-				(t.entityelement[t.bulletrayhite].staticflag == 0 && t.entityelement[t.bulletrayhite].eleprof.isimmobile == 1) )
+			if (t.bulletrayhite == 0 || t.entityelement[t.bulletrayhite].staticflag == 1 || t.entityelement[t.bulletrayhite].iAllowBuletHole == 1 )
 			{
 				int iMaterialIndex = t.tttriggerdecalimpact - 10;
 				bulletholes_add(iMaterialIndex, t.brayx2_f, t.brayy2_f, t.brayz2_f, vecRayHitNormal.x, vecRayHitNormal.y, vecRayHitNormal.z);
