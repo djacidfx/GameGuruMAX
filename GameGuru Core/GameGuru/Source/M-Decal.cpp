@@ -245,7 +245,7 @@ void decal_load(void)
 	{
 		// this load creates a large delay each time test game is used, so allow user to skip this new effect for quicker testing
 		extern bool g_bTemporarilyDisableFullDecalEffectLoading;
-		if ( g_bTemporarilyDisableFullDecalEffectLoading == false )
+		if ( g_bTemporarilyDisableFullDecalEffectLoading == false && g.gdisablefulldecaleffects == 0 )
 		{
 			t.decal[t.decalid].newparticle.iParticle_Floor_Active = 1;
 			t.decal[t.decalid].newparticle.bParticle_Show_At_Start = false;

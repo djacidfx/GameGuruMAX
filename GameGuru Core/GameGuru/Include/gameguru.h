@@ -779,6 +779,7 @@ struct Sglobals
 	int gdisplaydepth;
 	int gdisplaywidth;
 	int gexportassets;
+	int gdisablefulldecaleffects;
 	int ggodmodestate;
 	int glightmaxsize;
 	int glightquality;
@@ -1651,6 +1652,7 @@ struct Sglobals
 		 glightmaxsize = 0;
 		 ggodmodestate = 0;
 		 gexportassets = 0;
+		 gdisablefulldecaleffects = 0;
 		 gdisplaywidth = 0;
 		 gdisplaydepth = 0;
 		 gbloodonfloor = 0;

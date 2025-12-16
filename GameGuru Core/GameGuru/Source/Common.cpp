@@ -2891,6 +2891,9 @@ void FPSC_LoadSETUPINI (bool bUseMySystemFolder)
 					// DOCDOC: exportassets = Enables the ability for save standalone to include the FPE along with the entities other resources.
 					t.tryfield_s = "exportassets"; if (t.field_s == t.tryfield_s)  g.gexportassets = t.value1;
 
+					// DOCDOC: disablefulldecaleffects = Disables default ability to fully load decal particle system (performance hit on test game each time)
+					t.tryfield_s = "disablefulldecaleffects"; if (t.field_s == t.tryfield_s)  g.gdisablefulldecaleffects = t.value1;		
+
 					// DOCDOC: localserver = Not Used
 					t.tryfield_s = "localserver"; if (t.field_s == t.tryfield_s)  g.glocalserveroverride_s = t.value_s;
 

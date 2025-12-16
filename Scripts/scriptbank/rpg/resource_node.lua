@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Resource Node v18 by Necrym59
+-- Resource Node v19 by Necrym59
 -- DESCRIPTION: Allows to use this object as a resource node to give the player the selected resource item.
 -- DESCRIPTION: [@NODE_TYPE=1(1=Growth, 2=Extraction)]
 -- DESCRIPTION: [@NODE_TOOL_NAME$=-1(0=AnyWeaponList)] Specific Weapon/Tool to use - (No Weapon=Any)
@@ -35,10 +35,6 @@ local node_scaler					= {}
 local hide_node						= {}
 local resource_entity_no			= {}
 
-
-local origin_x		= {}
-local origin_y		= {}
-local origin_z		= {}
 local newposx		= {}
 local newposy		= {}
 local newposz		= {}
@@ -60,7 +56,6 @@ local healthcheck	= {}
 local terrainheight	= {}
 local surfaceheight	= {}
 local nodewidth		= {}
-local tableName		= {}
 local wait			= {}
 
 function resource_node_properties(e, node_type, node_tool_name, node_respawn_time, node_respawns, node_resource_quantity, resource_spawn_time, resource_spawn_spread, resource_entity_name, node_use_range,  node_use_prompt, node_tool_prompt, node_scaler, hide_node)
@@ -114,8 +109,6 @@ function resource_node_init(e)
 	nodewidth[e] = 0
 	healthcheck[e] = starthealth[e]
 	wait[e] = math.huge	
-	tableName[e] = "nodelist" ..tostring(e)
-	_G[tableName[e]] = {}	
 	SetEntityAlwaysActive(e,1)
 	status[e] = "init"
 end
@@ -143,12 +136,9 @@ function resource_node_main(e)
 				if ee ~= nil and g_Entity[ee] ~= nil then
 					if lower(GetEntityName(ee)) == lower(resnode[e].resource_entity_name) then
 						resnode[e].resource_entity_no = ee
-						origin_x[e] = g_Entity[ee]['x']+(nodewidth[e]/2)
-						origin_y[e] = g_Entity[ee]['y']
-						origin_z[e] = g_Entity[ee]['z']+(nodewidth[e]/2)
-						SetEntityAlwaysActive(ee,1)
-						CollisionOff(ee)
-						Hide(ee)
+						SetEntityAlwaysActive(resnode[e].resource_entity_no,1)
+						CollisionOff(resnode[e].resource_entity_no)
+						Hide(resnode[e].resource_entity_no)
 						break
 					end
 				end
@@ -262,27 +252,25 @@ function resource_node_main(e)
 	end	
 
 	if status[e] == "create_resource" and resnode[e].resource_entity_no ~= 0 then			
-		if doonce[e] == 0 and created[e] < resnode[e].node_resource_quantity then			
+		if doonce[e] == 0 and created[e] < resnode[e].node_resource_quantity then
 			local etoclone = resnode[e].resource_entity_no
 			newEntn[e] = SpawnNewEntity(etoclone)
-			PromptDuration("Spawned Entity ID: " .. newEntn[e],3000)			
 			Show(newEntn[e])
 			GravityOff(newEntn[e])
 			CollisionOff(newEntn[e])
-			table.insert(_G[tableName[e]],newEntn[e])
 			if resnode[e].node_type == 1 then
 				if resnode[e].resource_spawn_spread == 0 then 
 					local newya = math.random(0,360)
-					newposx[e] = origin_x[e]
-					newposy[e] = origin_y[e]
-					newposz[e] = origin_z[e]
+					newposx[e] = g_Entity[e]['x'] + nodewidth[e]
+					newposy[e] = g_Entity[e]['y']
+					newposz[e] = g_Entity[e]['z'] + nodewidth[e]
 				end	
 				if resnode[e].resource_spawn_spread > 0 then 
 					local newya = math.random(0,360)
-					newposx[e] = origin_x[e] + math.cos(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
-					newposz[e] = origin_z[e] + math.sin(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
+					newposx[e] = g_Entity[e]['x'] + math.cos(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
+					newposz[e] = g_Entity[e]['z'] + math.sin(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
 					terrainheight[e] = GetTerrainHeight(newposx[e],newposz[e])
-					surfaceheight[e] = GetSurfaceHeight(newposx[e],origin_y[e],newposz[e])
+					surfaceheight[e] = GetSurfaceHeight(newposx[e],newposy[e],newposz[e])
 					if surfaceheight[e] > terrainheight[e] then
 						newposy[e] = surfaceheight[e]
 					else
@@ -295,7 +283,7 @@ function resource_node_main(e)
 				newposx[e] = g_Entity[e]['x'] + math.cos(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
 				newposz[e] = g_Entity[e]['z'] + math.sin(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
 				terrainheight[e] = GetTerrainHeight(newposx[e],newposz[e])
-				surfaceheight[e] = GetSurfaceHeight(newposx[e],origin_y[e],newposz[e])
+				surfaceheight[e] = GetSurfaceHeight(newposx[e],newposy[e],newposz[e])
 				if surfaceheight[e] > terrainheight[e] then
 					newposy[e] = surfaceheight[e] + math.random(10,30)
 				else
@@ -306,7 +294,7 @@ function resource_node_main(e)
 			CollisionOn(newEntn[e])
 			GravityOn(newEntn[e])
 			cntEntn[e] = cntEntn[e] + 1
-			created[e] = created[e] +1	
+			created[e] = created[e] + 1
 			wait[e] = g_Time + 600			
 			doonce[e] = 1
 		end

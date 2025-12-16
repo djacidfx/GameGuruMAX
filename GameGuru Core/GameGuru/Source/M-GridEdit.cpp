@@ -131,6 +131,8 @@ using namespace GGGrass;
 extern sObject* g_selected_editor_object;
 extern int g_selected_editor_objectID;
 extern XMFLOAT4 g_selected_editor_color;
+extern float g_fSpecialDragInYAdjustment;
+
 int iEditorGridSizeX = 100;
 int iEditorGridSizeZ = 100;
 bool bRenderTabTab = false;
@@ -11539,6 +11541,7 @@ void mapeditorexecutable_loop(void)
 											fHitOffsetX = 0;
 											fHitOffsetY = 0;
 											fHitOffsetZ = 0;
+											g_fSpecialDragInYAdjustment = 0.0f;
 											bDraggingActive = false;
 											g_bHoldGridEntityPosWhenManaged = true;
 											g_fHoldGridEntityPosX = t.gridentityposx_f;
@@ -11634,6 +11637,7 @@ void mapeditorexecutable_loop(void)
 												fHitOffsetX = 0;
 												fHitOffsetY = 0;
 												fHitOffsetZ = 0;
+												g_fSpecialDragInYAdjustment = 0.0f;
 												bDraggingActive = false;
 												g_bHoldGridEntityPosWhenManaged = true;
 												g_fHoldGridEntityPosX = t.gridentityposx_f;
@@ -18895,6 +18899,7 @@ void editor_constructionselection ( void )
 				fHitOffsetX = 0;
 				fHitOffsetY = 0;
 				fHitOffsetZ = 0;
+				g_fSpecialDragInYAdjustment = 0.0f;
 				// LB: these can be uninitialised, but we need these filled so the plane can be under the cursor initially
 				t.gridentityposx_f = t.inputsys.localx_f;
 				t.gridentityposy_f = t.inputsys.localcurrentterrainheight_f;
@@ -22304,7 +22309,7 @@ void gridedit_mapediting ( void )
 										{
 											t.gridentityposx_f = t.inputsys.localx_f - fHitOffsetX;
 											t.gridentityposz_f = t.inputsys.localy_f - fHitOffsetZ;
-											t.gridentityposy_f = t.inputsys.localcurrentterrainheight_f - fHitOffsetY;
+											t.gridentityposy_f = (t.inputsys.localcurrentterrainheight_f - fHitOffsetY) + g_fSpecialDragInYAdjustment;
 										}
 										else
 										{
@@ -23157,7 +23162,7 @@ void gridedit_mapediting ( void )
 									}
 								}
 
-								//  080415 - if NOT holding SHIFT, delete after one placement
+								// if NOT holding SHIFT, delete after one placement
 								bool bShiftBeingHeldDown = false;
 								if (t.inputsys.keyshift != 0)
 								{
@@ -23181,6 +23186,13 @@ void gridedit_mapediting ( void )
 										bShiftBeingHeldDown = true;
 									}
 								}
+								else
+								{
+									// can ONLY persist for the one-off current object being dragged in (as its a direct copy of that Y offset value)
+									// and in cases where SHIFT keeps the selection for secondary additions of this dragged in object
+									g_fSpecialDragInYAdjustment = 0.0f;
+								}
+
 								if (bShiftBeingHeldDown == false && t.gridedit.entityspraymode == 0 )
 								{
 									t.inputsys.kscancode = 211;
