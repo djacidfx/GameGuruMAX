@@ -2457,8 +2457,12 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			//PE: Only change if user has not selected a custom skybox and use bDisableSkybox
 			if (t.visuals.skyindex == 0)
 			{
-				t.visuals.bDisableSkybox = false;
-				iChangeSkyType = 0;
+				//PE: Dont change if user have selected "none"
+				if (!t.visuals.bDisableSkybox)
+				{
+					t.visuals.bDisableSkybox = false;
+					iChangeSkyType = 0;
+				}
 			}
 			fLODMultiplier = 3.0f;
 		}
@@ -2481,8 +2485,12 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			//PE: Only change if user has not selected a custom skybox and use bDisableSkybox
 			if (t.visuals.skyindex == 0)
 			{
-				t.visuals.bDisableSkybox = true;
-				iChangeSkyType = 1;
+				//PE: Dont change if user have selected "none"
+				if (!t.visuals.bDisableSkybox)
+				{
+					t.visuals.bDisableSkybox = true;
+					iChangeSkyType = 1;
+				}
 			}
 			fLODMultiplier = 1.0f;
 
