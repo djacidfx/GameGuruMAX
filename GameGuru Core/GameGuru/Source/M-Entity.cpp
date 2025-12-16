@@ -5544,7 +5544,8 @@ void c_entity_loadelementsdata ( void )
 						
 						t.a = t.a_f = c_ReadFloat(1); t.entityelement[t.e].eleprof.light.fProbeBrightness = t.a_f;
 
-						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
+						t.a = c_ReadLong(1); t.entityelement[t.e].iAllowBuletHole = t.a;
+
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
@@ -7157,7 +7158,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					//PE: Fillers.
 
 					writer.WriteFloat(t.entityelement[ent].eleprof.light.fProbeBrightness);
-					writer.WriteFloat(0.0f);
+
+					//writer.WriteFloat(0.0f);
+					writer.WriteLong(t.entityelement[ent].iAllowBuletHole);
+
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);

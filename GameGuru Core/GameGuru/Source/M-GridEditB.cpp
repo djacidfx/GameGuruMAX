@@ -2,7 +2,7 @@
 // VS2017 (32bit) having trouble with large GridEdit.cpp file, so split into two
 //
 
-// Includes 
+// Includes
 #include "stdafx.h"
 #include "gameguru.h"
 #include "M-WelcomeSystem.h"
@@ -14,13 +14,8 @@
 #include <string>
 #include <time.h>
 #include <wininet.h>
-#include <mmsystem.h>
 #include "ShlObj.h"
-#include "sha1.h"
-#include "sha2.h"
-#include "miniz.h"
 #include "Nlohmann JSON/json.hpp"
-
 #include "M-RPG.h"
 #include "M-Workshop.h"
 
@@ -27300,6 +27295,15 @@ void DisplayFPEGeneral(bool readonly, int entid, entityeleproftype *edit_gridele
 				g_bChangedGameCollectionList = false;
 			}
 
+			if (elementID > 0 && elementID < t.entityelement.size() )
+			{
+				bool bAllowBulletHole = t.entityelement[elementID].iAllowBuletHole;
+				if (ImGui::Checkbox("Allow Bullet Holes ?", &bAllowBulletHole))
+				{
+					t.entityelement[elementID].iAllowBuletHole = bAllowBulletHole;
+				}
+			}
+
 			ImGui::Indent(-10);
 		}
 	}
@@ -44714,7 +44718,10 @@ void load_storyboard(char *name)
 		ReloadLensFlareImages();
 
 		//PE: Add custom fonts from remote project.
-		iLaunchAfterSync = 699;
+		if(iLaunchAfterSync == 202)
+			iLaunchAfterSync = 799;
+		else
+			iLaunchAfterSync = 699;
 	}
 	else
 	{

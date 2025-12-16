@@ -2782,6 +2782,15 @@ void mapfile_addallentityrelatedfiles ( int entid, entityeleproftype* pEleProf )
 	int iStoredEntID = t.entid;
 	t.entid = entid;
 
+	//PE: Add any custom explosions.
+	if (pEleProf->explodable_decalname.Len() > 0)
+	{
+		char effectname[MAX_PATH];
+		strcpy(effectname, "gamecore\\decals\\");
+		strcat(effectname, pEleProf->explodable_decalname.Get());
+		addfoldertocollection(effectname);
+	}
+
 	if (pEleProf->newparticle.emittername.Len() > 0)
 	{
 		char effectname[MAX_PATH];

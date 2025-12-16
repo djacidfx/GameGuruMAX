@@ -2039,6 +2039,18 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	// resort texture list to ignore objects set to be ignored
 	DoTextureListSort ( );
 
+	//PE: Make sure we do not display hud used in last level.
+	t.game.activeStoryboardScreen = -1;
+	for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+	{
+		if (Storyboard.Nodes[i].showAtStart)
+		{
+			t.game.activeStoryboardScreen = i;
+			break;
+		}
+	}
+
+
 	// if reloading standalone level, need to restore basic stats from LUA save file
 	// must now reload preserved state of level when enter it (g_LevelFilename)
 	if (!g_Storyboard_Starting_New_Level)
@@ -2718,6 +2730,10 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							sprintf(tmp, "Project t.game.jumplevel_s : %s", nextlevel.c_str());
 							timestampactivity(0, tmp);
 							t.game.jumplevel_s = nextlevel.c_str();
+							//PE: Make sure we do not run GameLoopLoadStats when not loading a game but linking directly.
+							extern bool g_Storyboard_Starting_New_Level;
+							g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
+
 						}
 					}
 				}
@@ -3013,7 +3029,7 @@ void game_masterroot_levelloop_initcode_aftertitleloop(void)
 	// if game executable and not ignoring title system
 	if (t.game.gameisexe == 1 && t.game.ignoretitle == 0)
 	{
-		titleslua_free ( );
+		titleslua_free();
 		sky_show();
 	}
 

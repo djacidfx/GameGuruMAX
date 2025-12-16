@@ -97,14 +97,6 @@ int g_iSuperTriggerFullGrassReveal = 0;
 
 #include <algorithm>
 #include <string>
-#include <time.h>
-
-#include <wininet.h>
-#include <mmsystem.h>
-#include "ShlObj.h"
-#include "sha1.h"
-#include "sha2.h"
-
 #include "miniz.h"
 
 int iGenralWindowsFlags = ImGuiWindowFlags_None | ImGuiWindowFlags_NoMove;
@@ -1596,6 +1588,16 @@ bool commonexecutable_loop_for_game(void)
 
 		iLaunchAfterSync = 202;
 		return true;
+	}
+	extern bool bSpecialStandalone;
+	if (bSpecialStandalone || t.game.gameisexe == 1)
+	{
+		if (iLaunchAfterSync == 799 || iLaunchAfterSync == 699)
+		{
+			iLaunchAfterSync = 202;
+			void AddRemoteProjectFonts(void);
+			AddRemoteProjectFonts();
+		}
 	}
 	if (iLaunchAfterSync == 202)
 	{
