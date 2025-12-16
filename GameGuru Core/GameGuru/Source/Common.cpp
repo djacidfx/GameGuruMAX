@@ -112,6 +112,7 @@ void common_init ( void )
 	// go through all files in list and decrypt the ones marked _e_
 	SetDir("Files");
 	cStr pFilesRootDir = GetDir();
+	pFilesRootDir = pFilesRootDir + "\\";
 	SetCanUse_e_(1);
 	for ( int f = 1; f <= g.filecollectionmax; f++ )
 	{
