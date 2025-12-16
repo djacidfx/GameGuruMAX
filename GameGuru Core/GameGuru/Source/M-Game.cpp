@@ -2718,6 +2718,10 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							sprintf(tmp, "Project t.game.jumplevel_s : %s", nextlevel.c_str());
 							timestampactivity(0, tmp);
 							t.game.jumplevel_s = nextlevel.c_str();
+							//PE: Make sure we do not run GameLoopLoadStats when not loading a game but linking directly.
+							extern bool g_Storyboard_Starting_New_Level;
+							g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
+
 						}
 					}
 				}
@@ -3013,7 +3017,7 @@ void game_masterroot_levelloop_initcode_aftertitleloop(void)
 	// if game executable and not ignoring title system
 	if (t.game.gameisexe == 1 && t.game.ignoretitle == 0)
 	{
-		titleslua_free ( );
+		titleslua_free();
 		sky_show();
 	}
 

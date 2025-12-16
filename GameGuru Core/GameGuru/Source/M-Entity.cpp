@@ -2042,7 +2042,6 @@ void entity_loaddata ( void )
 		t.entityprofile[t.entid].blendmode = 0;
 
 		t.entityprofile[t.entid].light.fProbeBrightness = 1.0f;
-		t.entityelement[t.entid].iAllowBuletHole = 0;
 
 		//  temp variable to hold which physics object we are on from the importer
 		t.tPhysObjCount = 0;
