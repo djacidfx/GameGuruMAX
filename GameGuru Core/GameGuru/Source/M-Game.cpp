@@ -2039,6 +2039,18 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	// resort texture list to ignore objects set to be ignored
 	DoTextureListSort ( );
 
+	//PE: Make sure we do not display hud used in last level.
+	t.game.activeStoryboardScreen = -1;
+	for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+	{
+		if (Storyboard.Nodes[i].showAtStart)
+		{
+			t.game.activeStoryboardScreen = i;
+			break;
+		}
+	}
+
+
 	// if reloading standalone level, need to restore basic stats from LUA save file
 	// must now reload preserved state of level when enter it (g_LevelFilename)
 	if (!g_Storyboard_Starting_New_Level)
