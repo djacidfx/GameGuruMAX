@@ -1667,11 +1667,12 @@ void physics_player_init ( void )
 	//  Player start height (marker or no)
 	t.tbestterrainplayery_f = BT_GetGroundHeight(t.terrain.TerrainID, t.terrain.playerx_f, t.terrain.playerz_f) + t.terrain.adjaboveground_f;
 
-	//  also ensure ABOVE water Line (  )
-	if (  t.tbestterrainplayery_f<t.terrain.waterliney_f+20+t.terrain.adjaboveground_f ) 
-	{
-		t.tbestterrainplayery_f=t.terrain.waterliney_f+20+t.terrain.adjaboveground_f;
-	}
+	// LB: Probably some request/rationalle to always start above water line, but new request wants to start underwater if marker is underwater :)
+	// also ensure ABOVE water Line
+	//if (  t.tbestterrainplayery_f<t.terrain.waterliney_f+20+t.terrain.adjaboveground_f ) 
+	//{
+	//	t.tbestterrainplayery_f=t.terrain.waterliney_f+20+t.terrain.adjaboveground_f;
+	//}
 	if (  t.terrain.playery_f == 0 ) 
 	{
 		t.terrain.playery_f=t.tbestterrainplayery_f;
