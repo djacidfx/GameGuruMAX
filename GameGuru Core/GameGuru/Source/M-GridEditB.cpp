@@ -44690,7 +44690,10 @@ void load_storyboard(char *name)
 		ReloadLensFlareImages();
 
 		//PE: Add custom fonts from remote project.
-		iLaunchAfterSync = 699;
+		if(iLaunchAfterSync == 202)
+			iLaunchAfterSync = 799;
+		else
+			iLaunchAfterSync = 699;
 	}
 	else
 	{

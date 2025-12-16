@@ -1587,6 +1587,16 @@ bool commonexecutable_loop_for_game(void)
 		iLaunchAfterSync = 202;
 		return true;
 	}
+	extern bool bSpecialStandalone;
+	if (bSpecialStandalone || t.game.gameisexe == 1)
+	{
+		if (iLaunchAfterSync == 799 || iLaunchAfterSync == 699)
+		{
+			iLaunchAfterSync = 202;
+			void AddRemoteProjectFonts(void);
+			AddRemoteProjectFonts();
+		}
+	}
 	if (iLaunchAfterSync == 202)
 	{
 		int iGridObj = g.ebeobjectbankoffset + 1000;
