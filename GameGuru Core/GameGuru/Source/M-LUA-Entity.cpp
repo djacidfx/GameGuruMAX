@@ -1181,6 +1181,8 @@ void entity_lua_refreshentity ( void )
 void entity_lua_collected ( void )
 {
 	t.entityelement[t.e].collected = t.v;
+	extern void darklua_refreshhaskeystatefor(LPSTR);
+	darklua_refreshhaskeystatefor(t.entityelement[t.e].eleprof.name_s.Get());
 	t.entityelement[t.e].lua.flagschanged = 1;
 }
 

@@ -1421,6 +1421,8 @@ luaMessage** ppLuaMessages = NULL;
 						if (t.entityelement[iEntityIndex].collected != 0)
 						{
 							t.entityelement[iEntityIndex].collected = 0;
+							extern void darklua_refreshhaskeystatefor(LPSTR);
+							darklua_refreshhaskeystatefor(t.entityelement[iEntityIndex].eleprof.name_s.Get());
 							t.entityelement[iEntityIndex].x += 999999;
 							t.entityelement[iEntityIndex].y += 999999;
 							t.entityelement[iEntityIndex].z += 999999;
@@ -1445,6 +1447,8 @@ luaMessage** ppLuaMessages = NULL;
 				entity_lua_collisionoff();
 				t.e = store;
 				t.entityelement[iEntityIndex].collected = (int)fabs(iCollectState);
+				extern void darklua_refreshhaskeystatefor(LPSTR);
+				darklua_refreshhaskeystatefor(t.entityelement[iEntityIndex].eleprof.name_s.Get());
 				t.entityelement[iEntityIndex].x -= 999999;
 				t.entityelement[iEntityIndex].y -= 999999;
 				t.entityelement[iEntityIndex].z -= 999999;
@@ -8642,6 +8646,80 @@ int SetInventoryItemSlot(lua_State* L)
 	}
 	return 0;
 }
+
+void darklua_refreshhaskeystatefor(LPSTR keyobjectname)
+{
+	// all checks case insensitive
+	cstr checkthisname = Lower(keyobjectname);
+
+	// called when a collected state changes (i.e. a key) but need to allow all doors (haskey users) to refresh without messing up other haskey states
+	for (int e = 1; e <= g.entityelementlist; e++)
+	{
+		//  check if demilited key
+		t.masterkeyname_s = Lower(t.entityelement[e].eleprof.usekey_s.Get());
+		if (Len(t.masterkeyname_s.Get()) > 0)
+		{
+			t.tmultikey = 0;
+			for (int n = 1; n <= Len(t.masterkeyname_s.Get()); n++)
+			{
+				if (cstr(Mid(t.masterkeyname_s.Get(), n)) == ";")
+				{
+					t.tmultikey = 1;
+				}
+			}
+			//  Is USEKEY Collected?
+			bool bNeedToRefreshDoor = false;
+			if (t.tmultikey == 0)
+			{
+				//  (SINGLE)
+				for (int te = 1; te <= g.entityelementlist; te++)
+				{
+					if (stricmp(checkthisname.Get(), Lower(t.entityelement[te].eleprof.name_s.Get())) == NULL)
+					{
+						if (cstr(Lower(t.entityelement[te].eleprof.name_s.Get())) == t.masterkeyname_s)
+						{
+							bNeedToRefreshDoor = true; break;
+						}
+					}
+				}
+			}
+			else
+			{
+				//  (MULTIPLE)
+				int n = 1;
+				while (n <= Len(t.masterkeyname_s.Get()))
+				{
+					t.keyname_s = "";
+					while (n <= Len(t.masterkeyname_s.Get()))
+					{
+						if (cstr(Mid(t.masterkeyname_s.Get(), n)) == ";")  break;
+						t.keyname_s = t.keyname_s + Mid(t.masterkeyname_s.Get(), n);
+						++n;
+					}
+					//  look for this key
+					int ttokay = 0;
+					for (int te = 1; te <= g.entityelementlist; te++)
+					{
+						if (stricmp(checkthisname.Get(), Lower(t.entityelement[te].eleprof.name_s.Get())) == NULL)
+						{
+							if (cstr(Lower(t.entityelement[te].eleprof.name_s.Get())) == t.keyname_s)
+							{
+								ttokay = 1; break;
+							}
+						}
+					}
+					//  any key not found means overall master key not valid
+					if (ttokay == 0)  bNeedToRefreshDoor = true;
+					++n;
+				}
+			}
+			if (bNeedToRefreshDoor == true)
+			{
+				t.entityelement[e].lua.haskey = 0;
+			}
+		}
+	}
+}
 int MoveInventoryItem (lua_State* L)
 {
 	lua = L;
@@ -8767,9 +8845,18 @@ int MoveInventoryItem (lua_State* L)
 						if (item.e > 0)
 						{
 							if (bothplayercontainersto == 0 || bothplayercontainersto == 1)
+							{
+								if (bothplayercontainersto == 0) t.entityelement[item.e].collected = 1;
+								if (bothplayercontainersto == 1) t.entityelement[item.e].collected = 2;
+								darklua_refreshhaskeystatefor(t.entityelement[item.e].eleprof.name_s.Get());
 								t.entityelement[item.e].active = 1;
+							}
 							else
+							{
 								t.entityelement[item.e].active = 0;
+								t.entityelement[item.e].collected = 0;
+								darklua_refreshhaskeystatefor(t.entityelement[item.e].eleprof.name_s.Get());
+							}
 						}
 						break;
 					}

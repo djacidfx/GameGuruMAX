@@ -940,8 +940,8 @@ void lua_loop_allentities ( void )
 					}
 				}
 
-				//  Detect if USE KEY field entity has been collected
-				if (  t.entityelement[t.e].lua.haskey == 0 ) 
+				// Detect if USE KEY field entity has been collected
+				if ( t.entityelement[t.e].lua.haskey == 0 )
 				{
 					//  check if demilited key
 					t.masterkeyname_s=Lower(t.entityelement[t.e].eleprof.usekey_s.Get());
@@ -962,7 +962,7 @@ void lua_loop_allentities ( void )
 							//  (SINGLE)
 							for ( t.te = 1 ; t.te<=  g.entityelementlist; t.te++ )
 							{
-								if (  t.entityelement[t.te].collected == 1 ) 
+								if (t.entityelement[t.te].collected == 1 || t.entityelement[t.te].collected == 2)
 								{
 									if (  cstr(Lower(t.entityelement[t.te].eleprof.name_s.Get())) == t.masterkeyname_s ) 
 									{
@@ -989,7 +989,7 @@ void lua_loop_allentities ( void )
 								t.ttokay=0;
 								for ( t.te = 1 ; t.te <= g.entityelementlist; t.te++ )
 								{
-									if (  t.entityelement[t.te].collected == 1 ) 
+									if (t.entityelement[t.te].collected == 1 || t.entityelement[t.te].collected == 2)
 									{
 										if (  cstr(Lower(t.entityelement[t.te].eleprof.name_s.Get())) == t.keyname_s ) 
 										{
@@ -1009,8 +1009,8 @@ void lua_loop_allentities ( void )
 					{
 						//  when door/gate entity does not specify USE KEY, set to -1 to script knows
 						//  no key/entity is required here (for additional script behaviours)
-						t.entityelement[t.e].lua.haskey=-1;
-						t.entityelement[t.e].lua.flagschanged=1;
+						t.entityelement[t.e].lua.haskey = -1;
+						t.entityelement[t.e].lua.flagschanged = 1;
 					}
 				}
 
