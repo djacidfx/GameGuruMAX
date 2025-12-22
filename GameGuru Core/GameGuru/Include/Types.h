@@ -7399,10 +7399,12 @@ struct gunsettingstype
 	cStr tracer_imagefile;
 	uint32_t tracer_WPEId;
 	bool fake_reload;
+	int delayedshot;
 
 	// Constructor
 	gunsettingstype ( )
 	{
+		 delayedshot = 0;
 		 iVRWeaponLimbOfWeapon = 0;
 		 iVRWeaponStaticFrame = 0;
 		 iVRWeaponMode = 0;

@@ -549,6 +549,12 @@ void gun_loaddata ( void )
 					cmpStrConst( t_field_s, "lockcamera" );
 					if( matched )  g.firemodes[t.gunid][0].settings.lockcamera = t.value1;
 
+					// LB: for weapons like bow and arrow, fire anim starts and then arrow released some time later (in ms)
+					cmpStrConst(t_field_s, "delayedshot");
+					if (matched)  g.firemodes[t.gunid][0].settings.delayedshot = t.value1;
+					cmpStrConst(t_field_s, "alt delayedshot");
+					if (matched)  g.firemodes[t.gunid][1].settings.delayedshot = t.value1;
+
 					//  Gun model animation keyframe setting
 					cmpStrConst( t_field_s, "keyframe ratio" );
 					if( matched ) 
