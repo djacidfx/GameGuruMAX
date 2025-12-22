@@ -1808,11 +1808,21 @@ void gun_control ( void )
 		{
 			if ( gun_getstartandfinish ( false ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1820,6 +1830,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].action.start2;
@@ -1874,11 +1885,21 @@ void gun_control ( void )
 		{
 			if ( gun_getzoomstartandfinish ( ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1886,6 +1907,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].zoomaction.start2;
@@ -1924,11 +1946,21 @@ void gun_control ( void )
 		{
 			if (  t.tmeleeanim == 0 ) 
 			{
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 				// new true random selection of melee
-				t.tempmeani = 1 + Rnd(2);
-				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == t.tlastmeleeanim ) 
+				if (animchoicemode != 2)
+				{
+					t.tempmeani = 1 + Rnd(2);
+					if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0) t.tempmeani = 1;
+					if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0) t.tempmeani = 1;
+				}
+				else
+				{
+					t.tempmeani = t.tlastmeleeanim;
+				}
+				if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 				{
 					t.tempmeani = t.tlastmeleeanim + 1;
 					if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -1936,6 +1968,7 @@ void gun_control ( void )
 				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
 				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
 				t.tlastmeleeanim = t.tempmeani;
+
 				if ( t.tempmeani == 1 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].meleeaction.start;
@@ -1977,11 +2010,21 @@ void gun_control ( void )
 			{
 				if (  t.tmeleeanim == 0 ) 
 				{
+					// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+					int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 					// new true random selection of melee
-					t.tempmeani = 1 + Rnd(2);
-					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == t.tlastmeleeanim ) 
+					if (animchoicemode != 2)
+					{
+						t.tempmeani = 1 + Rnd(2);
+						if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0) t.tempmeani = 1;
+						if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0) t.tempmeani = 1;
+					}
+					else
+					{
+						t.tempmeani = t.tlastmeleeanim;
+					}
+					if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 					{
 						t.tempmeani = t.tlastmeleeanim + 1;
 						if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -1989,6 +2032,7 @@ void gun_control ( void )
 					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
 					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
 					t.tlastmeleeanim = t.tempmeani;
+
 					if ( t.tempmeani == 1 )
 					{
 						t.gstart=g.firemodes[t.gunid][g.firemode].emptyaction.start;

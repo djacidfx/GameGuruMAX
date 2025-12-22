@@ -7400,10 +7400,12 @@ struct gunsettingstype
 	uint32_t tracer_WPEId;
 	bool fake_reload;
 	int delayedshot;
+	int animchoicemode;
 
 	// Constructor
 	gunsettingstype ( )
 	{
+		 animchoicemode = 0;
 		 delayedshot = 0;
 		 iVRWeaponLimbOfWeapon = 0;
 		 iVRWeaponStaticFrame = 0;
