@@ -1,4 +1,4 @@
--- Add_Movement v4 by Necrym59
+-- Add_Movement v5 by Necrym59
 -- DESCRIPTION: Will add the selected movement effect to the named object.
 -- DESCRIPTION: Attach to an object. Set Always active ON
 -- DESCRIPTION: [OBJECT_NAME$=""]
@@ -6,7 +6,7 @@
 -- DESCRIPTION: [MOVE_Y=0(0,1000)]
 -- DESCRIPTION: [MOVE_Z=0(0,1000)]
 -- DESCRIPTION: [#MOVE_SPEED=0.50(0.0,2.0)]
--- DESCRIPTION: [RESET_DELAY=0(0,100)] seconds
+-- DESCRIPTION: [RESET_DELAY=0(0,100)] in seconds (0=No Reset)
 -- DESCRIPTION: [RESET_ROTATION!=1] Rotates when end resets.
 -- DESCRIPTION: [ActiveAtStart!=1] if unchecked use a switch or zone trigger to activate.
 -- DESCRIPTION: <Sound1> - Reset Sound
@@ -103,7 +103,7 @@ function add_movement_main(e)
 		if add_movement[e].object_no ~= 0 then
 			if add_movement[e].ActivateAtStart == 1 then SetActivated(e,1) end
 			if add_movement[e].ActivateAtStart == 0 then SetActivated(e,0) end
-		end		
+		end
 		reset[e] = g_Time + (add_movement[e].reset_delay*1000)
 		status[e] = "endinit"
 	end
@@ -152,8 +152,9 @@ function add_movement_main(e)
 					reset[e] = g_Time + (add_movement[e].reset_delay*1000)
 				end
 			end	
-		end
-		if g_Time > reset[e] and reached[e] == 1 then
+		end		
+		
+		if g_Time > reset[e] and add_movement[e].reset_delay > 0 and reached[e] == 1 then
 			GravityOff(add_movement[e].object_no)
 			CollisionOff(add_movement[e].object_no)
 			SetPosition(add_movement[e].object_no,objectxpos[e],objectypos[e],objectzpos[e])
@@ -181,5 +182,7 @@ function add_movement_main(e)
 				end
 			end			
 		end
+		
+		if add_movement[e].reset_delay == 0 and reached[e] == 1 then SetActivated(e,0) end
 	end
 end
