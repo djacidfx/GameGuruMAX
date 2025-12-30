@@ -14915,7 +14915,6 @@ DARKLUA_API void LuaCall()
 	if ( ppLuaStates==NULL ) return;
 	if ( ppLuaStates[id] == NULL )
 	{
-
 		//add to error list
 		StringList item;
 		strcpy ( item.fileName , functionName );
@@ -14934,6 +14933,7 @@ DARKLUA_API void LuaCall()
 	WriteToDebugLog ( "functionResults" , functionResults );
 	WriteToDebugLog ( "===========" , true );
 #endif
+	GG_CRASH_CONTEXT("LuaCall", "functionName=%s functionParams=%d", functionName, functionParams);
 
 	lua = ppLuaStates[id]->state;
 
@@ -15034,6 +15034,7 @@ DARKLUA_API void LuaCallSilent()
 	WriteToDebugLog ( "functionResults" , functionResults );
 	WriteToDebugLog ( "===========" , true );
 #endif
+	GG_CRASH_CONTEXT("LuaCall", "functionName=%s functionParams=%d", functionName, functionParams);
 
 	lua = ppLuaStates[id]->state;
 
@@ -15205,6 +15206,8 @@ DARKLUA_API void LuaCallSilent()
     // run the Lua script string
 	int a = 0;
 
+	GG_CRASH_CONTEXT("LuaExecute", "pString=%s id=%d", pString, id);
+
 	a = luaL_loadbuffer(lua, pString, strlen(pString), pString) ||	lua_pcall(lua, 0, 0, 0);
 	if (a) 
 	{
@@ -15243,6 +15246,8 @@ DARKLUA_API void LuaCallSilent()
 
     // run the Lua script string
 	int a = 0;
+
+	GG_CRASH_CONTEXT("LuaExecute", "pString=%s", pString);
 
 	a = luaL_loadbuffer(lua, pString, strlen(pString), pString) ||	lua_pcall(lua, 0, 0, 0);
 	if (a) 

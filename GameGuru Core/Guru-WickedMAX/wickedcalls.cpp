@@ -52,6 +52,9 @@ using namespace wiGraphics;
 using namespace wiScene;
 using namespace wiECS;
 
+// Helps with CRASH LOG collection
+thread_local char g_CrashContext[1024];
+
 // Object loading structure
 struct WickedLoaderState
 {
@@ -71,6 +74,7 @@ bool g_bWickedCreateOnlyWhenUsed = false;
 bool g_bWickedIgnoreTextureInfo = false;
 bool g_bWickedUseImagePtrInsteadOfTexFile = false;
 bool g_bDisplayWarnings = true;
+bool g_bDisplayObjectAndLimbWarnings = true;
 int g_iWickedPutInEmissiveMode = 0;
 XMFLOAT4 g_lastMousePos = { 0,0,0,0 };
 uint64_t g_hovered_entity = 0;

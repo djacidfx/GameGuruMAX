@@ -116,6 +116,10 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
             0
         );
 
+		// Refresh module list to be sure
+        SymRefreshModuleList(process);
+
+        // handle baseAddress return value
         if (baseAddress == 0)
         {
             DWORD e = GetLastError();
@@ -123,7 +127,7 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         }
         else
         {
-            log << "baseAddress=" << std::dec << baseAddress << "\r\n";
+            log << "SymLoadModuleEx: " << std::dec << baseAddress << "\r\n";
         }
 
         // the address we need is not the runtime address the exception provides!
@@ -169,7 +173,7 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         log << "Lookup address:  0x" << std::hex << lookupAddress << "\r\n";
         if (!lineInfo.empty())
         {
-            log << "Source Code:     " << lineInfo << "\r\n";
+            log << "Source code:     " << lineInfo << "\r\n";
         }
 
         // ----------------------------
@@ -222,81 +226,166 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         pSym->SizeOfStruct = sizeof(SYMBOL_INFO);
         pSym->MaxNameLen = MAX_SYM_NAME;
 
-        log << "Call stack (5 frames):\r\n";
 
-        // Frame 0 should be the crash site; subsequent frames are callers.
-        for (int i = 0; i < 5; ++i)
+        // excellent stack tracer (walk more, print best 5)
+        log << "Call stack:   Up to 10 frames:\r\n";
+
+        const int kMaxWalk = 32;
+        const int kWantPrinted = 10;
+
+        DWORD64 lastRuntimePC = 0;
+        int printed = 0;
+
+        for (int walk = 0; walk < kMaxWalk && printed < kWantPrinted; ++walk)
         {
-            bool walked = false;
+            BOOL ok = StackWalk64(
+                machineType,
+                process,
+                thread,
+                &frame,
+                &ctx,
+                NULL,
+                SymFunctionTableAccess64,
+                SymGetModuleBase64,
+                NULL
+            );
 
-            if (i == 0)
+            if (!ok || frame.AddrPC.Offset == 0)
             {
-                // Use the PC from the context as the first frame without walking
-                walked = true;
-            }
-            else
-            {
-                walked = StackWalk64(
-                    machineType,
-                    process,
-                    thread,
-                    &frame,
-                    &ctx,
-                    NULL,
-                    SymFunctionTableAccess64,
-                    SymGetModuleBase64,
-                    NULL
-                ) ? true : false;
-            }
-
-            if (!walked)
-            {
-                log << "  #" << std::dec << i << ": <StackWalk64 stopped> err=" << std::dec << GetLastError() << "\r\n";
+                log << "  <StackWalk64 stopped> err=" << std::dec << GetLastError() << "\r\n";
                 break;
             }
 
-            // For i==0, frame.AddrPC.Offset is already set from ctx above.
-            DWORD64 runtimePC = (i == 0) ? frame.AddrPC.Offset : frame.AddrPC.Offset;
-            if (runtimePC == 0)
+            DWORD64 runtimePC = frame.AddrPC.Offset;
+
+            // sanity: 0x1 / 0x42 etc
+            if (runtimePC < 0x10000)
             {
-                log << "  #" << std::dec << i << ": <null PC>\r\n";
+                log << "  <invalid PC 0x" << std::hex << runtimePC << ">\r\n";
                 break;
             }
 
-            DWORD64 pc = TranslateAddrIfNeeded(runtimePC);
+            // skip duplicates (can happen depending on unwind/prolog)
+            if (runtimePC == lastRuntimePC)
+                continue;
+            lastRuntimePC = runtimePC;
 
-            // Function
-            std::string fn = "???";
+            // We will try to resolve symbols/lines using runtime PC first.
+            // If that fails (common when InvadeProcess fails), fall back to translated PC.
+            DWORD64 pcRuntime = runtimePC;
+            DWORD64 pcXlated = TranslateAddrIfNeeded(runtimePC);
+
+            auto ResolveFnAndLine = [&](DWORD64 addr,
+                std::string& outFn,
+                DWORD64& outDispSym,
+                std::string& outFile,
+                DWORD& outLine,
+                DWORD& outDispLine,
+                DWORD& outLineErr) -> bool
+            {
+                outFn = "???";
+                outDispSym = 0;
+
+                if (SymFromAddr(process, addr, &outDispSym, pSym))
+                    outFn = pSym->Name;
+
+                IMAGEHLP_LINE64 line = {};
+                line.SizeOfStruct = sizeof(line);
+                DWORD dispLine = 0;
+
+                if (SymGetLineFromAddr64(process, addr, &dispLine, &line))
+                {
+                    outFile = line.FileName ? line.FileName : "";
+                    outLine = line.LineNumber;
+                    outDispLine = dispLine;
+                    outLineErr = 0;
+                    return true;
+                }
+
+                outLineErr = GetLastError();
+                outFile.clear();
+                outLine = 0;
+                outDispLine = 0;
+                return false;
+            };
+
+            std::string fn;
             DWORD64 dispSym = 0;
-            if (SymFromAddr(process, pc, &dispSym, pSym))
-                fn = pSym->Name;
-
-            // File/line
-            IMAGEHLP_LINE64 line = {};
-            line.SizeOfStruct = sizeof(line);
+            std::string file;
+            DWORD lineNo = 0;
             DWORD dispLine = 0;
+            DWORD lineErr = 0;
 
-            if (SymGetLineFromAddr64(process, pc, &dispLine, &line))
+            bool haveLine = ResolveFnAndLine(pcRuntime, fn, dispSym, file, lineNo, dispLine, lineErr);
+
+            // If runtime address failed, try translated address:
+            if (!haveLine && pcXlated != pcRuntime)
             {
-                log << "  #" << std::dec << i
-                    << "  0x" << std::hex << runtimePC
-                    << "  " << fn
-                    << "  (" << line.FileName << ":" << std::dec << line.LineNumber << ")\r\n";
+                std::string fn2;
+                DWORD64 dispSym2 = 0;
+                std::string file2;
+                DWORD lineNo2 = 0;
+                DWORD dispLine2 = 0;
+                DWORD lineErr2 = 0;
+
+                bool haveLine2 = ResolveFnAndLine(pcXlated, fn2, dispSym2, file2, lineNo2, dispLine2, lineErr2);
+
+                // Prefer the translated result if it gives us line info, or even a better symbol name:
+                if (haveLine2 || fn == "???")
+                {
+                    fn = fn2;
+                    dispSym = dispSym2;
+                    file = file2;
+                    lineNo = lineNo2;
+                    dispLine = dispLine2;
+                    lineErr = lineErr2;
+                    haveLine = haveLine2;
+                }
+            }
+
+            // Module name (handy for filtering / sanity)
+            std::string modName = "?";
+            IMAGEHLP_MODULE64 mod = {};
+            mod.SizeOfStruct = sizeof(mod);
+            if (SymGetModuleInfo64(process, pcXlated, &mod))
+            {
+                if (mod.ModuleName) modName = mod.ModuleName;
+            }
+
+            // Print
+            log << "  #" << std::dec << printed
+                << "  0x" << std::hex << runtimePC
+                << "  [" << modName << "] "
+                << fn;
+
+            if (dispSym)
+                log << "+0x" << std::hex << dispSym;
+
+            if (haveLine && !file.empty())
+            {
+                log << "  (" << file << ":" << std::dec << lineNo << ")";
+                if (dispLine)
+                    log << " +0x" << std::hex << dispLine;
+                log << "\r\n";
             }
             else
             {
-                DWORD e = GetLastError();
-                log << "  #" << std::dec << i
-                    << "  0x" << std::hex << runtimePC
-                    << "  " << fn
-                    << "  (no line, err=" << std::dec << e << ")\r\n";
+                log << "  (no line, err=" << std::dec << lineErr << ")\r\n";
             }
+
+            ++printed;
         }
 
         // NOW cleanup (after stack trace)
         SymCleanup(process);
     }
-
+	// used to dump parameter values using GG_CRASH_CONTEXT macro when we want to investigate a function call 
+    extern thread_local char g_CrashContext[1024];
+    if (strlen(g_CrashContext)>0)
+    {
+        log << "Crash Ring Buffer: " << g_CrashContext << "\r\n";
+    }
+	// used to dump crash extra debug info from actual Wicked Engine calls
     if (strlen(g_pDebugExtraInfo) > 0)
     {
         log << g_pDebugExtraInfo << "\r\n";
