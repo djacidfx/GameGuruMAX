@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Light Control v25 by Necrym59, with thanks to synchromesh
+-- Light Control v26 by Necrym59, with thanks to synchromesh
 -- DESCRIPTION: Ramps the strength distance of a light up or down when activated by a zone, switch or by range.
 -- DESCRIPTION: Attach to a light.
 -- DESCRIPTION: [@RANGE_SENSING=1(1=Yes, 2=No, 3=None-Light On)]
@@ -15,6 +15,7 @@
 -- DESCRIPTION: [LIGHT_OBJECT_NAME$="Light Object"]
 -- DESCRIPTION: <Sound0> when turning on
 -- DESCRIPTION: <Sound1> when overpowered
+-- DESCRIPTION: <Sound2> when turning off
 
 local lower = string.lower
 
@@ -229,6 +230,7 @@ function lightcontrol_main(e)
 			SetLightRange(lightNum,current_level[e])
 			if lightcontrol[e].light_object_no > 0 then SetEntityEmissiveStrength(lightcontrol[e].light_object_no,current_level[e]) end
 			rwait[e] = g_Time + (lightcontrol[e].fixed_interval*1000)
+			PlaySound(e,2)
 			SetActivated(e,0)
 		end
 		if g_Time > rwait[e] and g_Entity[e]['activated'] == 0 then
@@ -236,16 +238,19 @@ function lightcontrol_main(e)
 			SetLightRange(lightNum,current_level[e])
 			if lightcontrol[e].light_object_no > 0 then SetEntityEmissiveStrength(lightcontrol[e].light_object_no,current_level[e]) end
 			rwait[e] = g_Time + (lightcontrol[e].fixed_interval*1000)
+			PlaySound(e,0)
 			SetActivated(e,1)
-		end			
+		end
 	end	
 	
 	--Sound--
-	if current_level[e] > minrange[e]+2 and current_level[e] < minrange[e] + 15 and played[e] == 0 then
-		PlaySound(e,0)
-		played[e] = 1
-	end
-	if current_level[e] == lightcontrol[e].max_light_distance then StopSound(e,0) end
-	if current_level[e] <= minrange[e] then played[e] = 0 end
+	if lightcontrol[e].flicker ~= 4 then
+		if current_level[e] > minrange[e]+2 and current_level[e] < minrange[e] + 15 and played[e] == 0 then
+			PlaySound(e,0)
+			played[e] = 1
+		end
+		if current_level[e] == lightcontrol[e].max_light_distance then StopSound(e,0) end
+		if current_level[e] <= minrange[e] then played[e] = 0 end
+	end	
 end
 
