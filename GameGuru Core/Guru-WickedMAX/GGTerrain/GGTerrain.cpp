@@ -830,6 +830,8 @@ Texture texReadBackCompute;
 Texture texReadBackStaging[ NUM_READ_BACK_TEXTURES ];
 uint32_t currReadBackTex = 0;
 uint32_t readBackValid = 0;
+static constexpr uint32_t READBACK_INVALID = 0xFFFFFFFFu;
+std::atomic<uint32_t> g_lastReadBackWrittenIndex{ READBACK_INVALID };
 
 // page generator variables
 RenderPass renderPassPhysicalTex;
@@ -7301,6 +7303,7 @@ void GGTerrain_WindowResized()
 	pageGenerationList.Clear();
 	readBackValid = 0;
 	currReadBackTex = 0;
+	g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
 }
 
 void GGTerrain_DrawPages( CommandList cmd )
@@ -7691,6 +7694,7 @@ void GGTerrain_CheckPageShift()
 		pageGenerationList.Clear();
 		readBackValid = 0;
 		currReadBackTex = 0;
+		g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
 
 		// wipe out page memory and start again
 		pagesFree.Clear();
@@ -7743,6 +7747,7 @@ void GGTerrain_CheckPageShift()
 		pageGenerationList.Clear();
 		readBackValid = 0;
 		currReadBackTex = 0;
+		g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
 
 		// shift page memory
 		for( uint32_t y = 0; y < physPagesY; y++ )
@@ -7978,7 +7983,20 @@ void GGTerrain_CheckReadBack()
 			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().ArraySize, \
 			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().SampleCount);
 
-		device->Map( &texReadBackStaging[currReadBackTex], &mapping );
+		//LB: Basically, 'currReadBackTex' could be damn well anything, lastReadBackWrittenIndex is “last slot we queued a CopyResource into”
+		//device->Map(&texReadBackStaging[currReadBackTex], &mapping);
+		uint32_t last = g_lastReadBackWrittenIndex.load(std::memory_order_acquire);
+		if (last == READBACK_INVALID)
+		{
+			// Skip: no known-good completed copy has been published since the last reset.
+			wiProfiler::EndRange(range);
+			wiProfiler::EndRange(rangeTotal);
+			return;
+		}
+		last %= NUM_READ_BACK_TEXTURES;
+		uint32_t safe = (last + NUM_READ_BACK_TEXTURES - 1) % NUM_READ_BACK_TEXTURES;
+		GG_CRASH_CONTEXT("ReadBack Index Check", "currReadBackTex=%u last=%u safe=%u", currReadBackTex, last, safe);
+		if (readBackValid) device->Map(&texReadBackStaging[safe], &mapping); // really really respect readBackValid!!
 
 		if ( !mapping.data )
 		{
@@ -8032,7 +8050,7 @@ void GGTerrain_CheckReadBack()
 			}
 		}
 #endif
-		device->Unmap( &texReadBackStaging[currReadBackTex] );
+		device->Unmap( &texReadBackStaging[safe] );
 
 		wiProfiler::EndRange( range );
 		range = wiProfiler::BeginRangeCPU( "Max - Terrain Read Back Sort" );
@@ -10318,11 +10336,15 @@ extern "C" void GGTerrain_VirtualTexReadBack( Texture texReadBack, uint32_t samp
 
 	device->CopyResource(&texReadBackStaging[currReadBackTex], &texReadBackCompute, cmd);
 
+	//LB: ring buffer violates when 'currReadBackTex' can be arbitarily reset to zero (so store the ACTUAL GOOD LAST COPY!)
+	g_lastReadBackWrittenIndex.store(currReadBackTex, std::memory_order_release);
+
 	currReadBackTex++;
 	if (currReadBackTex >= NUM_READ_BACK_TEXTURES)
 	{
 		readBackValid = 1; // can only read back once the GPU has completed one cycle of writes
 		currReadBackTex = 0;
+		// g_lastReadBackWrittenIndex is still valid from historical copies, thie above is just a wrap :)
 	}
 
 	wiProfiler::EndRange(range);
