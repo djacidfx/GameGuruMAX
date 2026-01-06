@@ -56,6 +56,9 @@ using namespace GGGrass;
 #include "BulletCollision/CollisionShapes/btTriangleCallback.h"
 #include "BulletCollision/NarrowPhaseCollision/btRaycastCallback.h"
 
+// includes MACRO for crash logging
+#include "wickedcalls.h"
+
 #define PI 3.14159265358979f
 
 #define GGKEY_BACK		0x08
@@ -7960,6 +7963,21 @@ void GGTerrain_CheckReadBack()
 		Mapping mapping;
 		mapping._flags = Mapping::FLAG_READ;
 		mapping.size = texWidth * texHeight * sizeof(uint32_t);
+
+		//LB: log this in the crash log buffer for known events where "device->Map(..." crashes some DX11 drivers
+		GG_CRASH_CONTEXT("GGTerrain_CheckReadBack", "TerrainReadBack Map: rbValid=%u currReadBackTex=%u stagingGPURes=%p mapFlags=%08X mapSize=%zu computeDesc{W=%u H=%u Fmt=%u} stagingDesc{W=%u H=%u Fmt=%u Usage=%u Bind=%08X CPU=%08X Misc=%08X Mips=%u Arr=%u Samp=%u}", \
+			(unsigned)readBackValid, (unsigned)currReadBackTex, (void*)&texReadBackStaging[currReadBackTex], \
+			(unsigned)mapping._flags, (size_t)mapping.size, \
+			(unsigned)texReadBackCompute.GetDesc().Width, (unsigned)texReadBackCompute.GetDesc().Height, (unsigned)texReadBackCompute.GetDesc().Format, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().Width, (unsigned)texReadBackStaging[currReadBackTex].GetDesc().Height, (unsigned)texReadBackStaging[currReadBackTex].GetDesc().Format, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().Usage, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().BindFlags, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().CPUAccessFlags, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().MiscFlags, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().MipLevels, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().ArraySize, \
+			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().SampleCount);
+
 		device->Map( &texReadBackStaging[currReadBackTex], &mapping );
 
 		if ( !mapping.data )
