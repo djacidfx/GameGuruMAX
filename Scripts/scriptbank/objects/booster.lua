@@ -1,4 +1,4 @@
--- Booster v3 by Necrym 59
+-- Booster v4 by Necrym 59
 -- DESCRIPTION: The object will give the player a booster or deduction if used.
 -- DESCRIPTION: [PROMPT_TEXT$="E to consume"]
 -- DESCRIPTION: [PROMPT_IF_COLLECTABLE$="E to collect"]
@@ -9,6 +9,8 @@
 -- DESCRIPTION: [@EFFECT=1(1=Add, 2=Deduct)]
 -- DESCRIPTION: [@BOOST_STYLE=1(1=Health Applied, 2=Stamina Timed, 3=Jumping Timed, 4=Speed Timed, 5=User Global Timed)]
 -- DESCRIPTION: [BOOST_TIME=5(0,60)] Seconds
+-- DESCRIPTION: [@BOOST_DISPLAY=1(1=None, 2=Statusbar, 3=Text)] boost time display
+-- DESCRIPTION: [STATUSBAR_IMAGEFILE$="imagebank\\HUD Library\\MISC\\progress-bar.png"]
 -- DESCRIPTION: [@@USER_GLOBAL_AFFECTED$=""(0=globallist)] eg: MyMana
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
@@ -30,6 +32,8 @@ local pickup_style = {}
 local effect = {}
 local boost_style = {}
 local boost_time = {}
+local boost_display = {}
+local statusbar_imagefile = {}
 local user_global_affected = {}
 local prompt_display = {}
 local item_highlight = {}
@@ -51,17 +55,23 @@ local hl_icon = {}
 local hl_imgwidth = {}
 local hl_imgheight = {}
 local booster_timer ={}
+local boost_bar_image = {}
+local boostbarsprite = {}
+local boostbarwidth	= {}
+local boostbarheight = {}
 
-function booster_properties(e, prompt_text, prompt_if_collectable, useage_text, quantity, pickup_range, pickup_style, effect, boost_style, boost_time, user_global_affected, prompt_display, item_highlight, highlight_icon_imagefile)
+function booster_properties(e, prompt_text, prompt_if_collectable, useage_text, quantity, pickup_range, pickup_style, effect, boost_style, boost_time, boost_display, statusbar_imagefile, user_global_affected, prompt_display, item_highlight, highlight_icon_imagefile)
 	booster[e].prompt_text = prompt_text
 	booster[e].prompt_if_collectable = prompt_if_collectable
 	booster[e].useage_text = useage_text
 	booster[e].quantity = quantity
 	booster[e].pickup_range = pickup_range
-	booster[e].pickup_style = pickup_style
-	booster[e].effect = effect
-	booster[e].boost_style = boost_style
+	booster[e].pickup_style = pickup_style or 1
+	booster[e].effect = effect or 1
+	booster[e].boost_style = boost_style or 1
 	booster[e].boost_time = boost_time
+	booster[e].boost_display = boost_display or 1
+	booster[e].statusbar_imagefile = statusbar_imagefile
 	booster[e].user_global_affected = user_global_affected
 	booster[e].prompt_display = prompt_display
 	booster[e].item_highlight = item_highlight
@@ -79,6 +89,8 @@ function booster_init(e)
 	booster[e].effect = 1
 	booster[e].boost_style = 1
 	booster[e].boost_time = 1
+	booster[e].boost_display = 1
+	booster[e].statusbar_imagefile = "imagebank\\HUD Library\\MISC\\progress-bar.png"
 	booster[e].user_global_affected = "MyMana"
 	booster[e].prompt_display = 1
 	booster[e].item_highlight = 0
@@ -96,11 +108,14 @@ function booster_init(e)
 	calcspeed[e] = 0
 	calcglobal[e] = 0
 	defaultglobal[e] = 0
-	defaultjump[e] = SetGamePlayerControlJumpmax
+	defaultjump[e] = GetGamePlayerControlJumpmax()
 	defaultspeed[e] = GetGamePlayerControlSpeedRatio()
 	currentvalue[e] = 0		
 	tEnt[e] = 0
 	g_tEnt = 0
+	boostbarsprite[e] = 0
+	boostbarwidth[e] = 0
+	boostbarheight[e] = 0
 	selectobj[e] = 0
 	booster_timer[e] = math.huge
 end
@@ -117,6 +132,16 @@ function booster_main(e)
 			SetSpriteOffset(hl_icon[e],hl_imgwidth[e]/2.0, hl_imgheight[e]/2.0)
 			SetSpritePosition(hl_icon[e],500,500)
 		end
+		if booster[e].boost_display == 2 then			
+			boostbarsprite[e] = CreateSprite(LoadImage(booster[e].statusbar_imagefile))
+			boostbarwidth[e] = GetImageWidth(LoadImage(booster[e].statusbar_imagefile))
+			boostbarheight[e] = GetImageHeight(LoadImage(booster[e].statusbar_imagefile))
+			SetSpriteColor(boostbarsprite[e],0,100,255,255)			
+			SetSpriteSize(boostbarsprite[e],-1,-1)
+			SetSpriteDepth(boostbarsprite[e],100)
+			SetSpriteOffset(boostbarsprite[e],boostbarwidth[e]/2.0,boostbarheight[e]/2.0)
+			SetSpritePosition(boostbarsprite[e],500,500)			
+		end		
 		booster_timer[e] = math.huge
 		SetGamePlayerControlJumpmax(defaultjump[e])
 		status[e] = "endinit"
@@ -277,7 +302,20 @@ function booster_main(e)
 				end
 			end	
 		end
+		if booster[e].boost_display > 1 and booster[e].boost_style > 1 then	
+			if booster[e].boost_display == 2 then
+				local btime = math.floor(booster_timer[e]-g_Time)/10
+				PasteSpritePosition(boostbarsprite[e],50,95)
+				SetSpriteSize(boostbarsprite[e],(btime/boostbarwidth[e])/50,0.5)
+				SetSpriteOffset(boostbarsprite[e],((btime/boostbarwidth[e])/50)/2,0)
+			end
+			if booster[e].boost_display == 3 then
+				local btime = math.floor((booster_timer[e]-g_Time)/1000)
+				Prompt("Boost Time: " ..btime)
+			end	
+		end		
 	end
+	
 	-- Reset Defaults and finish
 	if g_Time >= booster_timer[e] then
 		SetGamePlayerControlSpeedRatio(defaultspeed[e])
