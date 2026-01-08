@@ -11,25 +11,29 @@
 // Helps with CRASH LOG collection
 extern thread_local char g_CrashContext[1024];
 #define GG_CRASH_CONTEXT(fn, fmt, ...)                          \
-    do {                                                        \
-        char _gg_tmp[256];                                     \
-        int _n = snprintf(_gg_tmp, sizeof(_gg_tmp),             \
-                           " %s: " fmt "\r\n",                    \
-                           fn, __VA_ARGS__);                   \
-        if (_n > 0)                                             \
-        {                                                       \
-            size_t cur = strlen(g_CrashContext);               \
-            if (cur + _n >= sizeof(g_CrashContext))            \
-            {                                                   \
-                memmove(g_CrashContext,                         \
-                        g_CrashContext + (cur + _n - sizeof(g_CrashContext)), \
-                        sizeof(g_CrashContext));               \
-                cur = strlen(g_CrashContext);                  \
-            }                                                   \
-            strncat(g_CrashContext, _gg_tmp,                    \
-                    sizeof(g_CrashContext) - cur - 1);         \
-        }                                                       \
-    } while (0)
+    extern int g_iDisableCrashLogSystem;                         \
+    if(g_iDisableCrashLogSystem==0)                             \
+    {                                                          \
+        do {                                                        \
+            char _gg_tmp[256];                                     \
+            int _n = snprintf(_gg_tmp, sizeof(_gg_tmp),             \
+                               " %s: " fmt "\r\n",                    \
+                               fn, __VA_ARGS__);                   \
+            if (_n > 0)                                             \
+            {                                                       \
+                size_t cur = strlen(g_CrashContext);               \
+                if (cur + _n >= sizeof(g_CrashContext))            \
+                {                                                   \
+                    memmove(g_CrashContext,                         \
+                            g_CrashContext + (cur + _n - sizeof(g_CrashContext)), \
+                            sizeof(g_CrashContext));               \
+                    cur = strlen(g_CrashContext);                  \
+                }                                                   \
+                strncat(g_CrashContext, _gg_tmp,                    \
+                        sizeof(g_CrashContext) - cur - 1);         \
+            }                                                       \
+        } while (0);                                                \
+    }
 
 // Custom Layers
 #ifndef GGRENDERLAYERSENUM

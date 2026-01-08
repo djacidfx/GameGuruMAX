@@ -7969,6 +7969,7 @@ void GGTerrain_CheckReadBack()
 		mapping._flags = Mapping::FLAG_READ;
 		mapping.size = texWidth * texHeight * sizeof(uint32_t);
 
+		/*
 		//LB: log this in the crash log buffer for known events where "device->Map(..." crashes some DX11 drivers
 		GG_CRASH_CONTEXT("GGTerrain_CheckReadBack", "TerrainReadBack Map: rbValid=%u currReadBackTex=%u stagingGPURes=%p mapFlags=%08X mapSize=%zu computeDesc{W=%u H=%u Fmt=%u} stagingDesc{W=%u H=%u Fmt=%u Usage=%u Bind=%08X CPU=%08X Misc=%08X Mips=%u Arr=%u Samp=%u}", \
 			(unsigned)readBackValid, (unsigned)currReadBackTex, (void*)&texReadBackStaging[currReadBackTex], \
@@ -7982,6 +7983,7 @@ void GGTerrain_CheckReadBack()
 			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().MipLevels, \
 			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().ArraySize, \
 			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().SampleCount);
+		*/
 
 		//LB: Basically, 'currReadBackTex' could be damn well anything, lastReadBackWrittenIndex is “last slot we queued a CopyResource into”
 		//device->Map(&texReadBackStaging[currReadBackTex], &mapping);
@@ -7995,7 +7997,7 @@ void GGTerrain_CheckReadBack()
 		}
 		last %= NUM_READ_BACK_TEXTURES;
 		uint32_t safe = (last + NUM_READ_BACK_TEXTURES - 1) % NUM_READ_BACK_TEXTURES;
-		GG_CRASH_CONTEXT("ReadBack Index Check", "currReadBackTex=%u last=%u safe=%u", currReadBackTex, last, safe);
+		//GG_CRASH_CONTEXT("ReadBack Index Check", "currReadBackTex=%u last=%u safe=%u", currReadBackTex, last, safe);
 		if (readBackValid) device->Map(&texReadBackStaging[safe], &mapping); // really really respect readBackValid!!
 
 		if ( !mapping.data )

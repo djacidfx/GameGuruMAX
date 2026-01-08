@@ -3105,6 +3105,9 @@ void FPSC_LoadSETUPINI (bool bUseMySystemFolder)
 
 					extern int g_iDisableWParticleSystem;
 					t.tryfield_s = "disablewparticlesystem"; if (t.field_s == t.tryfield_s) g_iDisableWParticleSystem = t.value1;
+
+					extern int g_iDisableCrashLogSystem;
+					t.tryfield_s = "disablecrashlogsystem"; if (t.field_s == t.tryfield_s) g_iDisableCrashLogSystem = t.value1;
 				}
 			}
 		}
@@ -6190,6 +6193,14 @@ void GetSetupIniEarly( void )
 						g_iDisableWParticleSystem = 1;
 					}
 				}				
+				if (pestrcasestr(t, "disablecrashlogsystem"))
+				{
+					if (pestrcasestr(t, "1"))
+					{
+						extern int g_iDisableCrashLogSystem;
+						g_iDisableCrashLogSystem = 1;
+					}
+				}
 			}
 			fclose(file);
 		}

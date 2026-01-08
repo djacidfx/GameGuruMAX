@@ -210,7 +210,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// once Wicked Initiailised we can provide the device and addres of the debug log function call
 	char* pMyLogSrtring = GetCrashHandlerDebugLogRef();
-	wiRenderer::GetDevice()->SetSpecialGGDebugLog(pMyLogSrtring);
+	extern int g_iDisableCrashLogSystem;
+	if ( g_iDisableCrashLogSystem == 0 )
+	{
+		// use "disablecrashlogsystem" in SETUP.INI to disable this as it has a performance hit!
+		wiRenderer::GetDevice()->SetSpecialGGDebugLog(pMyLogSrtring);
+	}
 
 	// Main application loop
 	MSG msg = { 0 };

@@ -380,15 +380,23 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         SymCleanup(process);
     }
 	// used to dump parameter values using GG_CRASH_CONTEXT macro when we want to investigate a function call 
-    extern thread_local char g_CrashContext[1024];
-    if (strlen(g_CrashContext)>0)
+    extern int g_iDisableCrashLogSystem;
+    if (g_iDisableCrashLogSystem == 0)
     {
-        log << "Crash Ring Buffer: " << g_CrashContext << "\r\n";
+        extern thread_local char g_CrashContext[1024];
+        if (strlen(g_CrashContext) > 0)
+        {
+            log << "Crash Ring Buffer: " << g_CrashContext << "\r\n";
+        }
+        // used to dump crash extra debug info from actual Wicked Engine calls
+        if (strlen(g_pDebugExtraInfo) > 0)
+        {
+            log << g_pDebugExtraInfo << "\r\n";
+        }
     }
-	// used to dump crash extra debug info from actual Wicked Engine calls
-    if (strlen(g_pDebugExtraInfo) > 0)
+    else
     {
-        log << g_pDebugExtraInfo << "\r\n";
+        log << "Crash Ring Buffer and Debug Logs disabled with 'disablecrashlogsystem = 1'\r\n";
     }
     log << "=====================================\r\n";
 

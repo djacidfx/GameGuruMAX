@@ -323,6 +323,7 @@ int g_iUseLODObjects = 1;
 bool bDisableLODLoad = false;
 int g_iDisableTerrainSystem = 0;
 int g_iDisableWParticleSystem = 0;
+int g_iDisableCrashLogSystem = 0;
 bool bSprayMoveWithMouse = false;
 
 
