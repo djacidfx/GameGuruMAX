@@ -812,6 +812,8 @@ LONGLONG g_tableofperformancetimers[TABLEOFPERFORMANCEMAX];
 uint32_t LuaFrameCount = 0;
 uint32_t LuaFrameCount2 = 0;
 
+int g_iViewPlayingSounds = 0;
+
 void lua_loop_allentities ( void )
 {
 #ifdef OPTICK_ENABLE
@@ -1313,6 +1315,60 @@ void lua_loop_allentities ( void )
 		}
 		MessageBoxA(NULL, pShowList, "Logic Performance (auto-triggered using 'producelogfiles=3')", MB_OK);
 		g_iViewPerformanceTimers = 0;
+	}
+
+	// View currently playing sounds when some rogue sound loops and needs to be located
+	if (g_iViewPlayingSounds == 1)
+	{
+		char pShowList[10240];
+		strcpy(pShowList, "First Ten Sounds Playing This Cycle:\n\n");
+		int iSoundPlayingCount = 0;
+		for (int s = 1; s <= 99999; s++)
+		{
+			if (SoundExist(s) == 1 && SoundPlaying(s) == 1)
+			{
+				int founde = 0;
+				LPSTR foundsoundname = "";
+				for (int e = 1; e <= g.entityelementlist; e++)
+				{
+					if (t.entityelement[e].soundset == s ||
+						t.entityelement[e].soundset1 == s ||
+						t.entityelement[e].soundset2 == s ||
+						t.entityelement[e].soundset3 == s ||
+						t.entityelement[e].soundset4 == s ||
+						t.entityelement[e].soundset5 == s ||
+						t.entityelement[e].soundset6 == s)
+					{
+						founde = e;
+						if (t.entityelement[e].soundset == s) foundsoundname = t.entityelement[e].eleprof.soundset_s.Get();
+						if (t.entityelement[e].soundset1 == s) foundsoundname = t.entityelement[e].eleprof.soundset1_s.Get();
+						if (t.entityelement[e].soundset2 == s) foundsoundname = t.entityelement[e].eleprof.soundset2_s.Get();
+						if (t.entityelement[e].soundset3 == s) foundsoundname = t.entityelement[e].eleprof.soundset3_s.Get();
+						if (t.entityelement[e].soundset4 == s) foundsoundname = t.entityelement[e].eleprof.soundset4_s.Get();
+						if (t.entityelement[e].soundset5 == s) foundsoundname = t.entityelement[e].eleprof.soundset5_s.Get();
+						if (t.entityelement[e].soundset6 == s) foundsoundname = t.entityelement[e].eleprof.soundset6_s.Get();
+						break;
+					}
+				}
+				char pThisLine[1024];
+				if (founde > 0)
+				{
+					sprintf(pThisLine, "Sound %d : Instance %d (%s)\n", s, founde, foundsoundname);
+				}
+				else
+				{
+					LPSTR pSoundFilename = "";
+					sSoundData* pSoundData = GetSound(s);
+					if(pSoundData) pSoundFilename = pSoundData->wickedFilename;
+					sprintf(pThisLine, "Sound %d : Not Instance : %s\n", s, pSoundFilename);
+				}
+				strcat(pShowList, pThisLine);
+				iSoundPlayingCount++;
+			}
+			if (iSoundPlayingCount >= 10) break;
+		}
+		MessageBoxA(NULL, pShowList, "Sounds Playing", MB_OK);
+		g_iViewPlayingSounds = 0;
 	}
 }
 //#pragma optimize("", on)

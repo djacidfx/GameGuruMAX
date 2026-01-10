@@ -552,6 +552,17 @@ void entity_lua_spawn ( void )
 				}
 				t.entitiesToSpawnQueue.push_back ( t.e );
 			}
+			else
+			{
+				// reloading saved game can set spawnatstart==2, just need to ensure it becomes visible with correct spawnatstart=2 states
+				if (t.entityelement[t.e].active == 1)
+				{
+					// and extra precaution of checking 'active' as objects are active==1 in this real-world scenario
+					t.entityelement[t.e].eleprof.phyalways = 0;
+					entity_lua_show ();
+					entity_lua_collisionon ();
+				}
+			}
 		}
 	}
 }
