@@ -367,7 +367,8 @@ void lua_loop_begin ( void )
 	entity_lua_activateifusedfromqueue();
 
 	// Write LUA globals
-	LuaSetInt (  "g_GameStateChange", t.luaglobal.gamestatechange );
+	LuaSetInt ("g_ShowObjectDebugVisuals", (int)t.luaglobal.showobjectdebugvisuals);
+	LuaSetInt ("g_GameStateChange", t.luaglobal.gamestatechange);
 	if ( ObjectExist(t.aisystem.objectstartindex)==1 )
 	{
 		LuaSetFloat (  "g_PlayerPosX",ObjectPositionX(t.aisystem.objectstartindex) );

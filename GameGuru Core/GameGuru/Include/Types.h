@@ -2319,6 +2319,7 @@ struct lightingtype
 //  LUA Global Vars
 struct luaglobaltype
 {
+	bool showobjectdebugvisuals;
 	int gamestatechange;
 	int setanim;
 	int loopmode;
@@ -2343,6 +2344,7 @@ struct luaglobaltype
 	// Constructor
 	luaglobaltype ( )
 	{
+		 showobjectdebugvisuals = false;
 		 gurumeditationprompt_s = "";
 		 gurumeditationprompttime = 0;
 		 scriptprompt3dFaceCamera = false;

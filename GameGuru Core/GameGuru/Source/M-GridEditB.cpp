@@ -5026,8 +5026,7 @@ static void DisplayPerformanceData(bool* p_open)
 		int dct = wiProfiler::GetDrawCallsTransparent();
 		int tris = wiProfiler::GetPolygons();
 		int trisShadow = wiProfiler::GetPolygonsShadows();
-		int trisTransparent = wiProfiler::GetPolygonsTransparent();
-		
+		int trisTransparent = wiProfiler::GetPolygonsTransparent();	
 		static int iPersistTimer = 0;
 		static int iPersistdc = 0;
 		static int iPersistdcs = 0;
@@ -5045,9 +5044,11 @@ static void DisplayPerformanceData(bool* p_open)
 			iPersisttrisShadow = trisShadow;
 			iPersisttrisTransparent = trisTransparent;
 		}
+
+		// draw performance data info
+		ImGui::SetWindowFontScale(1.0);
 		ImGui::Text("FPS: %.1f - Draw Calls: %5d, S:%5d, T:%5d", ImGui::GetIO().Framerate, iPersistdc, iPersistdcs, iPersistdct);
 		ImGui::Text("Triangles: %7d, S:%7d, T:%7d", iPersisttris, iPersisttrisShadow, iPersisttrisTransparent);
-
 		ImGui::Separator();
 
 		// highlight or regular
@@ -5063,8 +5064,6 @@ static void DisplayPerformanceData(bool* p_open)
 		}
 
 		ImGui::Separator();
-
-		ImGui::Text("");
 		ImGui::Text("");
 	}
 	ImGui::End();
@@ -5531,14 +5530,31 @@ void gridedit_instruction_block_rec ( sStateNode* pState, ImVec2 vTopCenterPos, 
 		// play and loop shows animation list for this object
 		sprintf(pInstructionDisplay, "##BehaviorEditorActionParam1Combo%s%d", pStateName, pinstruction->iInstructionIndex);
 		ImGui::SetCursorPos(ImVec2(fAbsInstructionLeftX, ImGui::GetCursorPos().y));
-		int iAnimationListIndex = 0;
+		int iAnimationListIndex = -1;
 		for (int iFind = 0; iFind < combo_animations_count; iFind++)
 		{
 			if ( stricmp (combo_animations[iFind], pinstruction->pActionParam1)==NULL) iAnimationListIndex = iFind;
 		}
-		if (ImGui::Combo(pInstructionDisplay, &iAnimationListIndex, combo_animations, combo_animations_count))
+		if (iAnimationListIndex > -1 || strcmp(pinstruction->pActionParam1,"")==NULL)
 		{
-			strcpy ( pinstruction->pActionParam1, combo_animations[iAnimationListIndex]);
+			if (ImGui::Combo(pInstructionDisplay, &iAnimationListIndex, combo_animations, combo_animations_count))
+			{
+				strcpy (pinstruction->pActionParam1, combo_animations[iAnimationListIndex]);
+			}
+		}
+		else
+		{
+			// can be a scenario where a script expects a specific set of animations, and those anims are
+			// chosen from the dropdown, but older legacy levels/objects could be missing newer anims referenced in the script/bytecode
+			// so need to ensure these 'legacy' anim names are preserved and shown in newer script views
+			sprintf(pInstructionDisplay, "##BehaviorEditorActionParam1%s%d", pStateName, pinstruction->iInstructionIndex);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
+			if (ImGui::InputText(pInstructionDisplay, &pinstruction->pActionParam1[0], 250, ImGuiInputTextFlags_None | ImGuiInputTextFlags_ReadOnly))
+			{
+				//instruction_freezewheneditingbehavior = true; cannot edit this to preserve integrity of newer script!
+			}
+			ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Could not find specified animation inside the object associated with this behavior!");
 		}
 	}
 	else
@@ -52499,12 +52515,20 @@ bool AI_Management_Settings(float fTabColumnWidth, bool bVisualUpdated)
 	{
 		iLastOpenHeader = 12;
 		ImGui::Indent(10);
+
 		ImGui::PushItemWidth(-10);
 		extern bool g_bShowRecastDetourDebugVisuals;
 		if (ImGui::Checkbox("Show Navigation Debug Visuals", &g_bShowRecastDetourDebugVisuals))
 		{
 		}
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle whether the navigation system debug visuals should be shown");
+		ImGui::PopItemWidth();
+
+		ImGui::PushItemWidth(-10);
+		if (ImGui::Checkbox("Show Object Debug Visuals", &t.luaglobal.showobjectdebugvisuals))
+		{
+		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle whether the LUA system should show object debug visuals");
 		ImGui::PopItemWidth();
 
 		ImGui::PushItemWidth(-10);

@@ -1750,7 +1750,6 @@ void WickedCall_SetObjectFrameEx(sObject* pObject, float fFrame)
 	}
 }
 
-
 float WickedCall_GetObjectFrame(sObject* pObject)
 {
 	float fFrame = 0.0f;
@@ -1798,6 +1797,24 @@ float WickedCall_GetObjectRealFrame(sObject* pObject)
 		}
 	}
 	return fFrame;
+}
+
+bool WickedCall_GetObjectPlaying(sObject* pObject)
+{
+	if (pObject)
+	{
+		if (pObject->pAnimationSet)
+		{
+			sAnimationSet* pAnimSet = pObject->pAnimationSet;
+			Entity animentity = pAnimSet->wickedanimentityindex;
+			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
+			if (animationcomponent->IsPlaying())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 bool bBlockSceneUpdate = false;

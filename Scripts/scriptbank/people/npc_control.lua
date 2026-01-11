@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Control v92 by Necrym59 and Lee
+-- NPC Control v93 by Necrym59 and Lee
 -- DESCRIPTION: The attached NPC will be controlled by this behavior.
 -- DESCRIPTION: [SENSE_TEXT$="Who's that ..an intruder??"]
 -- DESCRIPTION: [SENSE_RANGE=500(0,2000)]
@@ -168,7 +168,9 @@ local setframes = {}
 local dist = {}
 local tmphit = {}
 local deathifusedno = {}
+
 g_GibsEnabled = 0
+g_ShowObjectDebugVisuals = 0
 
 function npc_control_properties(e, sense_text, sense_range, sense_mode, npc_can_flee, idle_time, attack_range, attack_damage, random_damage, npc_can_roam, roam_range, npc_anim_speed, npc_move_speed, npc_run_speed, npc_turn_speed, npc_can_shoot, idle1_animation,  idle2_animation, walk_animation, run_animation, threat_animation, attack1_animation, attack1_hitframe, attack2_animation, attack2_hitframe, attack3_animation, attack3_hitframe, shoot_animation, hurt_animation, death1_animation, death2_animation, lastflag_animation, lastflag_time, lastflag_loop, force_move, npc_tilting, on_death, ifused, diagnostics)
 	npc_control[e].sense_text = sense_text or ""
@@ -181,7 +183,7 @@ function npc_control_properties(e, sense_text, sense_range, sense_mode, npc_can_
 	npc_control[e].random_damage = random_damage or 1
 	npc_control[e].npc_can_roam = npc_can_roam or 1
 	npc_control[e].roam_range = roam_range or 500
-	npc_control[e].npc_anim_speed = npc_anim_speed or 0.5
+	npc_control[e].npc_anim_speed = npc_anim_speed or 0.8
 	npc_control[e].npc_move_speed = npc_move_speed or 100
 	npc_control[e].npc_run_speed = npc_run_speed or 100
 	npc_control[e].npc_turn_speed = npc_turn_speed or 100
@@ -224,7 +226,7 @@ function npc_control_init_name(e,name)
 	npc_control[e].random_damage = 1
 	npc_control[e].npc_can_roam = 1
 	npc_control[e].roam_range = 500
-	npc_control[e].npc_anim_speed = 0.5
+	npc_control[e].npc_anim_speed = 0.8
 	npc_control[e].npc_move_speed = 100
 	npc_control[e].npc_run_speed = 110
 	npc_control[e].npc_turn_speed = 100
@@ -344,7 +346,7 @@ function npc_control_main(e)
 			end
 		end	
 		allegiance[e] = GetEntityAllegiance(e) -- (0-enemy, 1-ally, 2-neutral)
-		--SetAnimationSpeed(e,npc_control[e].npc_anim_speed) being used for both ModulateSpeed and SetAnimationSpeed!?! Messes Up legacy levels when this used!
+		SetAnimationSpeed(e,1.0) --SetAnimationSpeed(e,npc_control[e].npc_anim_speed) WAS being used for both ModulateSpeed and SetAnimationSpeed! Messes Up legacy! Fix At 1.0
 		SetEntityMoveSpeed(e,npc_control[e].npc_move_speed)
 		SetEntityTurnSpeed(e,npc_control[e].npc_turn_speed)
 		SetPreExitValue(e,0)
@@ -1238,9 +1240,9 @@ function npc_control_main(e)
 		end
 	end
 	--Diagnostic text -----------------------------------
-	if npc_control[e].diagnostics == 1 then
+	if npc_control[e].diagnostics == 1 or (g_ShowObjectDebugVisuals == 1 and GetPlayerDistance(e) < 500) then
 		local ex,ey,ez,ax,ay,az = GetEntityPosAng(e)
-		Text(2,30,3,"Entity : " ..name1[e])
+		Text(2,30,3,"Entity "..e..": " ..name1[e])
 		if allegiance[e] == 0 then Text(2,32,3,"Allegiance : Enemy") end
 		if allegiance[e] == 1 then Text(2,32,3,"Allegiance : Ally") end
 		if allegiance[e] == 2 then Text(2,32,3,"Allegiance : Neutral") end

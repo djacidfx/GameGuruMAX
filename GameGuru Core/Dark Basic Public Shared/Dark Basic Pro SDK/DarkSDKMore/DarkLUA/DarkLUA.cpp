@@ -2602,6 +2602,12 @@ luaMessage** ppLuaMessages = NULL;
 				{
 					iReturnValue = 1;
 				}
+
+				// detects when animation stopped
+				if (WickedCall_GetObjectPlaying(pObject)==false)
+				{
+					iReturnValue = 1;
+				}
 			 }
 		 }
 	 }

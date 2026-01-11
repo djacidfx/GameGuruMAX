@@ -96,6 +96,7 @@ void WickedCall_SetObjectFrame(sObject* pObject, float fFrame);
 void WickedCall_SetObjectFrameEx(sObject* pObject, float fFrame);
 float WickedCall_GetObjectFrame(sObject* pObject);
 float WickedCall_GetObjectRealFrame(sObject* pObject);
+bool WickedCall_GetObjectPlaying(sObject* pObject);
 void WickedCall_RemoveObject( sObject* pObject );
 void WickedCall_SetTexturePath ( LPSTR pPath );
 void WickedCall_TextureMesh ( sMesh* pMesh );
