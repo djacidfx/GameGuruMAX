@@ -12,9 +12,7 @@
 #endif
 
 // Externs
-#ifdef VRTECH
 extern GGVR_PlayerData GGVR_Player;
-#endif
 
 // 
 //  LUA Module
@@ -34,10 +32,6 @@ void lua_init ( void )
 		t.luabank_s[1]=t.tfile_s ; t.r=LoadLua(t.tfile_s.Get());
 		t.strwork = "" ; t.strwork = t.strwork + "Loaded "+t.tfile_s;
 		timestampactivity(0, t.strwork.Get() );
-		//t.tfile_s="scriptbank\\music.lua";
-		//t.luabank_s[2]=t.tfile_s ; t.r=LoadLua(t.tfile_s.Get());
-		//t.strwork = "" ; t.strwork = t.strwork + "Loaded "+t.tfile_s;
-		//timestampactivity(0, t.strwork.Get() );
 	}
 
 	//  Ensure entity elements are set to a LUA first run state
@@ -111,7 +105,6 @@ void lua_loadscriptin ( void )
 			}
 
 			cstr script_name = "";
-			//if (strnicmp(t.tscriptname_s.Get(), "projectbank", 11) != NULL) 
 			script_name = "scriptbank\\";
 			script_name += t.tscriptname_s;
 
@@ -123,7 +116,6 @@ void lua_loadscriptin ( void )
 				t.tscriptname_s = t.entityprofile[entid].aimain_s;
 
 				script_name = "";
-				//if (strnicmp(t.tscriptname_s.Get(), "projectbank", 11) != NULL) 
 				script_name = "scriptbank\\";
 				script_name += t.tscriptname_s;
 
@@ -261,7 +253,6 @@ void lua_initscript ( void )
 	}
 }
 
-#ifdef VRTECH
 void lua_execute_properties_variable(char *string)
 {
 	char tmp[4096];
@@ -317,7 +308,6 @@ void lua_execute_properties_variable(char *string)
 		}
 	}
 }
-#endif
 
 void lua_launchallinitscripts ( void )
 {
@@ -328,9 +318,6 @@ void lua_launchallinitscripts ( void )
 		if (t.game.firstlevelinitializesanygameprojectlua == 123)
 		{
 			t.game.firstlevelinitializesanygameprojectlua = 0;
-			//did not locate the files to be deleted
-			//LuaSetFunction ("GameLoopClearGlobalStates", 0, 0);
-			//LuaCall();
 			for (int i = -1; i < 999; i++)
 			{
 				cstr pFile = "";
@@ -369,14 +356,8 @@ void lua_launchallinitscripts ( void )
 		}
 	}
 
-	// launch music script
-	//LuaSetFunction ( "music_init", 0, 0 );
-	//LuaCallSilent ( );
-
-	#ifdef WICKEDENGINE
 	// clear entity vis list for new test level/game level run
 	entity_lua_getentityplrvisible_clear();
-	#endif
 }
 
 void lua_loop_begin ( void )
@@ -386,7 +367,8 @@ void lua_loop_begin ( void )
 	entity_lua_activateifusedfromqueue();
 
 	// Write LUA globals
-	LuaSetInt (  "g_GameStateChange", t.luaglobal.gamestatechange );
+	LuaSetInt ("g_ShowObjectDebugVisuals", (int)t.luaglobal.showobjectdebugvisuals);
+	LuaSetInt ("g_GameStateChange", t.luaglobal.gamestatechange);
 	if ( ObjectExist(t.aisystem.objectstartindex)==1 )
 	{
 		LuaSetFloat (  "g_PlayerPosX",ObjectPositionX(t.aisystem.objectstartindex) );
@@ -398,10 +380,6 @@ void lua_loop_begin ( void )
 	LuaSetFloat ( "g_PlayerAngZ", wrapangleoffset(CameraAngleZ(0)) );
 	LuaSetInt (  "g_PlayerObjNo", t.aisystem.objectstartindex );
 	LuaSetInt (  "g_PlayerHealth", t.player[t.plrid].health );
-
-	//extern int g_iUserGlobal;
-	//LuaSetInt ("g_UserGlobal", g_iUserGlobal);
-	//g_iUserGlobal = LuaGetInt ("g_UserGlobal");
 
 	LuaSetInt (  "g_PlayerLives", t.player[t.plrid].lives );
 	LuaSetFloat (  "g_PlayerFlashlight", t.playerlight.flashlightcontrol_f );
@@ -433,8 +411,6 @@ void lua_loop_begin ( void )
 	LuaSetFloat (  "g_TimeElapsed", g.timeelapsed_f );
 	LuaSetInt (  "g_PlayerThirdPerson", t.playercontrol.thirdperson.enabled );
 	LuaSetInt (  "g_PlayerController", g.gxbox );
-	//int iPlayerFOVPerc = (((t.visuals.CameraFOV_f*t.visuals.CameraASPECT_f)-20.0)/180.0)*100.0; match with SetPlayerFOV calc!
-	//t.visuals.CameraFOV_f = (20 + ((g_fLastKnownFOVin + 0.0) / 114.0) * 180.0) / t.visuals.CameraASPECT_f;
 	int iPlayerFOVPerc = (((t.visuals.CameraFOV_f * t.visuals.CameraASPECT_f) - 20.0) / 180.0) * 114.0f;// 100.0;
 	LuaSetInt (  "g_PlayerFOV", iPlayerFOVPerc );
 	LuaSetInt (  "g_PlayerLastHitTime", t.playercontrol.regentime );
@@ -454,13 +430,11 @@ void lua_loop_begin ( void )
 		if ( JoystickFireD() == 1 )  
 			t.tKeyPressE = 1;
 	}
-	#ifdef VRTECH
 	if ( g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1 )
 	{
 		if ( GGVR_RightController_Trigger() > 0.9f )
 			t.tKeyPressE = 1;
 	}
-	#endif
 	LuaSetInt ( "g_KeyPressE",t.tKeyPressE );
 	LuaSetInt ( "g_KeyPressQ",KeyState(g.keymap[16]) );
 
@@ -472,11 +446,9 @@ void lua_loop_begin ( void )
 	LuaSetInt ( "g_KeyPressR", KeyState(g.keymap[19]) );
 	LuaSetInt ( "g_KeyPressF", KeyState(g.keymap[33]) );
 	LuaSetInt ( "g_KeyPressC", KeyState(g.keymap[46]) );
-	//LuaSetInt ( "g_KeyPressJ", !!done in player control code!! );
 	LuaSetInt ( "g_KeyPressSPACE", KeyState(g.keymap[57]) );
 
 	// shift key for running/etc
-	#ifdef VRTECH
 	int tKeyPressShift = 0;
 	if ( KeyState(g.keymap[42]) ) tKeyPressShift = 1;
 	if ( KeyState(g.keymap[54]) ) tKeyPressShift = 1;
@@ -486,12 +458,7 @@ void lua_loop_begin ( void )
 			tKeyPressShift = 1;
 	}
 	LuaSetInt ( "g_KeyPressSHIFT", tKeyPressShift );
-	#else
-	LuaSetInt ( "g_KeyPressSHIFT", KeyState(g.keymap[42]) | KeyState(g.keymap[54]) );
-	#endif
-	#ifdef WICKEDENGINE
 	static int iResetMouseWheel = 0;
-	#endif
 	if ( g.luaactivatemouse != 0 )
 	{
 		// remains one (unless in-game menu, in which case it is set to 2 below when in standalone in-game menu (and read by playe control script to disable plr input for mouse data))
@@ -513,13 +480,10 @@ void lua_loop_begin ( void )
 
 		LuaSetInt("g_MouseWheel", (int) fFinalWheel ); //PE: Moved here so delta is not lost.
 
-		#ifdef WICKEDENGINE
 		iResetMouseWheel = 6; //PE: Reset when we leave menu and go back to the game. need 6 frame before everything is in sync.
 		extern DBPRO_GLOBAL int			g_iMouseLocalZ;
 		g_iMouseLocalZ = 0;
-		#endif
 
-		#ifdef VRTECH
 		if (g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1)
 		{
 			// also only do this if NOT in in-game menu
@@ -601,14 +565,11 @@ void lua_loop_begin ( void )
 				}
 			}
 		}
-		#endif
-		#ifdef STORYBOARD 
 		extern float LuaMousePosPercentX, LuaMousePosX, LuaMousePosPercentY, LuaMousePosY;
 		LuaMousePosX = g.LUAMouseX;
 		LuaMousePosY = g.LUAMouseY;
 		LuaMousePosPercentX = fFinalPercX;
 		LuaMousePosPercentY = fFinalPercY;
-		#endif
 		LuaSetFloat("g_MouseX", fFinalPercX);
 		LuaSetFloat("g_MouseY", fFinalPercY);
 
@@ -674,10 +635,8 @@ void lua_loop_begin ( void )
 	}
 	LuaSetInt("g_MouseClick", iMouseClickState);
 
-	#ifdef STORYBOARD 
 	extern int LuaMouseClick;
 	LuaMouseClick = iMouseClickState;
-	#endif
 
 	// continuing settinf of LUA globals
 	LuaSetInt ( "g_EntityElementMax", g.entityelementlist);
@@ -853,7 +812,9 @@ LONGLONG g_tableofperformancetimers[TABLEOFPERFORMANCEMAX];
 #define SWITCHTO30FPSRANGE 1000
 uint32_t LuaFrameCount = 0;
 uint32_t LuaFrameCount2 = 0;
-//#pragma optimize("", off)
+
+int g_iViewPlayingSounds = 0;
+
 void lua_loop_allentities ( void )
 {
 #ifdef OPTICK_ENABLE
@@ -878,9 +839,7 @@ void lua_loop_allentities ( void )
 		// this entity
 		int thisentid = t.entityelement[t.e].bankindex;
 		// LB210325 - why does "eleprof.spawnatstart==0" allow LUA_main to be called? Not active and not 'spawned at start' meansd no logic until something else spawns it (this caused cloned characters to clone the StartScript they moved into to be their main one, ie attack->patrol then stuck there)
-		// if ( thisentid>0 && (t.entityelement[t.e].active != 0 || t.entityelement[t.e].lua.flagschanged == 2 || t.entityelement[t.e].eleprof.phyalways != 0 || t.entityelement[t.e].eleprof.spawnatstart==0) ) 
 		// and only allow phyalways to work if spawn at start is not 0 (otherwise the always run logic will apply to entities not spawned in the level)
-		//if (thisentid > 0 && (t.entityelement[t.e].active != 0 || t.entityelement[t.e].lua.flagschanged == 2 || t.entityelement[t.e].eleprof.phyalways != 0))
 		if (thisentid > 0 && (t.entityelement[t.e].active != 0 || t.entityelement[t.e].lua.flagschanged == 2 || (t.entityelement[t.e].eleprof.phyalways != 0 && t.entityelement[t.e].eleprof.spawnatstart != 0)))
 		{
 			// skip new entities still in spawn activation sequence
@@ -890,8 +849,6 @@ void lua_loop_allentities ( void )
 			//LB: superceded with setting the active to zero when inside a shop/chest (i.e. not player inv/hotkeys)
 			// must skip entity element if collected by shop or other container
 			// only player and hotkeys collections can run logic!
-			//if (t.entityelement[t.e].collected >= 3)
-			//	continue;
 			// skip entities that are inside shops or chests, ect
 			if (t.entityelement[t.e].collected >= 3 && t.entityelement[t.e].active == 0)
 				continue;
@@ -937,9 +894,17 @@ void lua_loop_allentities ( void )
 			// Initial population of LUA data
 			lua_ensureentityglobalarrayisinitialised();
 
+			if (t.tobj > 0 &&  t.entityelement[t.e].eleprof.WEMaterial.customShaderID == 5)
+			{
+				//PE: Display blood damage from 0 to 200
+				float health = t.entityelement[t.e].health / 200.0f;
+				if (health < 0.0f) health = 0.0f;
+				if (health > 1.0f) health = 1.0f;
+				WickedCall_SetShaderParameter(t.tobj, 1, 1.0f - health);
+			}
+
 			// only process logic within plr freeze range
 			t.te = t.e; entity_getmaxfreezedistance ( );
-			//if (t.entityelement[t.e].plrdist < MAXFREEZEDISTANCE || t.entityelement[t.e].eleprof.phyalways != 0 || t.entityelement[t.e].lua.flagschanged == 2)
 			int iDistanceForLogicToBeProcessed = t.maximumnonefreezedistance;
 			if (t.entityelement[t.e].eleprof.phyalways == 0 && t.entityprofile[thisentid].ischaracter == 0) iDistanceForLogicToBeProcessed = 750; // use always active if want further than interactive range
 			//PE: Markers cant have always active , so process those in intervals.
@@ -962,7 +927,6 @@ void lua_loop_allentities ( void )
 				if (  t.waypointindex>0 ) 
 				{
 					// should be the player pos to trigger this, NOT the camera (Thanks AmenMoses!)
-					//t.tpointx_f=CameraPositionX(0); t.tpointz_f=CameraPositionZ(0);
 					t.tpointx_f = ObjectPositionX(t.aisystem.objectstartindex);
 					t.tpointz_f = ObjectPositionZ(t.aisystem.objectstartindex);
 					if (  t.waypoint[t.waypointindex].active == 1 )
@@ -979,8 +943,8 @@ void lua_loop_allentities ( void )
 					}
 				}
 
-				//  Detect if USE KEY field entity has been collected
-				if (  t.entityelement[t.e].lua.haskey == 0 ) 
+				// Detect if USE KEY field entity has been collected
+				if ( t.entityelement[t.e].lua.haskey == 0 )
 				{
 					//  check if demilited key
 					t.masterkeyname_s=Lower(t.entityelement[t.e].eleprof.usekey_s.Get());
@@ -1001,7 +965,7 @@ void lua_loop_allentities ( void )
 							//  (SINGLE)
 							for ( t.te = 1 ; t.te<=  g.entityelementlist; t.te++ )
 							{
-								if (  t.entityelement[t.te].collected == 1 ) 
+								if (t.entityelement[t.te].collected == 1 || t.entityelement[t.te].collected == 2)
 								{
 									if (  cstr(Lower(t.entityelement[t.te].eleprof.name_s.Get())) == t.masterkeyname_s ) 
 									{
@@ -1028,7 +992,7 @@ void lua_loop_allentities ( void )
 								t.ttokay=0;
 								for ( t.te = 1 ; t.te <= g.entityelementlist; t.te++ )
 								{
-									if (  t.entityelement[t.te].collected == 1 ) 
+									if (t.entityelement[t.te].collected == 1 || t.entityelement[t.te].collected == 2)
 									{
 										if (  cstr(Lower(t.entityelement[t.te].eleprof.name_s.Get())) == t.keyname_s ) 
 										{
@@ -1048,8 +1012,8 @@ void lua_loop_allentities ( void )
 					{
 						//  when door/gate entity does not specify USE KEY, set to -1 to script knows
 						//  no key/entity is required here (for additional script behaviours)
-						t.entityelement[t.e].lua.haskey=-1;
-						t.entityelement[t.e].lua.flagschanged=1;
+						t.entityelement[t.e].lua.haskey = -1;
+						t.entityelement[t.e].lua.flagschanged = 1;
 					}
 				}
 
@@ -1102,7 +1066,6 @@ void lua_loop_allentities ( void )
 				}
 
 				// Update each cycle as entity position, health and GetFrame (  change constantly )
-				//if (t.entityelement[t.e].plrdist < iDistanceForLogicToBeProcessed || t.entityprofile[thisentid].ischaracter == 1 || t.entityelement[t.e].eleprof.phyalways != 0)
 				if (t.entityelement[t.e].plrdist < iDistanceForLogicToBeProcessed || t.entityelement[t.e].eleprof.phyalways != 0)
 				{
 					// first quarter of freeze range get full updates - also characters and those with alwaysactive flags
@@ -1354,6 +1317,60 @@ void lua_loop_allentities ( void )
 		MessageBoxA(NULL, pShowList, "Logic Performance (auto-triggered using 'producelogfiles=3')", MB_OK);
 		g_iViewPerformanceTimers = 0;
 	}
+
+	// View currently playing sounds when some rogue sound loops and needs to be located
+	if (g_iViewPlayingSounds == 1)
+	{
+		char pShowList[10240];
+		strcpy(pShowList, "First Ten Sounds Playing This Cycle:\n\n");
+		int iSoundPlayingCount = 0;
+		for (int s = 1; s <= 99999; s++)
+		{
+			if (SoundExist(s) == 1 && SoundPlaying(s) == 1)
+			{
+				int founde = 0;
+				LPSTR foundsoundname = "";
+				for (int e = 1; e <= g.entityelementlist; e++)
+				{
+					if (t.entityelement[e].soundset == s ||
+						t.entityelement[e].soundset1 == s ||
+						t.entityelement[e].soundset2 == s ||
+						t.entityelement[e].soundset3 == s ||
+						t.entityelement[e].soundset4 == s ||
+						t.entityelement[e].soundset5 == s ||
+						t.entityelement[e].soundset6 == s)
+					{
+						founde = e;
+						if (t.entityelement[e].soundset == s) foundsoundname = t.entityelement[e].eleprof.soundset_s.Get();
+						if (t.entityelement[e].soundset1 == s) foundsoundname = t.entityelement[e].eleprof.soundset1_s.Get();
+						if (t.entityelement[e].soundset2 == s) foundsoundname = t.entityelement[e].eleprof.soundset2_s.Get();
+						if (t.entityelement[e].soundset3 == s) foundsoundname = t.entityelement[e].eleprof.soundset3_s.Get();
+						if (t.entityelement[e].soundset4 == s) foundsoundname = t.entityelement[e].eleprof.soundset4_s.Get();
+						if (t.entityelement[e].soundset5 == s) foundsoundname = t.entityelement[e].eleprof.soundset5_s.Get();
+						if (t.entityelement[e].soundset6 == s) foundsoundname = t.entityelement[e].eleprof.soundset6_s.Get();
+						break;
+					}
+				}
+				char pThisLine[1024];
+				if (founde > 0)
+				{
+					sprintf(pThisLine, "Sound %d : Instance %d (%s)\n", s, founde, foundsoundname);
+				}
+				else
+				{
+					LPSTR pSoundFilename = "";
+					sSoundData* pSoundData = GetSound(s);
+					if(pSoundData) pSoundFilename = pSoundData->wickedFilename;
+					sprintf(pThisLine, "Sound %d : Not Instance : %s\n", s, pSoundFilename);
+				}
+				strcat(pShowList, pThisLine);
+				iSoundPlayingCount++;
+			}
+			if (iSoundPlayingCount >= 10) break;
+		}
+		MessageBoxA(NULL, pShowList, "Sounds Playing", MB_OK);
+		g_iViewPlayingSounds = 0;
+	}
 }
 //#pragma optimize("", on)
 bool g_WarnOnlyOnce = true;
@@ -1397,6 +1414,4 @@ void lua_loop ( void )
 
 void lua_raycastingwork (void)
 {
-	// moving and controlling ray casts separate so can test speed of combined work
-
 }

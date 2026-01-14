@@ -1,4 +1,4 @@
--- Door v30 by Lee and Necrym59
+-- Door v31 by Lee and Necrym59
 -- DESCRIPTION: Open and closes an 'animating' door when the player is within [Range=70(50,500)],
 -- DESCRIPTION: and when triggered will open the door, play <Sound0> and turn collision off after a delay of [DELAY=1000].
 -- DESCRIPTION: When the door is closed, play <Sound1> is played. You can elect to keep the door [Unlocked!=1], and customize the [LockedText$="Door locked. Find key"].

@@ -11,7 +11,6 @@
 #include <wininet.h>
 #include <mmsystem.h>
 
-#ifdef ENABLEIMGUI
 //PE: GameGuru IMGUI.
 #include "..\Imgui\imgui.h"
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -23,7 +22,6 @@
 #include <algorithm>
 #include <string>
 #include <time.h>
-#endif
 
 // Externals
 extern int g_trialStampDaysLeft;
@@ -36,11 +34,9 @@ void CleanStringOfEscapeSlashes ( char* pText );
 void set_inputsys_mclick(int value);
 
 // Globals
-#ifdef VRTECH
 extern char g_pCloudKeyErrorString[10240];
 extern char g_pCloudKeyExpiresDate[11];
 extern bool g_bCloudKeyIsHomeEdition;
-#endif
 int g_welcomesystemclosedown = 0;
 struct welcomepagetype
 {
@@ -78,10 +74,8 @@ void welcome_loadasset ( cstr welcomePath, LPSTR pImageFilename, int iImageID )
 
 void welcome_waitfornoinput ( void )
 {
-	#ifdef FPSEXCHANGE
 	OpenFileMap (  1, "FPSEXCHANGE" );
 	SetEventAndWait (  1 );
-	#endif
 	do
 	{
 		t.inputsys.kscancode=ScanCode();
@@ -174,18 +168,12 @@ void welcome_init ( int iLoadingPart )
 		// announcement system
 		if (ImageExist(g.editorimagesoffset + 64) == 0)
 		{
-			#ifdef PRODUCTV3
-			 welcome_loadasset(welcomePath, "welcome-assets\\vrquest-news-banner.png", g.editorimagesoffset + 64);
-			#else
 			 welcome_loadasset(welcomePath, "welcome-assets\\gameguru-news-banner.png", g.editorimagesoffset + 64);
-			#endif
 		}
 
 		// registered trade mark
-		#ifdef VRTECH
 		welcome_loadasset(welcomePath, "registered.png", g.editorimagesoffset + 65);
 		welcome_loadasset(welcomePath, "registeredsmall.png", g.editorimagesoffset + 66);
-		#endif
 	}
 
 	// using legacy image loading
@@ -195,13 +183,8 @@ void welcome_init ( int iLoadingPart )
 	memset ( &g_welcome, 0, sizeof(g_welcome) );
 	g_welcome.iPageWidth = ImageWidth ( g.editorimagesoffset+8 );
 	g_welcome.iPageHeight = ImageHeight ( g.editorimagesoffset+8 );
-	#ifdef WICKEDENGINE
 	g_welcome.iCenterX = g_pGlob->iScreenWidth/2;
 	g_welcome.iCenterY = g_pGlob->iScreenHeight/2;
-	#else
-	g_welcome.iCenterX = GetChildWindowWidth(0)/2;
-	g_welcome.iCenterY = GetChildWindowHeight(0)/2;
-	#endif
 	g_welcome.iTopLeftX = g_welcome.iCenterX-(g_welcome.iPageWidth/2);
 	g_welcome.iTopLeftY = g_welcome.iCenterY-(g_welcome.iPageHeight/2);
 	g_welcome.fPercToPageX = g_welcome.iPageWidth / 100.0f;
@@ -259,53 +242,12 @@ void welcome_free ( void )
 
 void welcome_staticbackdrop ( void )
 {
-	#ifdef WICKEDENGINE
 	// No static backdrop in MAX
-	#else
-	//PE: It takes a few sync (here) before everything display correct , so increased to 4
-	if (ImageExist(g.editorimagesoffset + 12) == 1)
-	{
-		for (int iSyncPass = 0; iSyncPass <= 4; iSyncPass++)
-		{
-			Cls();
-			// stretch anim backdrop to size of client window
-			Sprite(123, -100000, -100000, g.editorimagesoffset + 12);
-			SizeSprite(123, GetChildWindowWidth(0) + 1, GetChildWindowHeight(0) + 11);
-			PasteSprite(123, 0, 0);
-			Sync();
-		}
-	}
-	#endif
 }
 
 void welcome_updatebackdrop ( char* pText )
 {
-	#ifdef WICKEDENGINE
 	// No backdrop in MAX
-	#else
-	if ( ImageExist ( g.editorimagesoffset+41 ) == 1 )
-	{
-		if ( SpriteExist(123)==1 ) Sprite ( 123, -10000, -10000, g.editorimagesoffset+12 );
-		if ( SpriteExist(124)==1 ) DeleteSprite(124);
-		for ( int s = 0; s < 2; s++ )
-		{
-			Cls();
-
-			// stretch anim backdrop to size of client window
-			Sprite ( 123, -100000, -100000, g.editorimagesoffset+12 );
-			SizeSprite ( 123, GetChildWindowWidth(0)+1, GetChildWindowHeight(0)+11 );
-			PasteSprite ( 123, 0, 0 );
-
-			Sprite ( 123, -10000, -10000, g.editorimagesoffset+41 );
-			int iImgWidth = ImageWidth(g.editorimagesoffset+41);
-			int iImgHeight = ImageHeight(g.editorimagesoffset+41);
-			SizeSprite ( 123, iImgWidth, iImgHeight );
-			PasteSprite ( 123, (GetChildWindowWidth(0)-iImgWidth)/2, (GetChildWindowHeight(0)-iImgHeight)/2 );
-			pastebitmapfontcenter ( pText, GetChildWindowWidth(0)/2, ((GetChildWindowHeight(0)-iImgHeight)/2)+(iImgHeight)-48, 4, 255);
-			Sync();
-		}
-	}
-	#endif
 }
 
 void welcome_converttopagecoords ( float& fX1, float& fY1 )
@@ -822,54 +764,6 @@ void welcome_whatyouget_page ( int iHighlightingButton )
 	}
 }
 
-/* old
-// CHANGE LOG PAGE
-
-struct welcomechangelogtype
-{
-	int iNextButtonID;
-	char pLog[102400];
-};
-welcomechangelogtype g_welcomechangelog;
-
-void welcome_changelog_init ( void )
-{
-	memset ( &g_welcomechangelog, 0, sizeof(g_welcomechangelog) );
-	g_welcomechangelog.iNextButtonID = 1;
-
-	// create a change log from anything newly added to GameGuru
-	strcpy ( g_welcomechangelog.pLog, "V 2017.09 DX11 DEV 30\n" );
-	strcat ( g_welcomechangelog.pLog, "* Tweaked Escape level to stop rocket man from messing up LOD animation\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Tweaked Escape level to stop rocket man from messing\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Tweaked Escape level to stop rocket man from messing\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Tweaked Escape level to stop rocket man from messing\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-	strcat ( g_welcomechangelog.pLog, "* Added generation of global environment map from sky/floor for PBR effect\n" );
-}
-
-void welcome_changelog_page ( int iHighlightingButton )
-{
-	// draw page
-	int iID = 0;
-	welcome_text ( "LATEST CHANGE LOG", 5, 50, 10, 255, false, false );
-	welcome_drawbox ( 0, 10, 20, 90, 65 );
-	welcome_text ( "Take a look at all the changes made since the last time you launched\nGameGuru. Use the mouse wheel to scroll through them.", 1, 50, 72, 192, true, false );
-	welcome_text ( g_welcomechangelog.pLog, 2, 13, 25, 192, true, true );
-	iID = g_welcomechangelog.iNextButtonID; welcome_textinbox ( iID, "NEXT", 1, 50, 90, g_welcomebutton[iID].alpha );
-
-	// control page
-	if ( t.inputsys.mclick == 1 ) 
-	{
-		if ( iHighlightingButton == 1 ) t.tclosequick = 1;
-	}
-}
-*/
-
 // MAIN PAGE
 
 struct welcomemaintype
@@ -973,27 +867,15 @@ void welcome_mainvr_page ( int iHighlightingButton )
 {
 	// draw page
 	int iID = 0;
-	#ifdef PRODUCTV3
-	welcome_text ( "WELCOME TO VR QUEST", 5, 50, 10, 255, false, false );
-	welcome_drawrotatedimage(g.editorimagesoffset+65, 85, 6, 0, 0, 0, false);
-	welcome_text ( "Would you like to learn more about VR Quest\nor go directly to the editor and start creating?", 1, 50, 72, 192, true, false );
-	welcome_drawrotatedimage(g.editorimagesoffset + 66, 73, 69, 0, 0, 0, false);
-	#else
 	welcome_text ( "WELCOME TO GAMEGURU MAX", 5, 50, 10, 255, false, false );
 	welcome_text ( "GameGuru MAX is still in development - this is an Alpha version", 1, 50, 18, 192, true, false );
 	welcome_text ( "Look out for regular updates!", 1, 50, 23, 192, true, false );
 	welcome_text ( "Would you like to learn more about GameGuru MAX\nor go directly to the editor and start creating?", 1, 50, 72, 192, true, false );
-	#endif
 	iID = 4; welcome_drawbox ( iID, 10, 90, 11.5f, 92 );
 	if ( g.gshowonstartup != 0 ) welcome_drawrotatedimage ( g.editorimagesoffset+40, 10.75f, 88.5f, 0, 0, 0, false );
 	welcome_text ( "Untick to skip welcome dialog in future", 1, 13.5f, 91.0f, 255, false, true );
-	#ifdef PRODUCTV3
-	welcome_drawrotatedimage ( g.editorimagesoffset+56, 37.5f, 22, 0, 0, 0, false );
-	welcome_drawrotatedimage ( g.editorimagesoffset+58, 62.5f, 22, 0, 0, 0, false );
-	#else
 	welcome_drawrotatedimage ( g.editorimagesoffset+56, 37.5f, 30, 0, 0, 0, false );
 	welcome_drawrotatedimage ( g.editorimagesoffset+58, 62.5f, 30, 0, 0, 0, false );
-	#endif
 	iID = 1; welcome_textinbox ( iID, "USER GUIDE", 1, 37.5f, 60, g_welcomebutton[iID].alpha );
 	iID = 3; welcome_textinbox ( iID, "CREATE", 1, 62.5f, 60, g_welcomebutton[iID].alpha );
 
@@ -1061,9 +943,6 @@ int welcome_play_page ( int iHighlightingButton )
 	// draw page
 	int iID = 0;
 	welcome_text ( "PLAY A SAMPLE LEVEL", 5, 50, 10, 255, false, false );
-	//welcome_drawbox ( 0, 50-12.0f, 20, 50+12.0f, 65 );
-	//welcome_drawrotatedimage ( g.editorimagesoffset+59, 50, 22, 0, 0, 0, false );
-	//welcome_text ( "THE BIG ESCAPE", 2, 50, 50, 255, false, false );
 	welcome_drawrotatedimage ( g.editorimagesoffset+59, 50, 20, 0, 0, 0, false );
 	welcome_text ( "THE BIG ESCAPE", 2, 50, 18, 255, false, false );
 	iID = 2; welcome_textinbox ( iID, "LOAD", 1, 50, 60, g_welcomebutton[iID].alpha );
@@ -1082,7 +961,6 @@ int welcome_play_page ( int iHighlightingButton )
 		{
 			// load a game level
 			t.tlevelautoload_s="The Big Escape.fpm";
-			//t.tlevelautoload_s=g.fpscrootdir_s+"\\Files\\mapbank\\"+t.tlevelautoload_s;
 			t.tlevelautoload_s=g.mysystem.mapbankAbs_s+t.tlevelautoload_s;
 
 			// force immediate quit of welcome system
@@ -1220,66 +1098,6 @@ void welcome_freetrialexitapp_page ( int iHighlightingButton )
 		}
 	}
 }
-
-/*
-void welcome_findbestpromotion ( LPSTR pReturnString )
-{
-	// connect to server, get best promotion, copy to return string
-	strcpy ( pReturnString, "" );
-
-	// request data from server
-	DWORD dwDataReturnedSize = 0;
-	char pDataReturned[10240];
-	memset(pDataReturned, 0, sizeof(pDataReturned));
-	UINT iError = OpenURLForDataOrFile(pDataReturned, &dwDataReturnedSize, "", "GET", "/api/gameguru/trial/offers", NULL);
-	if (iError <= 0 && *pDataReturned != 0 && strchr(pDataReturned, '{') != 0)
-	{
-		// break up response string
-		// "status": "success"
-		// "offers": [array]
-		char pFirstSteamURL[10240];
-		strcpy ( pFirstSteamURL, "" );
-		char pWorkStr[10240];
-		strcpy(pWorkStr, pDataReturned);
-		if (pWorkStr[0] == '{') strcpy(pWorkStr, pWorkStr + 1);
-		int n = 10200;
-		for (; n>0; n--) if (pWorkStr[n] == '}') { pWorkStr[n] = 0; break; }
-		char* pChop = strstr(pWorkStr, ",");
-		char pStatusStr[10240];
-		strcpy(pStatusStr, pWorkStr);
-		if (pChop) pStatusStr[pChop - pWorkStr] = 0;
-		char* pStatusValue = strstr(pStatusStr, ":") + 1;
-		if (pChop[0] == ',') pChop += 1;
-		if (strstr(pStatusValue, "success") != NULL)
-		{
-			// success
-			// offers - first URL
-			char pSearchForToken[8];
-			pSearchForToken[0] = '"';
-			pSearchForToken[1] = 'u';
-			pSearchForToken[2] = 'r';
-			pSearchForToken[3] = 'l';
-			pSearchForToken[4] = '"';
-			pSearchForToken[5] = ':';
-			pSearchForToken[6] = '"';
-			pSearchForToken[7] = 0;
-			pChop = strstr(pChop, pSearchForToken ) + 7;
-			strcpy(pFirstSteamURL, pChop);
-			char pEndOfChunk[2];
-			pEndOfChunk[0] = '"';
-			pEndOfChunk[1] = 0;
-			char* pFirstSteamURLEnd = strstr(pFirstSteamURL, pEndOfChunk);
-			pFirstSteamURL[pFirstSteamURLEnd - pFirstSteamURL] = 0;
-			if ( strlen ( pFirstSteamURL ) < 2040 ) strcpy ( pReturnString, pFirstSteamURL );
-		}
-		else
-		{
-			// error, pReturnString remains blank
-			char* pMessageValue = strstr(pChop, ":") + 1;
-		}
-	}
-}
-*/
 
 void welcome_freetrialintroapp_init ( void )
 {
@@ -1423,22 +1241,7 @@ UINT OpenURLForDataOrFile ( LPSTR pDataReturned, DWORD* pReturnDataSize, LPSTR p
 					// News
 					char m_szPostData[1024];
 					strcpy ( m_szPostData, "k=vIo3sc2z" );
-					#ifdef WICKEDENGINE
 				     strcat ( m_szPostData, "&app=gamegurumax" );
-					#else
-					 #ifdef PRODUCTV3
-					  if ( g_bCloudKeyIsHomeEdition == true )
-					   strcat ( m_szPostData, "&app=vrquesthome" );
-					  else
-					   strcat ( m_szPostData, "&app=vrquest" );
-					 #else
-					  #ifdef FREETRIALVERSION
-					   strcat ( m_szPostData, "&app=gamegurufree" );
-					  #else
-					   strcat ( m_szPostData, "&app=gameguru" );
-					  #endif
-					 #endif
-					#endif
 				    extern int g_iSpecialIDEForViewingTestAnnouncements;
 					if ( g_iSpecialIDEForViewingTestAnnouncements == 2 )
 					{
@@ -1527,7 +1330,6 @@ UINT OpenURLForDataOrFile ( LPSTR pDataReturned, DWORD* pReturnDataSize, LPSTR p
 bool g_bRunningForFirstTime = false;
 int g_iSpecialIDEForViewingTestAnnouncements = 0;
 
-#ifdef WICKEDENGINE
 #define ONLYSHOWCHANGELOGONETIME
 bool welcome_get_change_log(void)
 {
@@ -1583,7 +1385,7 @@ bool welcome_get_change_log(void)
 			{
 				if (*pSrc != '\n' && *pSrc != '\r') { *pDst = *pSrc; pDst++; }
 			}
-			strcpy(pURLText, "https://www.game-guru.com/max");
+			strcpy(pURLText, "https://www.game-guru.com");
 			if (g_iSpecialIDEForViewingTestAnnouncements == 0)
 			{
 				// only public build users get set to 1 (internal testers already have this set to 2)
@@ -1611,7 +1413,6 @@ bool welcome_get_change_log(void)
 	}
 	return false;
 }
-#endif
 
 bool welcome_announcements_init ( void )
 {
@@ -1671,313 +1472,7 @@ bool welcome_announcements_init ( void )
 		fclose(showtestfile);
 	}				
 
-	/* disable announcements system - using live changelog instead
-	// LB: checking for announcement can take up to 30 seconds!!
-	// disable for now as we have changelog showing local changes for installed build
-	bool bDisableAnnouncementCheckRestoreWhenOnOwnThread = false;
-	#ifdef WICKEDENGINE
-	bDisableAnnouncementCheckRestoreWhenOnOwnThread = true;
-	#endif
-	if (bDisableAnnouncementCheckRestoreWhenOnOwnThread == false)
-	{
-		// request news from server
-		char pImageLocalFile[2048];
-		DWORD dwDataReturnedSize = 0;
-		char pDataReturned[10240];
-		memset(pDataReturned, 0, sizeof(pDataReturned));
-		UINT iError = OpenURLForDataOrFile(pDataReturned, &dwDataReturnedSize, pUniqueCode, "POST", "/api/app/announcement", NULL);
-		if (iError <= 0 && *pDataReturned != 0 && strchr(pDataReturned, '{') != 0)
-		{
-			// break up response string
-			char updated_at[1024];
-			memset(updated_at, 0, sizeof(updated_at));
-			char pNewsText[10240];
-			strcpy(pNewsText, "");
-			char pURLText[10240];
-			strcpy(pURLText, "");
-			char pImageURL[10240];
-			strcpy(pImageURL, "");
-			char pWorkStr[10240];
-			strcpy(pWorkStr, pDataReturned);
-			if (pWorkStr[0] == '{') strcpy(pWorkStr, pWorkStr + 1);
-			int n = 10200;
-			for (; n > 0; n--) if (pWorkStr[n] == '}') { pWorkStr[n] = 0; break; }
-			char* pChop = strstr(pWorkStr, ",");
-			char pStatusStr[10240];
-			strcpy(pStatusStr, pWorkStr);
-			if (pChop) pStatusStr[pChop - pWorkStr] = 0;
-			char* pStatusValue = strstr(pStatusStr, ":") + 1;
-			if (pChop[0] == ',') pChop += 1;
-			if (strstr(pStatusValue, "success") != NULL)
-			{
-				// success
-				// news
-				pChop = strstr(pChop, ":") + 2;
-				strcpy(pNewsText, pChop);
-				char pEndOfChunk[4];
-				pEndOfChunk[0] = '"';
-				pEndOfChunk[1] = ',';
-				pEndOfChunk[2] = '"';
-				pEndOfChunk[3] = 0;
-				char* pNewsTextEnd = strstr(pNewsText, pEndOfChunk);
-				pNewsText[pNewsTextEnd - pNewsText] = 0;
-				pChop += strlen(pNewsText);
-
-				// go through news and replace \n with real carriage returns
-				int n = 0;
-				char* pReplacePos = pNewsText;
-				for (;;)
-				{
-					pReplacePos = strstr(pReplacePos, "\\r\\n");
-					if (pReplacePos != NULL)
-					{
-						pReplacePos[0] = ' ';
-						pReplacePos[1] = ' ';
-						pReplacePos[2] = ' ';
-						pReplacePos[3] = '\n';
-						pReplacePos += 4;
-					}
-					else
-						break;
-				}
-
-				// url
-				strcpy(pURLText, pChop);
-				pEndOfChunk[0] = '"';
-				pEndOfChunk[1] = ',';
-				pEndOfChunk[2] = '"';
-				strcpy(pURLText, strstr(pURLText, pEndOfChunk) + 9);
-				char* pURLEnd = strstr(pURLText, pEndOfChunk);
-				pURLText[pURLEnd - pURLText] = 0;
-				pChop += strlen(pURLText) + 9;
-				CleanStringOfEscapeSlashes(pURLText);
-
-				// image_url
-				pChop = strstr(pChop, "image_url");
-				pChop += 11; // skips past image_url":
-				LPSTR pEndOfImageURL = strstr(pChop, ",\"test");
-				DWORD dwLength = pEndOfImageURL - pChop;
-				memcpy(pImageURL, pChop, dwLength);
-				pImageURL[dwLength] = 0;
-				CleanStringOfEscapeSlashes(pImageURL);
-
-				// test flag
-				int iTestAnnouncement = 0;
-				pChop = strstr(pChop, ",\"test\":");
-				pChop += 8; // get past ,"test":
-				if (*pChop == '0')
-				{
-					iTestAnnouncement = 0;
-				}
-				else
-				{
-					iTestAnnouncement = 1;
-				}
-
-				// updated_at
-				char pUpdatedAt[10240];
-				pEndOfChunk[0] = '"';
-				pEndOfChunk[1] = ':';
-				pEndOfChunk[2] = '{';
-				pChop = strstr(pChop, pEndOfChunk);
-				if (pChop)
-				{
-					pChop = pChop + 2 + 9;
-					strcpy(pUpdatedAt, pChop);
-					memcpy(updated_at, pUpdatedAt, 19);
-					updated_at[19] = 0;
-				}
-				else
-					strcpy(updated_at, "");
-
-				// show what_notifications dialog if news available
-				char install_stamp_at[1024];
-				memset(install_stamp_at, 0, sizeof(install_stamp_at));
-
-				// Image Handling
-				strcpy(pImageLocalFile, g.fpscrootdir_s.Get());
-				#ifdef PRODUCTV3
-				strcat(pImageLocalFile, "\\languagebank\\english\\artwork\\welcome-assets\\vrquest-news-banner.png");
-				#else
-				strcat(pImageLocalFile, "\\languagebank\\english\\artwork\\welcome-assets\\gameguru-news-banner.png");
-				#endif
-
-				// so we download an image
-				char pNoDomainPart[1024];
-				strcpy(pNoDomainPart, "");
-				if (strcmp(pImageURL, "null") != NULL)
-				{
-					// get filename only
-					#ifdef PRODUCTV3
-					strcat(pImageLocalFile, "\\languagebank\\english\\artwork\\welcome-assets\\vrquest-news-banner.png");
-					strcpy(pNoDomainPart, pImageURL);
-					#else
-					strcpy(pNoDomainPart, pImageURL + strlen("https://www.thegamecreators.com"));
-					#endif
-
-					// get file ext
-					char pFileExt[1024];
-					strcpy(pFileExt, pNoDomainPart + strlen(pNoDomainPart) - 4);
-
-					// Download the image file
-					DWORD dwImageReturnedSize = 0;
-					char pImageReturned[10240];
-					sprintf(pImageLocalFile, "%s\\localimagefile%s", g.fpscrootdir_s.Get(), pFileExt);
-					UINT iImageError = OpenURLForDataOrFile(pImageReturned, &dwImageReturnedSize, "", "GET", pNoDomainPart, pImageLocalFile);
-					if (iImageError == 0)
-					{
-						// load local image file soon (below)
-					}
-					else
-					{
-						// if image not downloaded for some reason, revert to default
-						strcpy(pImageLocalFile, g.fpscrootdir_s.Get());
-						#ifdef PRODUCTV3
-						strcat(pImageLocalFile, "\\languagebank\\english\\artwork\\welcome-assets\\vrquest-news-banner.png");
-						#else
-						strcat(pImageLocalFile, "\\languagebank\\english\\artwork\\welcome-assets\\gameguru-news-banner.png");
-						#endif
-					}
-				}
-				if (iTestAnnouncement == 0)
-				{
-					char pInstallStampFile[1024];
-					strcpy(pInstallStampFile, g.fpscrootdir_s.Get());
-					strcat(pInstallStampFile, "\\installstamp.dat");
-					file = GG_fopen(pInstallStampFile, "r");
-					if (file != NULL)
-					{
-						fread(install_stamp_at, 1, 19, file);
-						install_stamp_at[19] = 0;
-						fclose(file);
-					}
-					if (strcmp(updated_at, install_stamp_at) != NULL)
-					{
-						// different updated_at entry, show new news
-						bNewsIsAvailable = true;
-						strcpy(g_welcomeText, pNewsText);
-						strcpy(g_welcomeLinkUrl, pURLText);
-						strcpy(g_welcomeImageUrl, pImageLocalFile);
-
-						// update install stamp so we know news has been read
-						FILE* fp = GG_fopen(pInstallStampFile, "w");
-						fwrite(updated_at, 1, 19, fp);
-						fclose(fp);
-					}
-				}
-			}
-			else
-			{
-				// error
-				char* pMessageValue = strstr(pChop, ":") + 1;
-			}
-		}
-	}
-	*/
-
-	#ifdef WICKEDENGINE
 	#define ALWAYSSHOWANNOUNCEMENTIFBUILD
-	#ifdef ALWAYSSHOWANNOUNCEMENTIFBUILD
-	// new way pulls changelog.txt file if exists and uses that for announcement
-	// so the builds are tied to the changelog they represent
-	// do welcome announce stuff triggered above
-	/* replaced with live changelog
-	if (bDisableAnnouncementCheckRestoreWhenOnOwnThread == true)
-	{
-		bNewsIsAvailable = welcome_get_change_log();
-	}
-	*/
-	#endif
-	#endif
-
-	/* old
-	#ifdef VRTECH
-	// override any news if the user is about to expire
-	if (strlen(g_pCloudKeyExpiresDate) == 10)
-	{
-		// work out day count of expiry date
-		char pYear[5]; memcpy(pYear, g_pCloudKeyExpiresDate, 4); pYear[4] = 0;
-		char pMonth[3]; memcpy(pMonth, g_pCloudKeyExpiresDate+5, 2); pMonth[2] = 0;
-		char pDay[3]; memcpy(pDay, g_pCloudKeyExpiresDate+8, 2); pDay[2] = 0;
-		int iYear = atoi(pYear)*365;
-		int iMonth = atoi(pMonth)*31;
-		int iDay = atoi(pDay);
-		int iTotal = iYear + iMonth + iDay;
-
-		// work out day count of today
-		time_t t = time(NULL);
-		struct tm tm = *localtime(&t);
-		int iNowYear = (tm.tm_year + 1900)*365;
-		int iNowMonth = (tm.tm_mon+1)*31;
-		int iNowDay = tm.tm_mday;
-		int iNowTotal = iNowYear + iNowMonth + iNowDay;
-
-		// if within 7 days of expiry, warn user
-		if (iNowTotal + 7 > iTotal)
-		{
-			bNewsIsAvailable = true;
-			strcpy ( g_welcomeText, "Your license is about to expire. Contact support before your software expires. You will not be able to use this software after it has expired." );
-			strcpy ( g_welcomeLinkUrl, "https://vrquest.com/us/contact" );
-			strcpy ( g_welcomeImageUrl, "" );
-		}
-	}
-	#endif
-	*/
-
-	// detect if steam review reminder is required
-	#ifndef VRTECH
-	//Against Steam Policy!
-	//if (g.reviewRequestReminder != 0)
-	//{
-	//	if (g.reviewRequestMinuteCounter > 60 * 20 )   // 20 hours
-	//	{
-	//		bNewsIsAvailable = true;
-	//		strcpy(g_welcomeText, "");
-	//		strcpy(g_welcomeLinkUrl, "");
-	//		strcpy(g_welcomeImageUrl, "");
-	//		extern bool g_bOfferSteamReviewReminder;
-	//		g_bOfferSteamReviewReminder = true;
-	//		g.reviewRequestReminder = 0;
-	//	}
-	//}
-	#endif
-
-	/*
-	#ifdef WICKEDENGINE
-	if (g_bRunningForFirstTime == true)
-	{
-		// do not show announcement the first time we run
-		bNewsIsAvailable = false;
-	}
-	#endif
-	*/
-
-	/* old
-	// if no news, skip the welcome dialog
-	if ( bNewsIsAvailable == true )
-	{
-		// overwrite default with announcement image
-		image_setlegacyimageloading(true);
-		LoadImage ( g_welcomeImageUrl, g.editorimagesoffset+64 );
-		if ( ImageExist ( g.editorimagesoffset+64 ) == 0 ) 
-		{
-			// sometimes the image is download corrupt!
-			strcpy ( g_welcomeImageUrl, g.fpscrootdir_s.Get() );
-			#ifdef PRODUCTV3
-			strcat ( g_welcomeImageUrl, "\\languagebank\\english\\artwork\\welcome-assets\\vrquest-news-banner.png" );
-			#else
-			#ifdef WICKEDENGINE
-			strcat(g_welcomeImageUrl, "\\Files\\languagebank\\english\\artwork\\welcome-assets\\gameguru-news-banner.jpg");
-			#else
-			strcat(g_welcomeImageUrl, "\\languagebank\\english\\artwork\\welcome-assets\\gameguru-news-banner.png");
-			#endif
-			#endif
-			LoadImage ( g_welcomeImageUrl, g.editorimagesoffset+64 );
-		}
-		image_setlegacyimageloading(false);
-		g_welcomeCycle = 0; if ( strlen(g_welcomeLinkUrl) > 0 ) g_welcomeCycle = 1;		
-	}
-	*/
 
 	// false will skip the dialog altogether
 	return false;// bNewsIsAvailable;
@@ -2015,25 +1510,12 @@ void welcome_announcements_steamreview_page(int iHighlightingButton)
 
 void welcome_announcements_page(int iHighlightingButton)
 {
-	// For GameGuru Classic - Steam Review Reminder
-	#ifndef VRTECH
-	//Against Steam Policy!
-	//extern bool g_bOfferSteamReviewReminder;
-	//if (g_bOfferSteamReviewReminder == true)
-	//{
-	//	welcome_announcements_steamreview_page(iHighlightingButton);
-	//	return;
-	//}
-	#endif
-
 	// announcement system can also offer user option to update
-	#ifdef WICKEDENGINE
 	extern bool g_bOfferLatestUpdate;
 	if (g_bOfferLatestUpdate==true)
 	{
 		PasteImage(g.editorimagesoffset + 8, g_welcome.iTopLeftX, g_welcome.iTopLeftY+50);
 	}
-	#endif
 
 	// draw page
 	int iID = 0;
@@ -2109,11 +1591,7 @@ void welcome_announcements_page(int iHighlightingButton)
 	}
 
 	// regular CONTIUNUE(LINK) or UPDATE OFFER
-	#ifdef WICKEDENGINE
 	if (g_bOfferLatestUpdate == true)
-	#else
-	if (0)
-	#endif
 	{
 		// offer latest update
 		if (g_iSpecialIDEForViewingTestAnnouncements == 2 )
@@ -2153,12 +1631,8 @@ void welcome_announcements_page(int iHighlightingButton)
 		}
 
 		// control page
-#ifdef WICKEDENGINE
 		//PE: Take input directly so cant be blocked.
 		if (ImGui::IsMouseDown(0) && t.inputsys.mclickreleasestate == 0)
-#else
-		if (t.inputsys.mclick == 1 && t.inputsys.mclickreleasestate == 0)
-#endif
 		{
 			if (iHighlightingButton == 1)
 			{
@@ -2173,79 +1647,6 @@ void welcome_announcements_page(int iHighlightingButton)
 		}
 	}
 }
-
-/* old announcement system (for Classic and MAX)
-void welcome_announcements_page ( int iHighlightingButton )
-{
-	// draw page
-	int iID = 0;
-	welcome_text ( "Latest News", 5, 50, 8, 192, true, false );
-	if (ImageExist(g.editorimagesoffset+64) == 1)
-	{
-		welcome_drawrotatedimage(g.editorimagesoffset+64, 50, 18, 0, 0, 0, false);
-	}
-	int iCharCount = 0;
-	int iLineIndex = 1;
-	char pTextToShow[1024];
-	strcpy ( pTextToShow, g_welcomeText );
-	char pLine1[1024]; strcpy ( pLine1, "" );
-	char pLine2[1024]; strcpy ( pLine2, "" );
-	char pLine3[1024]; strcpy ( pLine3, "" );
-	char pLine4[1024]; strcpy ( pLine4, "" );
-	char pLine5[1024]; strcpy ( pLine5, "" );
-	char pWorkLine[1024]; strcpy ( pWorkLine, "" );
-	for ( int n = 0; n < strlen(pTextToShow); n++ )
-	{
-		iCharCount++;
-		if ( iCharCount > 65 && (pTextToShow[n] == ' ' || pTextToShow[n] == ',' || pTextToShow[n] == '.' || pTextToShow[n] == '"') )
-		{
-			if ( iLineIndex == 1 ) { strcpy ( pLine1, pTextToShow ); pLine1[n+1] = 0; }
-			if ( iLineIndex == 2 ) { strcpy ( pLine2, pTextToShow ); pLine2[n+1] = 0; }
-			if ( iLineIndex == 3 ) { strcpy ( pLine3, pTextToShow ); pLine3[n+1] = 0; }
-			if ( iLineIndex == 4 ) { strcpy ( pLine4, pTextToShow ); pLine4[n+1] = 0; }
-			strcpy ( pWorkLine, pTextToShow );
-			strcpy ( pTextToShow, pWorkLine+n+1 ); n = 0;
-			iCharCount = 0;
-			iLineIndex++;
-			if ( iLineIndex == 5 ) break;
-		}
-	}
-	if ( iLineIndex == 2 ) strcpy ( pLine2, pTextToShow );
-	if ( iLineIndex == 3 ) strcpy ( pLine3, pTextToShow );
-	if ( iLineIndex == 4 ) strcpy ( pLine4, pTextToShow );
-	if ( iLineIndex == 5 ) strcpy ( pLine5, pTextToShow );
-
-	welcome_text ( pLine1, 1, 50, 56, 192, true, false );
-	welcome_text ( pLine2, 1, 50, 61, 192, true, false );
-	welcome_text ( pLine3, 1, 50, 66, 192, true, false );
-	welcome_text ( pLine4, 1, 50, 71, 192, true, false );
-	welcome_text ( pLine5, 1, 50, 76, 192, true, false );
-	if ( g_welcomeCycle == 0 ) 
-	{ 
-		iID = 1; welcome_textinbox ( iID, "EXIT", 1, 50, 85, g_welcomebutton[iID].alpha );
-	}
-	else
-	{
-		iID = 1; welcome_textinbox ( iID, "EXIT", 1, 100-35, 85, g_welcomebutton[iID].alpha );
-		iID = 2; welcome_textinbox ( iID, "GOTO LINK", 1, 35, 85, g_welcomebutton[iID].alpha ); 
-	}
-
-	// control page
-	if ( t.inputsys.mclick == 1 && t.inputsys.mclickreleasestate == 0 ) 
-	{
-		if ( iHighlightingButton == 1 ) 
-		{
-			t.tclosequick = 1;
-		}
-		if ( iHighlightingButton == 2 ) 
-		{
-			// jump to announcement link if there is one
-			ExecuteFile ( g_welcomeLinkUrl,"","",0 );
-			t.tclosequick = 1;
-		}
-	}
-}
-*/
 
 void welcome_savestandalone_init ( void )
 {
@@ -2345,7 +1746,6 @@ void welcome_savestandalone_page ( int iHighlightingButton )
 		if ( iHighlightingButton == 3 ) 
 		{
 			// change location of save standalone game
-			#ifdef FPSEXCHANGE
 			OpenFileMap ( 1,"FPSEXCHANGE" );
 			SetFileMapString ( 1, 1000, g.exedir_s.Get() );
 			SetFileMapDWORD ( 1, 424, 2 );
@@ -2355,7 +1755,6 @@ void welcome_savestandalone_page ( int iHighlightingButton )
 				SetEventAndWait ( 1 );
 			}
 			t.returnstring_s = GetFileMapString(1, 1000);
-			#endif
 			if ( strlen(t.returnstring_s.Get()) > 0 )
 				g.exedir_s = t.returnstring_s;
 		}
@@ -2399,7 +1798,6 @@ void welcome_runloop ( int iPageIndex )
 	t.inputsys.mclickreleasestate = 0;
 }
 
-#ifdef VRTECH
 bool welcome_cycle(void)
 {
 	// carry page running from store
@@ -2411,10 +1809,8 @@ bool welcome_cycle(void)
 		return true;
 	}
 
-#ifdef WICKEDENGINE
 	//Add a modal window so cant click anything else then this screen:
 	ImGui::OpenPopup("##HiddenModalWindow");
-	//ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
 	ImGui::SetNextWindowPos(ImVec2(-100.0, 1) + ImGui::GetMainViewport()->Pos, ImGuiCond_Always);
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowViewport(viewport->ID);
@@ -2424,7 +1820,6 @@ bool welcome_cycle(void)
 		ImGui::Text("");
 		ImGui::EndPopup();
 	}
-#endif
 
 	// quit state
 	int iQuitState = 0;
@@ -2445,12 +1840,10 @@ bool welcome_cycle(void)
 			// leave loop, which was escaped or triggered
 			iQuitState = 1;// bStayInsideLoop = false;
 
-			#ifdef WICKEDENGINE
 			extern bool bBlockImGuiUntilNewFrame;
 			extern bool bImGuiRenderWithNoCustomTextures;
 			bBlockImGuiUntilNewFrame = true;
 			bImGuiRenderWithNoCustomTextures = true; //PE: We still need to use AddRectFilled, but cant have any custom textures or we crash. without we can see 3D from wicked for one frame.
-			#endif
 		}
 	}
 	
@@ -2459,13 +1852,10 @@ bool welcome_cycle(void)
 		if ( t.inputsys.mclick == 0 ) t.inputsys.mclickreleasestate = 0;
 		if ( t.inputsys.ignoreeditorintermination == 0 )
 		{
-			#ifdef FPSEXCHANGE
 			if ( GetFileMapDWORD( 1, 908 ) == 1 )  iQuitState=1;
-			#endif
 		}
 		if ( iPageIndex != WELCOME_EXITAPP )
 		{
-			#ifdef FPSEXCHANGE
 			if ( GetFileMapDWORD( 1, 516 ) > 0 )  iQuitState = 1;
 			if ( GetFileMapDWORD( 1, 400 ) == 1 ) { t.interactive.active = 0  ; iQuitState = 1; }
 			if ( GetFileMapDWORD( 1, 404 ) == 1 ) { t.interactive.active = 0  ; iQuitState = 1; }
@@ -2473,21 +1863,7 @@ bool welcome_cycle(void)
 			if ( GetFileMapDWORD( 1, 434 ) == 1 ) { t.interactive.active = 0  ; iQuitState = 1; }
 			if ( GetFileMapDWORD( 1, 758 ) != 0 ) { t.interactive.active = 0  ; iQuitState = 1; }
 			if ( GetFileMapDWORD( 1, 762 ) != 0 ) { t.interactive.active = 0  ; iQuitState = 1; }
-			#endif
 		}
-
-		// paste backdrop (scaled to fit client window)
-		#ifdef WICKEDENGINE
-		// No backdrop in wicked MAX
-		#else
-		Sprite ( 123, -100000, -100000, g.editorimagesoffset+12 );
-		#if defined(ENABLEIMGUI) && !defined(USEOLDIDE) 
-		SizeSprite(123, GetChildWindowWidth(0) + 1, GetChildWindowHeight(-2) );
-		#else
-		SizeSprite(123, GetChildWindowWidth(0) + 1, GetChildWindowHeight(0) + 11 );
-		#endif
-		PasteSprite ( 123, 0, 0 );
-		#endif
 
 		// paste page panel
 		if (ImageExist(g.editorimagesoffset + 8) == 1)
@@ -2497,14 +1873,9 @@ bool welcome_cycle(void)
 
 		// get mouse coordinate for control
 #if defined(ENABLEIMGUI) && !defined(USEOLDIDE) 
-#ifdef WICKEDENGINE
 		//PE: Get input directly so other windows cant block button clicks.
 		float tinputsystemXmouse = ((float)GetChildWindowWidth(-1) / (float)GetDisplayWidth()) * ImGui::GetMousePos().x;
 		float tinputsystemYmouse = ((float)GetChildWindowHeight(-1) / (float)GetDisplayHeight()) * ImGui::GetMousePos().y;
-		#else
-		float tinputsystemXmouse = ((float) GetChildWindowWidth(-1)  / (float)GetDisplayWidth()) * t.inputsys.xmouse;
-		float tinputsystemYmouse = ((float) GetChildWindowHeight(-1) / (float)GetDisplayHeight()) * t.inputsys.ymouse;
-		#endif
 #else
 		float tinputsystemXmouse = t.inputsys.xmouse + 0.0;
 		float tinputsystemYmouse = t.inputsys.ymouse - 30.0;
@@ -2528,7 +1899,6 @@ bool welcome_cycle(void)
 		// display correct page
 		if ( iPageIndex == WELCOME_SERIALCODE ) welcome_serialcode_page ( iHighlightingButton );
 		if ( iPageIndex == WELCOME_WHATYOUGET ) welcome_whatyouget_page ( iHighlightingButton );
-		//if ( iPageIndex == WELCOME_CHANGELOG ) welcome_changelog_page ( iHighlightingButton );
 		if ( iPageIndex == WELCOME_MAIN ) welcome_main_page ( iHighlightingButton );
 		if ( iPageIndex == WELCOME_MAINVR ) welcome_mainvr_page ( iHighlightingButton );
 		if ( iPageIndex == WELCOME_PLAY ) g_welcomesystemclosedown = welcome_play_page ( iHighlightingButton );
@@ -2560,7 +1930,6 @@ bool welcome_cycle(void)
 	// continue internal loop
 	return false;
 }
-#endif
 
 void welcome_show ( int iPageIndex )
 {
@@ -2581,7 +1950,6 @@ char cDownloadStoreUserId[256];
 char cDownloadStoreUserHash[256];
 
 extern bool bDownloadStore_Window;
-//#define MAXSTOREDATESIZE 32760
 #define MAXSTOREDATESIZE 131072
 char pDataReturned[MAXSTOREDATESIZE+8];
 char pDatatmp[MAXSTOREDATESIZE + 8];
@@ -2621,7 +1989,6 @@ int iDownloadLocation = 0;
 #endif
 
 
-#ifndef PRODUCTCLASSIC
 void imgui_download_store( void )
 {
 	if (!bDownloadStore_Window) return;
@@ -2665,14 +2032,9 @@ void imgui_download_store( void )
 			// break up response string
 			char* pChop;
 			strcpy(pDatatmp, "");
-			/*
-			{"success":true,"login_url":"https://tgcstore.net/auth/login?token=f081ca9c77fd76aadcf10cb90016411c","session_token":"f081ca9c77fd76aadcf10cb90016411c"}		
-			*/
-			//if ((pChop = strstr(pDataReturned, "\"status\":\"success\"")) != NULL)
 			if (( pChop = (char *) pestrcasestr(pDataReturned, "\"success\":true")) != NULL)
 			{
 				// success
-				//pChop += strlen("\"status\":\"success\"");
 				pChop += strlen("\"success\":true");
 				char pSearchForToken[256];
 				strcpy(pSearchForToken, "\"login_url\"\0");
@@ -2705,10 +2067,6 @@ void imgui_download_store( void )
 
 		if (strlen(cDownloadStoreLoginUrl) <= 0)
 		{
-			//PE: Debug
-			//if(pDataReturned > 0 && *pDataReturned != 0 )
-			//	strncpy(cDownloadStoreError, pDataReturned,8190);
-			//PE: Failed.
 			bDownloadStoreError = true;
 		}
 		iDownloadStoreProgress++;
@@ -2724,7 +2082,6 @@ void imgui_download_store( void )
 			memset(pDataReturned, 0, sizeof(pDataReturned));
 			dwDataReturnedSize = 0;
 			char cUrl[256];
-			//sprintf(cUrl, "/api/auth/session/status?k=%s&token=%s", NEWSTOREKEY , cDownloadStoreSessionToken);
 			sprintf(cUrl, "/api/auth/session/status?token=%s", cDownloadStoreSessionToken);
 			UINT iError = StoreOpenURLForDataOrFile(NULL, pDataReturned, &dwDataReturnedSize, "", "GET", cUrl, NULL);
 			if (iError <= 0 && *pDataReturned != 0 && strchr(pDataReturned, '{') != 0)
@@ -2734,14 +2091,9 @@ void imgui_download_store( void )
 				strcpy(pDatatmp, "");
 				strcpy(cDownloadStoreUserHash, "");
 				strcpy(cDownloadStoreUserId, "");
-				/*
-				{"success":true,"logged_in":false,"user_id":null,"user_hash":null}
-				*/
-				//if ((pChop = strstr(pDataReturned, "\"status\":\"success\"")) != NULL)
 				if ((pChop = (char *)pestrcasestr(pDataReturned, "\"success\":true")) != NULL)
 				{
 					// success
-					//pChop += strlen("\"status\":\"success\"");
 					pChop += strlen("\"success\":true");
 					char pSearchForToken[256];
 					strcpy(pSearchForToken, "\"logged_in\"\0");
@@ -2824,7 +2176,6 @@ void imgui_download_store( void )
 		dwDataReturnedSize = 0;
 		char cUrl[1024];
 
-		//sprintf(cUrl, "/api/purchases/download?userid=%s&hash=%s&app=GGMax&app_version=V0.1&sc=%s", cDownloadStoreUserId, cDownloadStoreUserHash , NEWSTOREPASSWORD);
 		sprintf(cUrl, "/api/purchases/download?user_id=%s&hash=%s&app=GGMax", cDownloadStoreUserId, cDownloadStoreUserHash);
 		UINT iError = StoreOpenURLForDataOrFile(NULL, pDataReturned, &dwDataReturnedSize, "", "GET", cUrl, pDownloadFile);
 		if (iError > 0)
@@ -2966,7 +2317,6 @@ void imgui_download_store( void )
 
 					//Also get checksum file.
 					//We have 2 locations to download to and have checksums for.
-					//cStr checksumfile = cStr("downloads\\storechecksum") + cStr(iDownloadLocation) + cStr(".lst");
 					//PE: Use same checksum file so it dont matter if you download local or in doc folder.
 					cStr checksumfile = "downloads\\storechecksum.lst";
 					hFile = GG_CreateFile(checksumfile.Get(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -3306,7 +2656,7 @@ void imgui_download_store( void )
 						replaceAll(url, "http://gcs-product-media.fra1.digitaloceanspaces.com", "");
 						strcpy(cUrl, url.c_str());
 						LPSTR pPassInURL = cUrl;
-						//LPSTR pPassInURL = "/data-files/ggmax/36084_2021-09-18_14-15_894962614.zip?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=J7LHIX3DWJWZH2HDPTED%2F20220525%2Ffra1%2Fs3%2Faws4_request&X-Amz-Date=20220525T094657Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=751d98de71f9936efa74b38f0ab236bd9d374a58fbff51af02e5d3c30e1c226f";
+						// pPassInURL Example = "/data-files/ggmax/36084_2021-09-18_14-15_894962614.zip?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=J7LHIX3DWJWZH2HDPTED%2F20220525%2Ffra1%2Fs3%2Faws4_request&X-Amz-Date=20220525T094657Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=751d98de71f9936efa74b38f0ab236bd9d374a58fbff51af02e5d3c30e1c226f";
 						UINT iError = StoreOpenURLForDataOrFile("gcs-product-media.fra1.digitaloceanspaces.com", pDataReturned, &dwDataReturnedSize, "", "GET", pPassInURL, pZipFile);
 						if (iError > 0)
 						{
@@ -3400,8 +2750,6 @@ void imgui_download_store( void )
 											ExtractFileFromBlock(1, pZipName, FullPath);
 
 											char cDestinationFullPath[256];
-											//strcpy(cDestinationFullPath, cZipDestination);
-											//GG_GetRealPath(&cDestinationFullPath[0], 1);
 											strcpy(cDestinationFullPath, StoreWriteFolder);
 											strcat(cDestinationFullPath, cZipDestination);
 											std::string stmp = cDestinationFullPath;
@@ -3585,9 +2933,7 @@ void imgui_download_store( void )
 		ImGui::End();
 	}
 }
-#endif
 
-#ifndef PRODUCTCLASSIC
 UINT StoreOpenURLForDataOrFile(LPSTR pServer, LPSTR pDataReturned, DWORD* pReturnDataSize, LPSTR pPostData, LPSTR pVerb, LPSTR urlWhere, LPSTR pLocalFileForImageOrNews)
 {
 	// default is main store 
@@ -3756,4 +3102,3 @@ UINT StoreOpenURLForDataOrFile(LPSTR pServer, LPSTR pDataReturned, DWORD* pRetur
 	*pReturnDataSize = dwDataLength;
 	return iError;
 }
-#endif

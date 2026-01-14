@@ -80,8 +80,6 @@ using namespace wiScene;
 using namespace wiFont;
 using namespace wiECS;
 
-//void ImportModel_OBJ(const std::string& fileName, Scene& scene);
-
 // Globals
 GlobStruct							g_Glob;
 GlobStruct*							g_pGlob = &g_Glob;
@@ -134,9 +132,6 @@ extern ImVec2 renderTargetAreaSize;
 extern bool bImGuiInTestGame;
 extern int g_iActivelyUsingVRNow;
 extern bool bActivateStandaloneOutline;
-
-// extern functions (ideally these dependencies are moved away from the master code)
-//extern void GGVR_SetHandObjectForMAX(int iLeftOrRightHand, float fHandX, float fHandY, float fHandZ, float fHandAngX, float fHandAngY, float fHandAngZ);
 
 enum EDITORSTENCILREF
 {
@@ -228,10 +223,6 @@ Entity CreateCubeMesh( std::string name, Scene& scene )
 	MaterialComponent& material = *scene.materials.GetComponent(materialEntity);
 
 	material.baseColor = XMFLOAT4(1,1,1, 1);
-	//material.textures[MaterialComponent::BASECOLORMAP].name = "";
-	//material.textures[MaterialComponent::DISPLACEMENTMAP].name = "";
-	//material.textures[MaterialComponent::NORMALMAP].name = obj_material.normal_texname;
-	//material.textures[MaterialComponent::SURFACEMAP].name = obj_material.specular_texname;
 	material.metalness = 0;
 	material.roughness = 1;
 
@@ -309,6 +300,12 @@ void CreateVRControllerObjects( void )
 	wiScene::GetScene().Merge( localScene );
 }
 
+__declspec(noinline) void ForceCrash_AccessViolation()
+{
+	volatile int* p = nullptr;
+	*p = 123; // writes to null -> 0xC0000005
+}
+
 void Master::Initialize()
 {
 #ifdef OPTICK_ENABLE
@@ -322,18 +319,15 @@ void Master::InitializeSecondaries()
 #ifdef OPTICK_ENABLE
 	OPTICK_EVENT();
 #endif
-	initializedSecondaries = true;
 
+	initializedSecondaries = true;
 	infoDisplay.active = false;
 	infoDisplay.watermark = false;// true;
 	infoDisplay.fpsinfo = false;// true;
 	infoDisplay.resolution = false;// true;
 	master_renderer = &masterrenderer;
-	//MessageBoxA(NULL, "masterrenderer.Load();", "Debug", 0);
 	masterrenderer.Load();
 	masterrenderer.setMSAASampleCount(1);
-	//masterrenderer.setOutlineEnabled(true); //PE: Enable cartoon outline shader.
-	//MessageBoxA(NULL, "ActivatePath(&masterrenderer);", "Debug", 0);
 	ActivatePath(&masterrenderer);
 	masterrenderer.Set3DResolution( masterrenderer.GetPhysicalWidth(), masterrenderer.GetPhysicalHeight() );
 
@@ -513,11 +507,6 @@ void Master::InitializeSecondaries()
 	// continues in background, does not wait until finished before launching MAX (small chance of trying to use an old X file first time!)
 	// better down the load if this popped up as an IMGUI prompt showing this process happening on startup
 	// with an option in the dialog and in the editor settings to switch off this activity by default
-
-	/*LB: no longer needed as we approach EA
-	//PE: FASTLOAD - This takes 5 sec here ?
-	HINSTANCE hinstance = ShellExecuteA(NULL, "open", "Guru-Converter.exe", "", "", SW_SHOWDEFAULT);
-	*/
 }
 
 void camerahook_domydemostuff(float fX, float fY, float fZ, float fAX, float fAY, float fAZ)
@@ -631,9 +620,6 @@ void Master::Update(float dt)
 	// super update to keep things ticking along during setup and regular loop
 	__super::Update(dt);
 
-	// failed attempt to uyse an intro video for splash
-	//static int iIntroVideoID = -999;
-
 	// push splash render to end of function FLICKER - MAKE THIS WORK!!!!
 	static bool bCustomSplash = false;
 	wiImageParams fx;
@@ -664,17 +650,6 @@ void Master::Update(float dt)
 
 		// until we are loaded and ready, present splash screen
 		timestampactivity(0, "initial setup");
-		//CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(); now below
-		//wiRenderer::GetDevice()->RenderPassBegin(&swapChain, cmd);
-		//wiImage::SetCanvas(canvas, cmd);
-		//wiFont::SetCanvas(canvas, cmd);
-		//Viewport viewport;
-		//viewport.Width = (float)swapChain.desc.width;
-		//viewport.Height = (float)swapChain.desc.height;
-		//wiRenderer::GetDevice()->BindViewports(1, &viewport, cmd);
-		//wiFontParams params;
-		//params.posX = 5.f;
-		//params.posY = 5.f;
 
 		// load and show MAX splash
 		timestampactivity(0, "splash screen");
@@ -683,7 +658,7 @@ void Master::Update(float dt)
 			// determine if in editor or game/standalone
 			bAreWeAEditor = true;
 			std::string appname = Appname();
-			const char *pestrcasestr(const char *arg1, const char *arg2);
+			const char* pestrcasestr(const char* arg1, const char* arg2);
 			if (!(pestrcasestr(appname.c_str(), "guru-mapeditor.exe") || pestrcasestr(appname.c_str(), "vr quest app.exe") || pestrcasestr(appname.c_str(), "gamegurumax.exe")))
 				bAreWeAEditor = false;
 
@@ -727,7 +702,7 @@ void Master::Update(float dt)
 					SetDir(pRealWritableArea);
 					MakeDirectory("buildingeditor");
 					SetDir(pOldDir.Get());
-				}		
+				}
 
 				// are we non-steam
 				SetDir("..");
@@ -738,11 +713,11 @@ void Master::Update(float dt)
 
 				//force non-Steam version (some installations are NOT detecting 'GameGuru MAX Updater.exe')
 				//#define FORCENONSTEAMAUTHENTICATION
-				#ifdef FORCENONSTEAMAUTHENTICATION
+#ifdef FORCENONSTEAMAUTHENTICATION
 				timestampactivity(0, "forcing non-Steam authentication");
 				timestampactivity(0, pCurrentDirChecking.Get());
 				g_bUpdateAppAvailable = true;
-				#endif
+#endif
 
 				// test for Steam functionality 
 				///#define TESTSTEAMFREETRIAL
@@ -750,14 +725,14 @@ void Master::Update(float dt)
 				// if steam, do auth check
 				if (g_bUpdateAppAvailable == false)
 				{
-					#ifndef GGMAXEDU
+#ifndef GGMAXEDU
 					// Steam Purchased (Owned)
 					char pInstallSteamTrialFile[MAX_PATH];
 					strcpy(pInstallSteamTrialFile, pOldDir.Get());
 					strcat(pInstallSteamTrialFile, "\\installsteamtrial.dat");
 					char pInstallSteamFile[MAX_PATH];
 					strcpy(pInstallSteamFile, pOldDir.Get());
-					strcat(pInstallSteamFile,"\\installsteam.dat");
+					strcat(pInstallSteamFile, "\\installsteam.dat");
 					GG_GetRealPath(pInstallSteamFile, 0);
 					timestampactivity(0, "GameGuru Steam version check");
 					bool bGameGuruMAXOwned = false;
@@ -770,11 +745,11 @@ void Master::Update(float dt)
 						{
 							SteamInitClient();
 
-							#ifdef TESTSTEAMFREETRIAL
+#ifdef TESTSTEAMFREETRIAL
 							if (SteamApps()->BIsSubscribedApp(1247289) == true) // dummy app, forces the free trial mode
-							#else
+#else
 							if (SteamApps()->BIsSubscribedApp(1247290) == true) //1247290) == true) // APPID = 1247290 = GameGuru MAX
-							#endif
+#endif
 							{
 								// yes, user owns Steam version :)
 								timestampactivity(0, "GameGuru MAX Steam version owned!");
@@ -834,7 +809,7 @@ void Master::Update(float dt)
 
 							// update install steam date stamp (so can run afterwards offline for 30 days - or 7 days if free trial)
 							// do not create the "pInstallSteamFile" file when running free trial
-							if(g_bFreeTrialVersion==false || (g_bFreeTrialVersion==true && FileExist(pInstallSteamFile)==0))
+							if (g_bFreeTrialVersion == false || (g_bFreeTrialVersion == true && FileExist(pInstallSteamFile) == 0))
 							{
 								if (FileExist(pInstallSteamFile) == 1) DeleteFileA(pInstallSteamFile);
 								OpenToWrite(1, pInstallSteamFile);
@@ -846,7 +821,7 @@ void Master::Update(float dt)
 								WriteString(1, pDateString);
 								char pDateChecksum[MAX_PATH];
 								int iDayTrick1 = (now->tm_mday - now->tm_mon);
-								int iDayTrick2 = (iDayTrick1*iDayTrick1) % 31;
+								int iDayTrick2 = (iDayTrick1 * iDayTrick1) % 31;
 								int iChecksumValue = (now->tm_year * 1165) + (now->tm_mon * 412) + (iDayTrick2 * 9);
 								sprintf(pDateChecksum, "%d", iChecksumValue);
 								WriteString(1, pDateChecksum);
@@ -883,9 +858,6 @@ void Master::Update(float dt)
 							}
 							CloseFile(1);
 						}
-
-						// shutdown Steam connection after check
-						//SteamAPI_Shutdown(); stay open now we have workshop support :)
 					}
 					else
 					{
@@ -899,7 +871,7 @@ void Master::Update(float dt)
 					extern int g_iFreeTrialDaysLeft;
 					g_iFreeTrialDaysLeft = 0;
 					bool bReadSteamDateFile = false;
-					if (iSteamErrorCode > 0 || g_bFreeTrialVersion==true)
+					if (iSteamErrorCode > 0 || g_bFreeTrialVersion == true)
 					{
 						// before declare auth error, check 30 day offline system, allow if have previously logged into Steam during 30 days
 						// or if a free trial and need to work out days left
@@ -922,7 +894,7 @@ void Master::Update(float dt)
 									int iWasM = (iDateAsValueLast - (iWasY * 380)) / 31;
 									int iWasD = iDateAsValueLast - (iWasY * 380) - (iWasM * 31);
 									int iDayTrick1 = (iWasD - iWasM);
-									int iDayTrick2 = (iDayTrick1*iDayTrick1) % 31;
+									int iDayTrick2 = (iDayTrick1 * iDayTrick1) % 31;
 									int iChecksumValueShouldBe = (iWasY * 1165) + (iWasM * 412) + (iDayTrick2 * 9);
 									int iChecksumValueIs = atoi(pDateChecksum);
 									if (iChecksumValueIs == iChecksumValueShouldBe)
@@ -933,7 +905,7 @@ void Master::Update(float dt)
 										if (g_bFreeTrialVersion == true)
 										{
 											// MAX free trial
-											g_iFreeTrialDaysLeft = 7 - (iDateAsValueNow-iDateAsValueLast);
+											g_iFreeTrialDaysLeft = 7 - (iDateAsValueNow - iDateAsValueLast);
 											if (g_iFreeTrialDaysLeft < 0) g_iFreeTrialDaysLeft = 0;
 											iSteamErrorCode = 0;
 										}
@@ -975,14 +947,14 @@ void Master::Update(float dt)
 						timestampactivity(0, pErrorStr);
 						PostQuitMessage(0);
 					}
-					#else
+#else
 					// can use an Educational Authenticator here (i.e. license key) if needed in the future..
-					#endif
+#endif
 				}
 
 				// Init EOS SDK
-				#ifdef GGMAXEDU
-				#ifdef GGMAXEPIC
+#ifdef GGMAXEDU
+#ifdef GGMAXEPIC
 				timestampactivity(0, "Initialize Epic Online Services API");
 				EOS_InitializeOptions SDKOptions = {};
 				SDKOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
@@ -1017,7 +989,7 @@ void Master::Update(float dt)
 						{
 							extern bool bSpecialStandalone;
 							extern bool bSpecialEditorFromStandalone;
-							if (bSpecialStandalone == true || bSpecialEditorFromStandalone == true || g.iStandaloneIsReloading > 0 )
+							if (bSpecialStandalone == true || bSpecialEditorFromStandalone == true || g.iStandaloneIsReloading > 0)
 							{
 								// editor calling itself
 								timestampactivity(0, "GameGuru MAX Calling Itself.");
@@ -1037,7 +1009,7 @@ void Master::Update(float dt)
 									// run via Epic Launcher, so use exchange code
 									timestampactivity(0, "[EOS SDK] run via Epic Launcher, so use exchange code...");
 									char pExchangeCode[MAX_PATH];
-									strcpy(pExchangeCode, findexchangecode+strlen("-AUTH_PASSWORD="));
+									strcpy(pExchangeCode, findexchangecode + strlen("-AUTH_PASSWORD="));
 									for (int n = 0; n < strlen(pExchangeCode); n++)
 									{
 										if (pExchangeCode[n] == ' ')
@@ -1112,8 +1084,8 @@ void Master::Update(float dt)
 					timestampactivity(0, "GameGuru MAX Epic version not owned - switching to free trial mode!");
 					g_bFreeTrialVersion = true;
 				}
-				#endif
-				#endif
+#endif
+#endif
 			}
 
 			// and then get the correct splash
@@ -1128,9 +1100,21 @@ void Master::Update(float dt)
 			else
 				pFolderToUse = "uiv3";
 			if (bSpecialEditorFromStandalone == true)
+			{
 				sprintf(fileName, "Files\\editors\\%s\\loadingsplash-fromstandalone.jpg", pFolderToUse);
+			}
 			else
-				sprintf(fileName, "Files\\editors\\%s\\loadingsplash.jpg", pFolderToUse);
+			{
+				if (bAreWeAEditor == true)
+				{
+					// use higher quality PNG when loading MAX!
+					sprintf(fileName, "Files\\editors\\%s\\loadingsplash.png", pFolderToUse);
+				}
+				else
+				{
+					sprintf(fileName, "Files\\editors\\%s\\loadingsplash.jpg", pFolderToUse);
+				}
+			}
 
 			// Do we have a storyboard ?
 			if ( bAreWeAEditor == false )
@@ -1218,7 +1202,6 @@ void Master::Update(float dt)
 			}
 			b_gSplashTextureLoaded = true;
 			extern bool bSpecialStandalone;
-			//extern bool bSpecialEditorFromStandalone;
 			if (bAreWeAEditor == true && bSpecialStandalone==false && bSpecialEditorFromStandalone==false)
 			{
 				if (g_bFreeTrialVersion == true)
@@ -1230,185 +1213,10 @@ void Master::Update(float dt)
 				}
 			}
 		}
-		/* now below
-		if (g_pSplashTexture.IsValid())
-		{
-			if (bCustomSplash)
-			{
-				float screenheight = canvas.GetLogicalHeight();
-				float screenwidth = canvas.GetLogicalWidth();
-				float img_w = g_pSplashTexture.desc.Width;
-				float img_h = g_pSplashTexture.desc.Height;
-				float fRatio = 1.0f / (img_h / img_w);
-				img_h = screenheight;
-				img_w = screenheight * fRatio;
-				if (img_w < screenwidth)
-				{
-					img_w = screenwidth;
-					img_h = screenwidth * (1.0f / ((float)g_pSplashTexture.desc.Width / (float)g_pSplashTexture.desc.Height));
-				}
-				fx.disableFullScreen();
-				fx.pos.x = screenwidth * 0.5;
-				fx.pos.y = screenheight * 0.5;
-				fx.pivot.x = 0.5;
-				fx.pivot.y = 0.5;
-				fx.siz.x = img_w;
-				fx.siz.y = img_h;
-			}
-			wiImage::Draw(&g_pSplashTexture, fx, cmd);
-		}
-		wiRenderer::GetDevice()->RenderPassEnd(cmd);
-		wiRenderer::GetDevice()->SubmitCommandLists();
-		*/
-
-		/* attempt to make a video intro while loading
-		ID3D11ShaderResourceView* lpIntroVideoTexture = NULL;
-		if (bAreWeAEditor == true)
-		{
-			// video intro at start of MAX - Dream It Build It Play It
-			static bool bUseIntroVideoSplash = true;
-			if (bUseIntroVideoSplash == true)
-			{
-				// load intro animation
-				for (int i = 1; i <= 32; i++)
-				{
-					if (AnimationExist(i) == 0) { iIntroVideoID = i; break; }
-				}
-				LPSTR pIntroVideoFile = "Files\\videobank\\MAX.mp4";
-				if (LoadAnimation(pIntroVideoFile, iIntroVideoID, g.videoprecacheframes, g.videodelayedload, 1) == true)
-				{
-					PlaceAnimation (iIntroVideoID, 0, 0, GetDisplayWidth() + 1, GetDisplayHeight() + 1);
-					PlayAnimation(iIntroVideoID);
-					Sleep(50); //Sleep so we get a video texture in the next call.
-					UpdateAllAnimation();
-				}
-				else
-				{
-					iIntroVideoID = -999;
-				}
-				bUseIntroVideoSplash = false;
-			}
-			else
-			{
-				// run intro animation
-				if (iIntroVideoID > 0)
-				{
-					extern void UpdateAllAnimation(void);
-					UpdateAllAnimation();
-					if (AnimationExist(iIntroVideoID))
-					{
-						if (AnimationPlaying(iIntroVideoID) == 1)
-						{
-							// grab active ptr to animation texture data
-							lpIntroVideoTexture = GetAnimPointerView(iIntroVideoID);
-						}
-					}
-				}
-			}
-		}
-		else
-		if (lpIntroVideoTexture != NULL)
-		{
-			//ImGuiWindow* window = ImGui::GetCurrentWindow();
-			//const ImRect image_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(100,100));
-			//window->DrawList->AddImage((ImTextureID)lpIntroVideoTexture, image_bb.Min, image_bb.Max, uv0, uv1, ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
-			//with current system need IMGUI to render Directly using DX11 calls using the IMGUI Hook in Wicked Engine
-			//as there are no direct methods in Wicked Engine to take lpIntroVideoTexture and render it..
-			/////////////////////
-			// could I copy the texture data into the existing splash texture?
-			//float fVideoW = GetAnimWidth(iIntroVideoID);
-			//float fVideoH = GetAnimHeight(iIntroVideoID);
-			//SetRenderAnimToImage(iIntroVideoID, true);
-			//TextureDesc desc;
-			//desc.BindFlags = BIND_RENDER_TARGET | BIND_SHADER_RESOURCE;
-			//desc.Format = FORMAT_R16G16B16A16_FLOAT;
-			//desc.Width = internalResolution.x;
-			//desc.Height = internalResolution.y;
-			//desc.SampleCount = getMSAASampleCount();
-			//device->CreateTexture(&desc, nullptr, &rtParticleDistortion);
-			//TextureDesc desc;
-			//desc.BindFlags = BIND_SHADER_RESOURCE | BIND_UNORDERED_ACCESS | BIND_RENDER_TARGET;
-			//desc.Format = FORMAT_R11G11B10_FLOAT;
-			//desc.Width = internalResolution.x / 2;
-			//desc.Height = internalResolution.y / 2;
-			//desc.MipLevels = std::min(8u, (uint32_t)std::log2(std::max(desc.Width, desc.Height)));
-			//device->CreateTexture(&desc, nullptr, &rtSceneCopy);
-			//for (uint32_t i = 0; i < g_pSplashTexture.GetDesc().MipLevels; ++i)
-			//{
-				//int subresource_index;
-				//subresource_index = device->CreateSubresource(&g_pSplashTexture, SRV, 0, 1, i, 1);
-			//}
-			GraphicsDevice* device = wiRenderer::GetDevice();
-			static Texture stagingTex;
-			static bool bCreateIntroStageOnce = true;
-			if (bCreateIntroStageOnce == true)
-			{
-				TextureDesc staging_desc = g_pSplashTexture.GetDesc();
-				staging_desc.Usage = USAGE_STAGING;
-				staging_desc.CPUAccessFlags = CPU_ACCESS_READ | CPU_ACCESS_WRITE;
-				staging_desc.BindFlags = 0;
-				staging_desc.MiscFlags = 0;
-				staging_desc.MipLevels = 1;
-				staging_desc.layout = IMAGE_LAYOUT_COPY_SRC;
-				bool success = device->CreateTexture(&staging_desc, nullptr, &stagingTex);
-				bCreateIntroStageOnce = false;
-			}
-			uint32_t texWidth = stagingTex.GetDesc().Width;
-			uint32_t texHeight = stagingTex.GetDesc().Height;
-			Mapping mapping;
-			mapping._flags = Mapping::FLAG_WRITE;//Mapping::FLAG_READ;
-			mapping.size = texWidth * texHeight * sizeof(uint32_t);
-			device->Map(&stagingTex, &mapping);
-			if (mapping.data)
-			{
-				uint32_t pitch = mapping.rowpitch / sizeof(uint32_t);
-				for (uint32_t y = 0; y < texHeight; y++)
-				{
-					uint32_t index = y * pitch;
-					uint32_t* dataPtr = ((uint32_t*)mapping.data) + index;
-					for (uint32_t x = 0; x < texWidth; x++)
-					{
-						//uint32_t value = *dataPtr;
-						*dataPtr = (uint32_t)rand() % 9999999;
-						dataPtr++;
-					}
-				}
-				device->Unmap(&stagingTex);
-			}
-			//CommandList cmd2 = device->BeginCommandList();
-			//GPUBarrier barriers1[] = {
-			//	GPUBarrier::Image(&stagingTex, stagingTex.desc.layout, IMAGE_LAYOUT_COPY_DST, 0)
-			//};
-			//device->Barrier(barriers1, arraysize(barriers1), cmd);
-			device->CopyResource(&g_pSplashTexture, &stagingTex, cmd);
-			//GPUBarrier barriers2[] = {
-			//	GPUBarrier::Image(&stagingTex, IMAGE_LAYOUT_COPY_DST, stagingTex.desc.layout, 0)
-			//};
-			//device->Barrier(barriers2, arraysize(barriers2), cmd);
-			//device->SubmitCommandLists();
-			//device->WaitForGPU();
-			////////////////////
-			// intro video must not survive the regular running of MAX
-			if (iIntroVideoID > 0)
-			{
-				if (AnimationExist(iIntroVideoID))
-				{
-					if (AnimationPlaying(iIntroVideoID) == 0)
-					{
-						StopAnimation(iIntroVideoID);
-						DeleteAnimation(iIntroVideoID);
-						setCompletelyLoaded(true);
-						iIntroVideoID = -999;
-					}
-				}
-			}
-		}
-		*/
 	}
 	else
 	{
 		// when GG completely initialised, can proceed normally
-		//setCompletelyLoaded(true); // moved further down
 	}
 
 	// handle visual splash until not needed
@@ -1452,6 +1260,37 @@ void Master::Update(float dt)
 			}
 			wiImage::Draw(&g_pSplashTexture, fx, cmd);
 		}
+
+		// and overlay with a ratio corrected 'universal' logo for UltraWide goodness
+		if (bAreWeAEditor == true)
+		{ 
+			bool bUniversalLogo = true;
+			if (bUniversalLogo == true)
+			{
+				char logoFile[MAX_PATH];
+				sprintf(logoFile, "Files\\editors\\uiv3\\MAX-Logo-Square.png");
+				std::shared_ptr<wiResource> tex = wiResourceManager::Load(logoFile);
+				wiGraphics::Texture pMAXLogoTexture;
+				if (tex) pMAXLogoTexture = tex->texture;
+				if (pMAXLogoTexture.IsValid())
+				{
+					float screenheight = canvas.GetLogicalHeight();
+					float screenwidth = canvas.GetLogicalWidth();
+					float img_w = pMAXLogoTexture.desc.Width;
+					float img_h = pMAXLogoTexture.desc.Height;
+					fx.disableFullScreen();
+					fx.pos.x = screenwidth * 0.5;
+					fx.pos.y = screenheight * 0.5;
+					fx.pivot.x = 0.5;
+					fx.pivot.y = 0.5;
+					fx.siz.x = img_w;
+					fx.siz.y = img_h;
+					fx.blendFlag = BLENDMODE_ALPHA;
+					wiImage::Draw(&pMAXLogoTexture, fx, cmd);
+				}
+			}
+		}
+
 		wiRenderer::GetDevice()->RenderPassEnd(cmd);
 		wiRenderer::GetDevice()->SubmitCommandLists();
 		g_iShowSplashForFirstFewCycles--;
@@ -1645,11 +1484,6 @@ void Master::RunCustom()
 			if (bFoundMissingFolder == true)
 			{
 				MessageBoxA(NULL, "GameGuru MAX seems to have files missing, run VERIFY FILES on Steam to restore missing files", "GameGuru MAX Missing Files", MB_OK);
-				//if (MessageBoxA(NULL, "GameGuru MAX seems to have files missing, do you want to run the updater to verify your files?", "GameGuru MAX Missing Files", MB_YESNO) == IDYES)
-				//{
-				//	// call auto update directly
-				//	ExecuteFile("..\\GameGuru MAX Updater.exe", "", "", 0);
-				//}
 				extern bool g_bCascadeQuitFlag;
 				g_bCascadeQuitFlag = true;
 				PostQuitMessage(0);
@@ -1910,7 +1744,6 @@ void Master::RunCustom()
 				GGVR_SetHMDDirectly(vecAngles.x, vecAngles.y, vecAngles.z, vecNormal.x, vecNormal.y, vecNormal.z);
 
 				// Fixed time update
-				//auto range = wiProfiler::BeginRangeCPU("Fixed Update");
 				{
 					if (frameskip)
 					{
@@ -1932,7 +1765,6 @@ void Master::RunCustom()
 						FixedUpdate();
 					}
 				}
-				//wiProfiler::EndRange(range); // Fixed Update
 
 				GGTrees_UpdateFrustumCulling( &wiScene::GetCamera() );
 
@@ -1996,7 +1828,6 @@ void Master::RunCustom()
 					viewport.Width = (float)swapChain.desc.width;
 					viewport.Height = (float)swapChain.desc.height;
 					wiRenderer::GetDevice()->BindViewports(1, &viewport, cmd);
-					//Compose(cmd);
 					masterrenderer.ComposeSimple(cmd); // no 2D stuff, done through forcerender to quad plane
 					wiRenderer::GetDevice()->RenderPassEnd(cmd);
 					wiProfiler::EndFrame(cmd); // End before Present() so that GPU queries are properly recorded
@@ -2172,7 +2003,6 @@ void MasterRenderer::Load()
 	#ifdef POSTPROCESSRAIN
 	setRainEnabled(false); //PE: test post process shader.
 	setRainTextures("Files\\effectbank\\common\\rain_color.png", "Files\\effectbank\\common\\rain_normal.png");
-//	setRainTextures("Files\\effectbank\\common\\rain_color2.png", "Files\\effectbank\\common\\rain_normal2.png");
 	setRainOpacity(0.0);
 	setRainScaleX(1.0);
 	setRainScaleY(1.0);
@@ -2188,7 +2018,6 @@ void MasterRenderer::Load()
 	#endif
 	setBloomEnabled ( true );
 	setShadowsEnabled ( true );
-	//setTessellationEnabled(true);
 	wiRenderer::SetTessellationEnabled(false); //PE: Tessellation dont work like this it has to be set per mesh, so have never worked.
 	setLightShaftsEnabled ( true );
 	setBloomThreshold ( 2.0f );
@@ -2196,8 +2025,6 @@ void MasterRenderer::Load()
 
 	// only activated when in TEST LEVEL
 	setEyeAdaptionEnabled( false );
-
-	//wiRenderer::SetTemporalAAEnabled( true ); // makes clouds look better but terrain doesn't output velocity vector
 
 	// disable wicked backlog, can draw behind imgui , can be seen sometimes.
 	if (wiBackLog::isActive()) 
@@ -2208,8 +2035,6 @@ void MasterRenderer::Load()
 	// for best terrain rendering
 	wiGraphics::SamplerDesc desc = wiRenderer::GetSampler ( SSLOT_OBJECTSHADER )->GetDesc ( );
 	desc.Filter = wiGraphics::FILTER_ANISOTROPIC;
-
-	//wiRenderer::ModifySampler ( desc, SSLOT_OBJECTSHADER ); no longer exists
 
 	// create cloudy sky by default
 	Scene weatherscene;
@@ -2357,7 +2182,6 @@ void MasterRenderer::ResizeBuffers(void)
 	if (GetDepthStencil() != nullptr)
 	{
 		TextureDesc desc;
-		//PE: wiRenderer::GetInternalResolution() dont match the depthbuffer size if using MSAA and cant be used.
 		desc.Width = GetWidth3D();
 		desc.Height = GetHeight3D();
 		desc.SampleCount = 1;
@@ -2642,12 +2466,3 @@ void MasterRenderer::RenderOutlineHighlighers(CommandList cmd) const
 		}
 	}
 }
-
-/*
-void ExtraDebug(const char* pProfileLabel)
-{
-#ifdef OPTICK_ENABLE
-	OPTICK_EVENT(pProfileLabel);
-#endif
-}
-*/

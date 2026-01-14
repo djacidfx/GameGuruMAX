@@ -9,7 +9,8 @@ BulletDebugDrawer::BulletDebugDrawer()
 	drawTransforms = false;
 }
 
-std::mutex lock;
+//std::mutex lock;
+std::recursive_mutex lock;
 void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 {
 	//PE: This is not threadsafe so.
@@ -33,9 +34,6 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
 		lineData[elementCount + 3] = to.x()* scale;
 		lineData[elementCount + 4] = to.y()* scale;
 		lineData[elementCount + 5] = to.z()* scale;
-		//lineData[elementCount + 6] = color.x();
-		//lineData[elementCount + 7] = color.y();
-		//lineData[elementCount + 8] = color.z();
 		elementCount += 6;
 		lock.unlock();
 		return;
@@ -47,9 +45,6 @@ void BulletDebugDrawer::drawLine(const btVector3& from, const btVector3& to, con
 	lineData.push_back(to.x()* scale);
 	lineData.push_back(to.y()* scale);
 	lineData.push_back(to.z()* scale);
-	//lineData.push_back(color.x());
-	//lineData.push_back(color.y());
-	//lineData.push_back(color.z());
 	elementCount += 6;
 	lock.unlock();
 }

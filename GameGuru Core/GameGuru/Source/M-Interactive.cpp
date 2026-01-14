@@ -13,7 +13,6 @@ void set_inputsys_mclick(int value);
 
 void interactive_init ( void )
 {
-	#ifdef VRTECH
 	//  Load interactive resources
 	t.tinteractivepath_s="languagebank\\neutral\\gamecore\\huds\\interactive\\";
 	t.strwork = "" ; t.strwork = t.strwork + t.tinteractivepath_s+"tutorial-background.png";
@@ -62,7 +61,6 @@ void interactive_init ( void )
 	LoadImage (  t.strwork.Get() ,g.interactiveimageoffset+33 );
 	t.strwork = "" ; t.strwork = t.strwork + t.tinteractivepath_s+"finish-highlight.png";
 	LoadImage ( t.strwork.Get() ,g.interactiveimageoffset+34 );
-	#endif
 
 	//  Scan mapbank\tutorial maps and collect grid of levels
 	t.tindex=1;
@@ -99,7 +97,6 @@ void interactive_init ( void )
 	t.interactive.showonstartup=1;
 	t.interactive.active = 0;
 
-	#ifdef VRTECH
 	t.tfile_s=g.fpscrootdir_s+"\\tutorialonstartup.ini";
 	if (  FileExist(t.tfile_s.Get()) == 1 ) 
 	{
@@ -115,7 +112,6 @@ void interactive_init ( void )
 	{
 		t.interactive.active=0;
 	}
-	#endif
 }
 
 void interactive_loop ( void )
@@ -599,7 +595,7 @@ void interactive_summary ( void )
 			if (  t.interactive.itemhighlightindex == 2 ) 
 			{
 				//  jump to tutorial website
-				ExecuteFile ( "https://www.game-guru.com/tutorials","","",0 );
+				ExecuteFile ( "https://www.game-guru.com","","",0 );
 				t.interactive.clicked=1;
 			}
 			if (  t.interactive.itemhighlightindex == 3 ) 

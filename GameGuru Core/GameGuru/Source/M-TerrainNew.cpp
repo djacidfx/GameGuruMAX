@@ -6,9 +6,7 @@
 
 #include "stdafx.h"
 #include "gameguru.h"
-//#include "wincodec.h"
 
-#ifdef ENABLEIMGUI
 #include "..\Imgui\imgui.h"
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -16,7 +14,6 @@
 #include "..\Imgui\imgui_internal.h"
 #include "..\Imgui\imgui_impl_win32.h"
 #include "..\Imgui\imgui_gg_dx11.h"
-#endif
 
 //#include "Terrain.h"
 #include "Utility/stb_image.h"
@@ -44,20 +41,14 @@ void SmallTutorialVideo(char *tutorial, char* combo_items[] = NULL, int combo_en
 void visuals_calcsunanglefromtimeofday(int iTimeOfday, float* pfSunAngleX, float* pfSunAngleY, float* pfSunAngleZ);
 
 // shadow mapping
-//extern CascadedShadowsManager g_CascadedShadow;
-extern int g_iTerrainIDForShadowMap;
+//extern int g_iTerrainIDForShadowMap;
 
-#ifdef ENABLEIMGUI
 extern bool bHelp_Window;
 extern bool bHelpVideo_Window;
 extern char cForceTutorialName[1024];
-#endif
 
-#ifndef PRODUCTCLASSIC
 extern bool bBoostIconColors;
-#endif
 
-#ifdef PROCEDURALTERRAINWINDOW
 extern bool bProceduralLevel;
 extern int iQuitProceduralLevel;
 extern bool BackBufferSnapShotMode;
@@ -92,7 +83,6 @@ extern ImVec4 drawCol_Down;
 bool bPopModalOpenProcedural = false;
 bool bPopModalOpenProceduralCameraMode = false;
 bool bPopModalTakeMapSnapshot = false;
-#endif
 
 #ifdef CUSTOMTEXTURES
 int g_iCustomTerrainMatSounds[32] = { 10 };
@@ -104,7 +94,6 @@ cstr g_DeferTextureUpdateCurrentFolder_s = "";
 std::vector<std::string> g_DeferTextureUpdate;
 std::vector<int> g_DeferTextureUpdateIncompatibleTextures;
 
-#ifdef WICKEDENGINE
 void Wicked_Update_Visuals(void *voidvisual);
 ImVec4 vLastTerrainPickPosition = ImVec4(0, 0,0,0);
 ImVec4 vLastRampTerrainPickPosition = ImVec4(0, 0, 0, 0);
@@ -114,7 +103,6 @@ extern bool bProceduralLevelFromStoryboard;
 extern wiECS::Entity g_weatherEntityID;
 extern MasterRenderer * master_renderer;
 
-#endif
 
 // Terrain Build Globals
 #define TERRAINTEXPANELSPRMAX 6
@@ -156,10 +144,6 @@ extern bool bRenderTabTab;
 #define TEXTURE_D_NAME "texture_D.dds"
 #define TEXTURE_N_NAME "texture_N.dds"
 
-/* g_pTerrain no longer used
-MaxTerrain::cTerrain* g_pTerrain = NULL;
-*/
-
 VOID DXUtil_ConvertWideStringToAnsi ( CHAR* strDestination, const WCHAR* wstrSource,int cchDestChar );
 
 // Terrain Build Local Structure
@@ -188,8 +172,6 @@ struct terrainbuildtype
 };
 terrainbuildtype terrainbuild;
 
-#ifdef VRTECH
-#ifdef ENABLEIMGUI
 
 int delay_terrain_execute = 0;
 int skib_terrain_frames_execute = 0;
@@ -221,13 +203,8 @@ int iTerrainRaiseMode = 1;
 int iLastRegionUpdateX, iLastRegionUpdateY;
 int iTerrainVegLoopUpdate = 0;
 extern bool bImGuiGotFocus;
-#else
-bool bDisableAllTerrainSprites = false;
-#endif
 bool bVegHasChanged = false;
-#endif
 
-#ifdef WICKEDENGINE
 struct NewLevelCamera
 {
 	float x;
@@ -237,7 +214,6 @@ struct NewLevelCamera
 };
 NewLevelCamera newLevelCamera;
 void PositionCameraForNewLevel();
-#endif
 
 struct sCustomBiomeType
 {
@@ -276,7 +252,6 @@ std::vector<sCustomBiomeType> g_sCustomBiomes;
 // Prototypes
 void set_inputsys_mclick(int value);
 
-#if defined(ENABLEIMGUI)
 int current_mode = 0;
 ImVec4 tool_selected_col;
 
@@ -399,7 +374,6 @@ void imgui_terrain_loop_v2(void)
 		bUpdateVeg = true;
 	}
 
-	//if (bUpdateVeg && Timer() - iLastUpdateVeg > 500 && !object_preload_files_in_progress() ) 
 	if (bUpdateVeg)
 	{
 		if (bEnableVeg)
@@ -407,17 +381,8 @@ void imgui_terrain_loop_v2(void)
 			t.visuals.VegQuantity_f = t.gamevisuals.VegQuantity_f;
 			t.visuals.VegWidth_f = t.gamevisuals.VegWidth_f;
 			t.visuals.VegHeight_f = t.gamevisuals.VegHeight_f;
-			grass_setgrassgridandfade();
 
 			extern bool bResourcesSet, bGridMade;
-			if (!(ObjectExist(t.tGrassObj) == 1 && GetMeshExist(t.tGrassObj) == 1))
-				grass_init();
-			else if (!bGridMade)
-			{
-				//grass_init();
-				//grass_setgrassimage();
-				//UpdateGrassTexture(g.gpbroverride);
-			}
 
 			bool bOldGridMade = bGridMade;
 			int iTrimUsingGrassMemblock = 0;
@@ -426,12 +391,6 @@ void imgui_terrain_loop_v2(void)
 				MakeVegetationGridQuick(4.0f*t.visuals.VegQuantity_f, t.visuals.VegWidth_f, t.visuals.VegHeight_f, terrain_veg_areawidth, t.terrain.vegetationgridsize, t.tTerrainID, iTrimUsingGrassMemblock, true);
 			else
 				MakeVegetationGridQuick(4.0f*t.visuals.VegQuantity_f, t.visuals.VegWidth_f, t.visuals.VegHeight_f, terrain_veg_areawidth, t.terrain.vegetationgridsize, t.tTerrainID, iTrimUsingGrassMemblock, false);
-
-			if (bGridMade && !bOldGridMade)
-			{
-				//Refresh textures.
-				//grass_setgrassimage();
-			}
 
 			// small lookup for memblock painting circles
 			static bool bCurveDataSet = false;
@@ -448,7 +407,6 @@ void imgui_terrain_loop_v2(void)
 			t.terrain.grassregionupdate = 0; //PE: Make sure we update.
 			t.terrain.grassupdateafterterrain = 1;
 			t.terrain.lastgrassupdatex1 = -1; //PE: Force update.
-			grass_loop();
 			t.terrain.grassupdateafterterrain = 0;
 			ShowVegetationGrid();
 			visuals_justshaderupdate();
@@ -469,24 +427,17 @@ void imgui_terrain_loop_v2(void)
 
 		if (bEnableVeg && iTerrainVegLoopUpdate++ > 10)
 		{
-			grass_loop();
 			iTerrainVegLoopUpdate = 0;
 		}
 
 		//Continue cheking if we need to update terrain.
-		//if (t.inputsys.mclick == 0 && bReadyToUpdateVeg && bEnableVeg && Timer() - iLastUpdateVeg > 250 && !object_preload_files_in_progress() ) 
 		if (bReadyToUpdateVeg && bEnableVeg)
 		{
 			t.visuals.VegQuantity_f = t.gamevisuals.VegQuantity_f;
 			t.visuals.VegWidth_f = t.gamevisuals.VegWidth_f;
 			t.visuals.VegHeight_f = t.gamevisuals.VegHeight_f;
-			grass_setgrassgridandfade();
-
-			if (!(ObjectExist(t.tGrassObj) == 1 && GetMeshExist(t.tGrassObj) == 1))
-				grass_init();
 
 			t.terrain.grassupdateafterterrain = 1;
-			grass_loop();
 			t.terrain.grassupdateafterterrain = 0;
 			ShowVegetationGrid();
 
@@ -571,7 +522,6 @@ void imgui_terrain_loop_v2(void)
 			if (ImGui::StyleCollapsingHeader("Edit Mode", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				iLastOpenHeader = 30;
-#ifdef GGTERRAIN_USE_NEW_TERRAIN
 
 				extern wiECS::Entity g_weatherEntityID;
 				wiScene::WeatherComponent* weather = wiScene::GetScene().weathers.GetComponent(g_weatherEntityID);
@@ -660,8 +610,6 @@ void imgui_terrain_loop_v2(void)
 
 				ImGui::Separator();
 				
-				//ggterrain_extra_params.edit_mode = GGTERRAIN_EDIT_NONE;
-
 				ImGui::Text("Enable Water"); ImGui::SameLine();
 				if ( ImGui::Checkbox("##EnableWater", &t.visuals.bWaterEnable)) 
 				{
@@ -716,8 +664,6 @@ void imgui_terrain_loop_v2(void)
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS1) | GGTERRAIN_FRACTAL_RIDGES1;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS2) | GGTERRAIN_FRACTAL_RIDGES2;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS3) | GGTERRAIN_FRACTAL_RIDGES3;
-
-							// ggtrees_global_params.draw_enabled = 0; //PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
 						}
 						if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select Desert Theme");
 						ImGui::SameLine();
@@ -758,8 +704,6 @@ void imgui_terrain_loop_v2(void)
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS1) | GGTERRAIN_FRACTAL_RIDGES1;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS2) | GGTERRAIN_FRACTAL_RIDGES2;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS3) | GGTERRAIN_FRACTAL_RIDGES3;
-
-							//ggtrees_global_params.draw_enabled = 0; //PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
 						}
 						if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select Arctic Theme");
 						ImGui::SameLine();
@@ -800,8 +744,6 @@ void imgui_terrain_loop_v2(void)
 							ggterrain_global_params.fractal_flags = ggterrain_global_params.fractal_flags & ~(GGTERRAIN_FRACTAL_VALLEYS1 | GGTERRAIN_FRACTAL_RIDGES1);
 							ggterrain_global_params.fractal_flags = ggterrain_global_params.fractal_flags & ~(GGTERRAIN_FRACTAL_VALLEYS2 | GGTERRAIN_FRACTAL_RIDGES2);
 							ggterrain_global_params.fractal_flags = ggterrain_global_params.fractal_flags & ~(GGTERRAIN_FRACTAL_VALLEYS3 | GGTERRAIN_FRACTAL_RIDGES3);
-
-							// gtrees_global_params.draw_enabled = 1; //PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
 						}
 						if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select Temperate Theme");
 						ImGui::SameLine();
@@ -842,8 +784,6 @@ void imgui_terrain_loop_v2(void)
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS1) | GGTERRAIN_FRACTAL_RIDGES1;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS2) | GGTERRAIN_FRACTAL_RIDGES2;
 							ggterrain_global_params.fractal_flags = (ggterrain_global_params.fractal_flags & ~GGTERRAIN_FRACTAL_VALLEYS3) | GGTERRAIN_FRACTAL_RIDGES3;
-
-							// ggtrees_global_params.draw_enabled = 1; //PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
 						}
 						if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select Mountain Theme");
 
@@ -874,9 +814,6 @@ void imgui_terrain_loop_v2(void)
 						{
 							GGTerrain_SetPerformanceMode( terrain_performance );
 						}
-
-						//ImGui::Text("Resolution Reduction");
-						//ImGui::SliderInt("##TerrainResReduction", (int*)&ggterrain_global_render_params2.readBackTextureReduction, 4, 16);
 						
 						ImGui::TextCenter("Editable Size (meters)");
 						// editable_size is from center to edge whereas meterValue is edge to edge so multiply by 2
@@ -1207,9 +1144,6 @@ void imgui_terrain_loop_v2(void)
 							ImGui::TextCenter("Tree Paint Mode");
 							ImGui::SliderInt("##TreePaintMode", &ggtrees_global_params.paint_mode, 0, 5);
 
-							//ImGui::TextCenter("Paint Tree Type");
-							//ImGui::SliderInt("##PaintTreeType", (int*)&ggtrees_global_params.paint_tree_type, 0, GGTrees_GetNumTypes()-1 );
-
 							ImGui::TextCenter("Tree Selection");
 							uint64_t values = ggtrees_global_params.paint_tree_bitfield;
 							for( uint32_t i = 0; i < GGTrees_GetNumTypes(); i++ )
@@ -1406,403 +1340,9 @@ void imgui_terrain_loop_v2(void)
 				ImGui::TextCenter( "Pages Needed: %d", GGTerrain_GetPagesNeeded() );
 				ImGui::TextCenter( "Pages Refresh Needed: %d", GGTerrain_GetPagesRefreshNeeded() );
 				ImGui::TextCenter( "Camera: %.1f, %.1f, %.1f", CameraPositionX(), CameraPositionY(), CameraPositionZ() );
-				//ImGui::TextCenter( "Debug Value: %d", GGTerrain_GetDebugValue() );
 
 				ImGui::PopItemWidth();
 
-#else
-
-				ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-				// center icons
-				float center_icons_numbers = 3.0f; //5
-				float icon_spacer = 10.0f;
-				int max_icon_size = 56;
-				int control_image_size = 26; //PE: 34 - This is now the lowest possible icon size.
-				float control_width = (control_image_size + 3.0) * center_icons_numbers + 6.0;
-				control_width += (icon_spacer * center_icons_numbers);
-				int indent = 10;
-				if (w > control_width) 
-				{
-					//PE: fit perfectly with window width.
-					control_image_size = (w - 20.0) / center_icons_numbers;
-					control_image_size -= 4.0; //Padding.
-					if (control_image_size > max_icon_size) control_image_size = max_icon_size;
-					control_width = (control_image_size + 3.0) * center_icons_numbers + 6.0;
-					control_width += (icon_spacer * (center_icons_numbers-1.0f));
-					if (control_image_size == max_icon_size)
-					{
-						indent = (w*0.5) - (control_width*0.5);
-						if (indent < 10)
-							indent = 10;
-					}
-				}
-				else
-				{
-					indent = (w*0.5) - (control_width*0.5);
-					if (indent < 10)
-						indent = 10;
-				}
-				int control_image_size_2 = control_image_size;
-				ImGui::Indent(indent);
-
-				//bool bHoldShift = t.inputsys.keyshift == 1;
-				// LB: Use TAB instead of shift or ctrl, and trigger the toggle as though clicking the button
-				bool bSwitchModeToOne = false;
-				bool bSwitchModeToZero = false;
-				static bool bReadyToChange = true;
-				bool bPressTAB = t.inputsys.keytab == 1;
-				if (!bPressTAB) bReadyToChange = true;
-				if (bReadyToChange && bPressTAB)
-				{
-					if (current_mode != TOOL_PAINTTEXTURE && current_mode != TOOL_PAINTGRASS)
-					{
-						if (iTerrainRaiseMode == 0) bSwitchModeToOne = true;
-						if (iTerrainRaiseMode == 1) bSwitchModeToZero = true;
-					}
-					else
-					{
-						if (iTerrainPaintMode == 0) bSwitchModeToOne = true;
-						if (iTerrainPaintMode == 1) bSwitchModeToZero = true;
-					}
-					bReadyToChange = false; //toggle, wait until tab is released again.
-				}
-
-				// add title above edit mode
-				LPSTR pEditTitle = "Sculpting Mode";
-				if (current_mode == TOOL_PAINTTEXTURE) pEditTitle = "Painting Mode";
-				if (current_mode == TOOL_PAINTGRASS) pEditTitle = "Paint and Erase";
-				ImGui::TextCenter(pEditTitle);
-
-				if (current_mode != TOOL_PAINTTEXTURE && current_mode != TOOL_PAINTGRASS)
-				{
-					//###############################
-					//## PE: Display Sculpt tools. ##
-					//###############################
-					
-					ImVec2 padding = { 3.0, 3.0 };
-
-					ImVec4 toggle_color = ImColor(255, 255, 255, 0);
-					if (current_mode == TOOL_SHAPE && iTerrainRaiseMode==1 )//(iTerrainRaiseMode == 1 && !bHoldShift) )
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (bSwitchModeToOne==true || ImGui::ImgBtn(TOOL_SHAPE_UP, ImVec2(control_image_size, control_image_size), toggle_color, ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors))
-					{
-						//Paint mode.
-						iTerrainRaiseMode = 1;
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "1";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Raise Terrain");
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(icon_spacer, 0.0f));
-
-					toggle_color = ImColor(255, 255, 255, 0);
-					if (current_mode == TOOL_SHAPE && iTerrainRaiseMode != 1 )//(iTerrainRaiseMode != 1 || bHoldShift ) )
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (bSwitchModeToZero==true || ImGui::ImgBtn(TOOL_SHAPE_DOWN, ImVec2(control_image_size, control_image_size), toggle_color, ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors))
-					{
-						//Remove mode.
-						iTerrainRaiseMode = 0;
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "1";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Lower Terrain");
-
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(icon_spacer, 0.0f));
-
-
-					CheckTutorialAction("TOOL_LEVELMODE", -10.0f); //Tutorial: check if we are waiting for this action
-					if (current_mode == TOOL_LEVELMODE)
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(TOOL_LEVELMODE, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "2";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Level Mode (This feature is not yet available)");
-					
-					//New line.
-
-					CheckTutorialAction("TOOL_STOREDLEVEL", -10.0f); //Tutorial: check if we are waiting for this action
-					if (current_mode == TOOL_STOREDLEVEL)
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(TOOL_STOREDLEVEL, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "3";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Copy Mode (This feature is not yet available)");
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(icon_spacer, 0.0f));
-
-					CheckTutorialAction("TOOL_BLENDMODE", -10.0f); //Tutorial: check if we are waiting for this action
-					if (current_mode == TOOL_BLENDMODE)
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(TOOL_BLENDMODE, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "4";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Blend Mode (This feature is not yet available)");
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(icon_spacer, 0.0f));
-
-					CheckTutorialAction("TOOL_RAMPMODE", -10.0f); //Tutorial: check if we are waiting for this action
-					if (current_mode == TOOL_RAMPMODE)
-					{
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(TOOL_RAMPMODE, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-
-						bForceKey = true;
-						csForceKey = "t";
-						bForceKey2 = true;
-						csForceKey2 = "5";
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Ramp Mode (This feature is not yet available)");
-
-					//#########################
-				}
-				ImGui::Indent(-indent);
-
-				//Setup indent for 2 icons.
-				control_width = (control_image_size_2 + 3.0f) * 2.0f + 6.0f;
-				indent = (w*0.5f) - (control_width*0.5f);
-				if (indent < 10)
-					indent = 10;
-
-				ImGui::Indent(indent);
-				if (t.terrain.terrainpaintermode >= 6)
-				{
-					if (iTerrainPaintMode == 1)// && !bHoldShift)
-					{
-						ImVec2 padding = { 3.0, 3.0 };
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size_2, control_image_size_2));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-
-					if (bSwitchModeToOne == true || ImGui::ImgBtn(EBE_CONTROL1, ImVec2(control_image_size_2, control_image_size_2), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-						//Paint mode.
-						iTerrainPaintMode = 1;
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Paint Mode");
-					ImGui::SameLine();
-
-					if (iTerrainPaintMode != 1)// || bHoldShift )
-					{
-						ImVec2 padding = { 3.0, 3.0 };
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size_2, control_image_size_2));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (bSwitchModeToZero == true || ImGui::ImgBtn(EBE_CONTROL2, ImVec2(control_image_size_2, control_image_size_2), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-						//Remove mode.
-						iTerrainPaintMode = 0;
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Delete Mode");
-
-				}
-				ImGui::Indent(-indent);
-
-
-				ImGui::Indent(10);
-				
-				//Brush Size.
-				ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-				ImGui::PushItemWidth(-10);
-				ImGui::TextCenter("Brush Size");
-				if (ImGui::MaxSliderInputFloat("##Brushsize", &t.terrain.RADIUS_f, 70.0f, 500.0f, "Draw Radius"))
-				{
-					if (t.terrain.RADIUS_f < t.tmin) t.terrain.RADIUS_f = t.tmin;
-					if (t.terrain.RADIUS_f > g.fTerrainBrushSizeMax) t.terrain.RADIUS_f = g.fTerrainBrushSizeMax;
-				}
-				ImGui::PopItemWidth();
-
-				//PE: Process brush size keyboard-shortcuts.
-				if (ImGui::IsKeyDown(17) && (ImGui::IsKeyDown(187) || ImGui::IsKeyDown(107) ) ) //[CTRL] + [+]
-				{
-					t.terrain.RADIUS_f += g.timeelapsed_f*3.0;
-					if (t.terrain.RADIUS_f < t.tmin) t.terrain.RADIUS_f = t.tmin;
-					if (t.terrain.RADIUS_f > g.fTerrainBrushSizeMax) t.terrain.RADIUS_f = g.fTerrainBrushSizeMax;
-				}
-				if (ImGui::IsKeyDown(17) && (ImGui::IsKeyDown(189) || ImGui::IsKeyDown(109))) //[CTRL] + [-]
-				{
-					t.terrain.RADIUS_f -= g.timeelapsed_f*3.0;
-					if (t.terrain.RADIUS_f < t.tmin) t.terrain.RADIUS_f = t.tmin;
-					if (t.terrain.RADIUS_f > g.fTerrainBrushSizeMax) t.terrain.RADIUS_f = g.fTerrainBrushSizeMax;
-				}
-
-				if (current_mode != TOOL_PAINTTEXTURE && current_mode != TOOL_PAINTGRASS)
-				{
-					control_width = (control_image_size_2 + 3.0f) * 2.0f + 6.0f;
-					control_width += 10.0f; //icon spacer.
-					int indent3 = (w*0.5f) - (control_width*0.5f);
-					if (indent3 < 10)
-						indent3 = 10;
-
-					ImGui::TextCenter("Brush Shape");
-
-					ImGui::Indent(-10);
-					ImGui::Indent(indent3);
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0.0f, 4.0f));
-
-					if (iBrushShape == 0)
-					{
-						ImVec2 padding = { 3.0, 3.0 };
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(SHAPE_CIRCLE, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors)) {
-						iBrushShape = 0;
-						g_pTerrain->SetBrush(0);
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Shape Circle");
-
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(icon_spacer, 0.0f));
-
-					if (iBrushShape != 0)
-					{
-						ImVec2 padding = { 3.0, 3.0 };
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(control_image_size, control_image_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-					if (ImGui::ImgBtn(SHAPE_SQUARE, ImVec2(control_image_size, control_image_size), ImVec4(0.0, 0.0, 0.0, 0.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, 0, 0, 0, false, false, false, false,false, bBoostIconColors))
-					{
-						iBrushShape = 1;
-						//PE: @Lee Square brush is not working, it only have a circle function.
-						g_pTerrain->SetBrush(1);
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Shape Square (This feature is not yet available)");
-
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-
-					ImGui::Indent(-indent3);
-					ImGui::Indent(10);
-
-				}
-				else
-				{
-					//PE: Make sure we always use circle if not in "Sculpt" mode.
-					g_pTerrain->SetBrush(0);
-					iBrushShape = 0;
-				}
-
-				if (current_mode == TOOL_PAINTTEXTURE)
-				{
-					if (g_pTerrain)
-					{
-						ImGui::TextCenter("Texture Opacity");
-						ImGui::PushItemWidth(-10);
-						float fTmp = iBrushStrength;
-						if (ImGui::MaxSliderInputFloat("##TerrainBrushStrength", &fTmp, 1, 255, "Goes From Transparent to Opaque",1)) {
-							iBrushStrength = fTmp;
-							g_pTerrain->SetPaintHardness(iBrushStrength);
-						}
-						ImGui::PopItemWidth();
-
-						ImGui::TextCenter("Texture Size");
-						//Range 0.0 - 10.0 1:1 = 1.0
-						static int iSourceScale = 1;
-						ImGui::PushItemWidth(-10);
-						if (ImGui::MaxSliderInputInt("##TerrainScaleSourcesize", &iSourceScale, 1, 10, "Set Texture Size")) {
-							g_pTerrain->SetScaleSource(iSourceScale);
-						}
-						ImGui::PopItemWidth();
-
-					}
-				}
-
-				if (current_mode == TOOL_PAINTGRASS)
-				{
-					int iTextRightPos = 116; //136
-
-					ImGui::TextCenter("Spray Strength");
-					ImGui::PushItemWidth(-10);
-					//PE: @Lee iBrushStrength shared with terrain paint texture strength.
-					float fTmp = iBrushStrength;
-					if (ImGui::MaxSliderInputFloat("##TerrainGrassBrushStrength", &fTmp, 1, 255, "Set Spray Strength (This feature is not yet available)", 1)) {
-						iBrushStrength = fTmp;
-						//No function yet.
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::TextCenter("Vegetation Height");
-					ImGui::PushItemWidth(-10);
-					if (ImGui::MaxSliderInputRangeFloat("##GrassVegHeight", &g_fvegRandomMin, &g_fvegRandomMax, 0.0, 100.0, "Set Vegetation Height"))
-					{
-						//No function needed.
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::TextCenter("Vegetation Density");
-					ImGui::PushItemWidth(-10);
-					//PE: @Lee use g_fvegDensityMin , g_fvegDensityMax.
-					if (ImGui::MaxSliderInputRangeFloat("##GrassDensity", &g_fvegDensityMin, &g_fvegDensityMax, 0.0, 100.0, "Set Vegetation Density (This feature is not yet available)"))
-					{
-						//No function needed.
-					}
-					ImGui::PopItemWidth();
-
-
-					//PE: Overall removed in new design.
-					/*
-					//PE: These is still Overall and not when spraying, so keep them as is for now.
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-					ImGui::Text("Overall Quantity:");
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-					ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-					ImGui::PushItemWidth(-10);
-					if (ImGui::SliderFloat("##VegOverallQuantity", &t.gamevisuals.VegQuantity_f, 0.0, 100.0, "%.0f"))
-					{
-						iLastUpdateVeg = Timer();
-						bUpdateVeg = true;
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Overall Vegetation Quantity");
-					ImGui::PopItemWidth();
-
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-					ImGui::Text("Overall Width:");
-					ImGui::SameLine();
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-					ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-					ImGui::PushItemWidth(-10);
-					if (ImGui::SliderFloat("##VegOverallWidth", &t.gamevisuals.VegWidth_f, 0.0, 100.0, "%.0f"))
-					{
-						iLastUpdateVeg = Timer();
-						bUpdateVeg = true;
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Overall Vegetation Width");
-					ImGui::PopItemWidth();
-					*/
-				}
-				
-				ImGui::Indent(-10);
-#endif // GGTERRAIN_USE_NEW_TERRAIN
 			}
 
 			if (current_mode == TOOL_PAINTTEXTURE)
@@ -2335,7 +1875,6 @@ void imgui_terrain_loop_v3(void)
 				ImGui::Indent(indent);
 
 				// LB: Use TAB instead of shift or ctrl, and trigger the toggle as though clicking the button
-				//bool bHoldShift = t.inputsys.keyshift == 1;
 				bool bSwitchModeToOne = false;
 				bool bSwitchModeToZero = false;
 				static bool bReadyToChange = true;
@@ -3188,11 +2727,8 @@ void imgui_terrain_loop(void)
 			t.visuals.VegQuantity_f = t.gamevisuals.VegQuantity_f;
 			t.visuals.VegWidth_f = t.gamevisuals.VegWidth_f;
 			t.visuals.VegHeight_f = t.gamevisuals.VegHeight_f;
-			grass_setgrassgridandfade();
 
 			extern bool bResourcesSet, bGridMade;
-			if (!(ObjectExist(t.tGrassObj) == 1 && GetMeshExist(t.tGrassObj) == 1) )
-				grass_init();
 
 			bool bOldGridMade = bGridMade;
 			int iTrimUsingGrassMemblock = 0;
@@ -3217,7 +2753,6 @@ void imgui_terrain_loop(void)
 			t.terrain.grassregionupdate = 0; //PE: Make sure we update.
 			t.terrain.grassupdateafterterrain = 1;
 			t.terrain.lastgrassupdatex1 = -1; //PE: Force update.
-			grass_loop();
 			t.terrain.grassupdateafterterrain = 0;
 			ShowVegetationGrid();
 			visuals_justshaderupdate();
@@ -3238,7 +2773,6 @@ void imgui_terrain_loop(void)
 
 		if (bEnableVeg && iTerrainVegLoopUpdate++ > 10) 
 		{
-			grass_loop();
 			iTerrainVegLoopUpdate = 0;
 		}
 
@@ -3248,13 +2782,8 @@ void imgui_terrain_loop(void)
 			t.visuals.VegQuantity_f = t.gamevisuals.VegQuantity_f;
 			t.visuals.VegWidth_f = t.gamevisuals.VegWidth_f;
 			t.visuals.VegHeight_f = t.gamevisuals.VegHeight_f;
-			grass_setgrassgridandfade();
-
-			if (!(ObjectExist(t.tGrassObj) == 1 && GetMeshExist(t.tGrassObj) == 1))
-				grass_init();
 
 			t.terrain.grassupdateafterterrain = 1;
-			grass_loop();
 			t.terrain.grassupdateafterterrain = 0;
 			ShowVegetationGrid();
 
@@ -3628,63 +3157,6 @@ void imgui_terrain_loop(void)
 			if (current_mode == TOOL_PAINTGRASS)
 				imgui_Customize_Vegetation(0);
 
-			if (!pref.bHideTutorials)
-			{
-				#ifndef REMOVED_EARLYACCESS
-				if (ImGui::StyleCollapsingHeader("Tutorial (this feature is incomplete)", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Indent(10);
-					char* my_combo_itemsp[] = { NULL,NULL,NULL };
-					int my_combo_items = 0;
-					int iVideoSection = 0;
-					cstr cShowTutorial = "02 - Creating terrain";
-					if (current_mode == TOOL_PAINTTEXTURE) {
-						my_combo_itemsp[0] = "50 - Painting terrain";
-						my_combo_itemsp[1] = "02 - Creating terrain";
-						my_combo_itemsp[2] = "03 - Add character and set a path";
-						my_combo_items = 3;
-						cShowTutorial = "50 - Painting terrain";
-						iVideoSection = SECTION_PAINT_TERRAIN;
-					}
-					else if (current_mode == TOOL_PAINTGRASS) {
-						my_combo_itemsp[0] = "01 - Getting started";
-						my_combo_itemsp[1] = "02 - Creating terrain";
-						my_combo_itemsp[2] = "03 - Add character and set a path";
-						my_combo_items = 3;
-						cShowTutorial = "02 - Creating terrain";
-						iVideoSection = SECTION_ADD_VEGETATION;
-					}
-					else // TOOL_SHAPE,TOOL_LEVELMODE ...
-					{
-						my_combo_itemsp[0] = "02 - Creating terrain";
-						my_combo_itemsp[1] = "01 - Getting started";
-						my_combo_itemsp[2] = "03 - Add character and set a path";
-						my_combo_items = 3;
-						cShowTutorial = "02 - Creating terrain";
-						iVideoSection = SECTION_SCULPT_TERRAIN;
-					}
-
-					SmallTutorialVideo(cShowTutorial.Get(), my_combo_itemsp, my_combo_items, iVideoSection);
-					float but_gadget_size = ImGui::GetFontSize()*12.0;
-					float w = ImGui::GetWindowContentRegionWidth()-10.0;
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-					#ifdef INCLUDESTEPBYSTEP
-					if (ImGui::StyleButton("View Step by Step Tutorial", ImVec2(but_gadget_size, 0)))
-					{
-						bHelp_Window = true;
-						bHelpVideo_Window = true;
-						extern bool bSetTutorialSectionLeft;
-						bSetTutorialSectionLeft = false;
-						strcpy(cForceTutorialName, cShowTutorial.Get());
-					}
-					if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start Step by Step Tutorial");
-					#endif
-
-					ImGui::Indent(-10);
-				}
-				#endif
-			}
-
 			if (ImGui::StyleCollapsingHeader("Keyboard Shortcuts ???", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				ImGui::Indent(10);
@@ -3720,76 +3192,11 @@ void imgui_terrain_loop(void)
 	}
 }
 
-#endif
 
 void terrain_createactualterrain(void)
 {
-	#ifdef WICKEDENGINE
-	// strangely, object can be zero when called from standalone game init
 	t.terrain.terrainobjectindex = t.terrain.objectstartindex + 3;
-	#endif
-
-	/* g_pTerrain no longer used
-	if ( g_pTerrain )
-	{
-		delete g_pTerrain;
-		g_pTerrain = NULL;
-	}
-	*/
-
-	#ifdef GGTERRAIN_USE_NEW_TERRAIN
 	return;
-	#endif
-
-	/* g_pTerrain no longer used
-	// create our temporary write location for data
-	char	szPath				[ MAX_PATH ] = "levelbank\\testmap\\";
-	WCHAR	szDirectory			[ MAX_PATH ] = L"";
-	char	szWorkingDirectory	[ MAX_PATH ] = "";
-
-	// get our working directory
-	GetCurrentDirectory ( 256, szDirectory );
-
-	DXUtil_ConvertWideStringToAnsi ( szWorkingDirectory, szDirectory, -1 );
-
-	strcat_s ( szWorkingDirectory, "\\" );
-	
-	GG_GetRealPath ( &szPath [ 0 ], 1 );
-	
-	g_pTerrain = new MaxTerrain::cTerrain;
-
-	// we will be using our terrain node naming convention!
-	char pTerrainNodeFile[MAX_PATH];
-	strcpy(pTerrainNodeFile, szPath);
-	strcat(pTerrainNodeFile, "TTR0XR0.dat"); // any file name will do, its the path we are using!
-	g_pTerrain->Load ( pTerrainNodeFile );
-	g_pTerrain->SetPath ( szWorkingDirectory, szWorkingDirectory );
-
-	// changing DDS to PNG gains almost 5000ms as no need to decompress DDS to get raw pixel data!!
-	g_pTerrain->ClearMaterials(true);
-	if (g_bTerrainGeneratorChooseRealTerrain == true)
-		g_pTerrain->AddMaterial("base", "texturebank\\terrain grass_color (uncompressed).dds");
-	else
-		g_pTerrain->AddMaterial("base", "texturebank\\terrain grey grid_color (uncompressed).dds");
-
-	g_pTerrain->SetDefaultMaterial ( "base" );
-
-	g_pTerrain->SetLOD ( false );
-	g_pTerrain->SetMaximumLOD ( 1 );
-	g_pTerrain->SetNodeDivision ( 10 );
-	g_pTerrain->SetMultithreading ( true );
-	g_pTerrain->SetEditing ( true );
-
-	#ifdef DEBUG
-		// add any debug calls here
-		g_pTerrain->SetDebugMode ( false );
-
-		// we want a tiny world for fast testing
-		g_pTerrain->SetDebugTiny ( true, 4 );
-	#endif
-
-	g_pTerrain->Build ( );
-	*/
 }
 
 //PE: We need these functions for skyspec ...
@@ -3882,8 +3289,6 @@ int imgui_get_selections(std::vector<cstr> selections, std::vector<cstr> selecti
 
 	ImGui::SetNextWindowSize(ImVec2(35 * ImGui::GetFontSize(), 33 * ImGui::GetFontSize()), ImGuiCond_Once); //ImGuiCond_FirstUseEver
 	ImGui::SetNextWindowPosCenter(ImGuiCond_Once);
-	//ImGui::SetNextWindowPos( ImGui::GetCursorPos() - ImVec2(25 * ImGui::GetFontSize(), 25 * ImGui::GetFontSize() ) ,  ImGuiCond_Once);
-
 	ImGui::Begin("Select Texture##imgui_get_selections", winopen, 0);
 
 	ImGui::Indent(10);
@@ -3891,8 +3296,6 @@ int imgui_get_selections(std::vector<cstr> selections, std::vector<cstr> selecti
 	ImGui::Columns(4, label.Get(), false);  //false no border
 	for (int i = 0; i < selections.size(); i++)
 	{
-		//	LoadImage(t.visuals.sGrassTextures[iL].Get(), t.terrain.imagestartindex + 180 + iL, 0, g.gdividetexturesize);
-
 		if (!ImageExist(t.terrain.imagestartindex + imagestart + i)) {
 			image_setlegacyimageloading(true);
 			LoadImage(selections[i].Get(), t.terrain.imagestartindex + imagestart + i, 0, g.gdividetexturesize);
@@ -3901,12 +3304,8 @@ int imgui_get_selections(std::vector<cstr> selections, std::vector<cstr> selecti
 
 		if (ImageExist(t.terrain.imagestartindex + imagestart + i)) {
 
-			//PE: 100% transparent dont look so good.
-			//if (ImGui::ImgBtn(t.terrain.imagestartindex + imagestart + i, ImVec2(iPreviewIconSize, iPreviewIconSize), ImColor(255, 255, 255, 0), ImColor(220, 220, 220, 220), ImColor(255, 255, 255, 255), ImColor(180, 180, 160, 255), 0, 0, 0, 0, false, false))
-
 			ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (iPreviewIconSize*0.5), 0.0f));
 			if (ImGui::ImgBtn(t.terrain.imagestartindex + imagestart + i, ImVec2(iPreviewIconSize, iPreviewIconSize), ImColor(0, 0, 0, 196), ImColor(255, 255, 255, 255), ImColor(220, 220, 220, 220), ImColor(180, 180, 160, 255), 0, 0, 0, 0, false, false, true))
-				//if (ImGui::ImgBtn(t.terrain.imagestartindex + imagestart + i, ImVec2(iPreviewIconSize, iPreviewIconSize), ImColor(0, 0, 0, 255)))
 			{
 				winopen = false;
 				retval = i;
@@ -3953,11 +3352,7 @@ void imgui_Customize_Terrain(int mode)
 	float media_icon_size = 40.0f;
 	float w = ImGui::GetWindowContentRegionWidth();
 	float plate_width = (media_icon_size + 6.0) * 4.0f;
-#ifdef WICKEDENGINE
 	if (ImGui::StyleCollapsingHeader("Palette", wflags))
-#else
-	if (ImGui::StyleCollapsingHeader("Customize Terrain", wflags))
-#endif
 	{
 		if (mode == 1) iLastOpenHeader = 2;
 		//Drpo down.
@@ -3965,7 +3360,6 @@ void imgui_Customize_Terrain(int mode)
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
 
 
-#ifdef WICKEDENGINE
 
 		//Use "texturebank" as default folder.
 
@@ -4009,7 +3403,6 @@ void imgui_Customize_Terrain(int mode)
 			}
 
 			init_terrain_selections();
-			//bUpdateTerrainMaterials = true;
 			//PE: We now activate if not exists, when selecting, so no need to reset all textures on a fresh palette.
 			bUpdateTerrainMaterials = false;
 		}
@@ -4034,7 +3427,6 @@ void imgui_Customize_Terrain(int mode)
 					//Load in image.
 					image_setlegacyimageloading(true);
 					SetMipmapNum(1); //PE: mipmaps not needed.
-					//t.terrain.imagestartindex = 63600
 					if (ImageExist(sTerrainTexturesID[iL]) == 1) DeleteImage(sTerrainTexturesID[iL]);
 
 					// sTerrainTextures stores as (uncompressed) to speed up material loading as raw data, but 
@@ -4053,12 +3445,11 @@ void imgui_Customize_Terrain(int mode)
 						}
 					}
 					LoadImage(pCompressedVersionIfAny, sTerrainTexturesID[iL], 0, g.gdividetexturesize);
-					//LoadImageSize(pCompressedVersionIfAny, sTerrainTexturesID[iL], 512,512); //Takes to long.
 					if (ImageExist(sTerrainTexturesID[iL]) == 1) 
 					{
-						//sTerrainTexturesID[iL] = t.terrain.imagestartindex + 80 + iL;
 					}
-					else {
+					else 
+					{
 						//Load failed, clear texture slot.
 						t.visuals.sTerrainTextures[iL] = "";
 						t.gamevisuals.sTerrainTextures[iL] = t.visuals.sTerrainTextures[iL];
@@ -4092,9 +3483,7 @@ void imgui_Customize_Terrain(int mode)
 							t.gamevisuals.sTerrainTexturesName[iL] = t.visuals.sTerrainTexturesName[iL];
 							bTextureNameWindow[iL] = false;
 						}
-						#ifdef WICKEDENGINE
 						if (ImGui::MaxIsItemFocused()) bImGuiGotFocus = true;
-						#endif
 
 						ImGui::PopItemWidth();
 						ImGui::Indent(-10);
@@ -4173,14 +3562,10 @@ void imgui_Customize_Terrain(int mode)
 
 						iLargerPreviewIconSize &= 0xfffe;
 
-						//iLargerPreviewIconSize = (iLargerPreviewIconSize / 8) * 8;
-						//if (iLargerPreviewIconSize < 8) iLargerPreviewIconSize = 8;
-
 						ImGui::SetBlurMode(true);
 						if (ImGui::ImgBtn(sTerrainTexturesID[iL], ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize), ImColor(0, 0, 0, 255), ImColor(220,220,220,220), ImColor(255,255,255,255), ImColor(180,180,160,255), -1,
 										   0, 0, 0, false, false, false, false, false, true))
 						{
-							//iSelectTexture = iL; //PE: Just select image.
 							if (iL == 0 && bTutorialCheckAction) TutorialNextAction();
 							if (iL == 2 && bTutorialCheckAction) TutorialNextAction();
 							iCurrentTextureForPaint = sTerrainSelectionID[iL];
@@ -4231,52 +3616,6 @@ void imgui_Customize_Terrain(int mode)
 
 						bool bInContext = false;
 						static int iCurrentTerrainContext = -1;
-						/*
-						if (iCurrentTerrainContext == -1 || iCurrentTerrainContext == iL)
-						{
-							if (ImGui::BeginPopupContextWindow())
-							{
-								iCurrentTerrainContext = iL;
-								bInContext = true;
-								if (ImGui::MenuItem("Change Texture"))
-								{
-									iSelectTexture = iL;
-									iCurrentTerrainContext = -1;
-								}
-								if (ImGui::MenuItem("Change Texture Name"))
-								{
-									bTextureNameWindow[iL] = true;
-									iCurrentTerrainContext = -1;
-								}
-								if (ImGui::MenuItem("Select Texture"))
-								{
-									if (iL == 0 && bTutorialCheckAction) TutorialNextAction();
-									if (iL == 2 && bTutorialCheckAction) TutorialNextAction();
-
-									iCurrentTextureForPaint = sTerrainSelectionID[iL]; //iL;
-								}
-								
-								if (iL != 0)
-								{
-									if (ImGui::MenuItem("Delete Texture"))
-									{
-										t.visuals.sTerrainTextures[iL] = ""; //delete image in next run.
-										t.gamevisuals.sTerrainTextures[iL] = t.visuals.sTerrainTextures[iL];
-										g.projectmodified = 1;
-										bUpdateTerrainMaterials = true;
-										if (iCurrentTextureForPaint == iL)
-											iCurrentTextureForPaint--;
-
-										iCurrentTerrainContext = -1;
-									}
-								}
-								ImGui::EndPopup();
-							}
-							else {
-								iCurrentTerrainContext = -1;
-							}
-						}
-						*/
 						if (!bInContext && ImGui::IsItemHovered())
 						{
 							ImGui::BeginTooltip();
@@ -4296,37 +3635,6 @@ void imgui_Customize_Terrain(int mode)
 						const ImRect image_bb((vSelectionDraw - padding), vSelectionDraw + padding + ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize));
 						ImGui::GetCurrentWindow()->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
 					}
-
-//					sLabel = cStr("##tradio") + cStr(iL);
-//					float checkwidth = ImGui::GetFontSize()*1.5;
-//					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (checkwidth*0.5), 0.0f));
-
-					if (iOldMaterial != iCurrentTextureForPaint)
-					{
-						/* g_pTerrain no longer used
-						if (g_pTerrain)
-						{
-							cstr sTextureName = cStr(iCurrentTextureForPaint);
-							//Only add material when user select it, save mem and faster loading.
-							if (g_pTerrain->FindMaterial(sTextureName.Get()) == nullptr)
-							{
-								//Not found try to load it.
-								g_pTerrain->AddMaterial(sTextureName.Get(), t.visuals.sTerrainTextures[sTerrainSelectionID[iCurrentTextureForPaint]].Get());
-
-							}
-							if (g_pTerrain->FindMaterial(sTextureName.Get()) != nullptr)
-							{
-								g_pTerrain->SetDefaultMaterial("base");
-
-								g_pTerrain->SetMaterial(sTextureName.Get());
-							}
-							iOldMaterial = iCurrentTextureForPaint;
-						}
-						*/
-					}
-//					if (ImGui::RadioButton(sLabel.Get(), &iCurrentTextureForPaint, iL)) {
-//						if (iL == 0 && bTutorialCheckAction) TutorialNextAction();
-//					}
 
 					ImGui::NextColumn();
 
@@ -4433,29 +3741,6 @@ void imgui_Customize_Terrain(int mode)
 
 		}
 
-		// Removed for early access
-		/*
-#ifdef DISPLAY4x4
-		ImGui::Columns(1);
-		ImGui::Indent(-4);
-		ImGui::Indent(10);
-		if (iUsedImages < 32 )
-		{
-			//ImGui::Text(""); //ImGui::Separator();
-			float but_gadget_size = ImGui::GetFontSize()*10.0;
-			ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-
-			if (ImGui::StyleButton("Add New Texture", ImVec2(but_gadget_size, 0))) {
-				iSelectTexture = 99;
-			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Add New Texture");
-
-			//ImGui::Separator();
-		}
-#endif
-		*/
-
-
 		#define REMOVETERRAINTEXTUREDIALOG
 		static bool terrain_selection_window = false;
 		static int iSelectedTerrainTexture = -1;
@@ -4537,245 +3822,11 @@ void imgui_Customize_Terrain(int mode)
 
 		if (bUpdateTerrainMaterials)
 		{
-			/* g_pTerrain no longer used
-			if (g_pTerrain)
-			{
-				// THIS TAKES 4 SECONDS DURING THE LAUNCH (OUCH)
-				// I would move this to a thread and have it done in the background
-				// though Paul may redo the whole terrain code with the updated design so not need at this stage to optimize this
-
-				// this is going to clear all current materials in the list, ideally it should not do this
-				g_pTerrain->ClearMaterials ( false );
-				for (int iL = 0; iL < 32; iL++)
-				{
-					if (t.visuals.sTerrainTextures[iL] != "") 
-					{
-						//PE: When reload , selection id must fit.
-						sTerrainSelectionID[iL] = iL;
-
-						// add a material, given this is already in use for the palette we should share
-						// the pixel data as this function is going to make its own copy and it will slow
-						// things down, not good
-						g_pTerrain->AddMaterial( cStr(iL).Get(), t.visuals.sTerrainTextures[iL].Get ( ));
-					}
-				}
-
-				// due to materials being cleared aside from the base we must reset it
-				g_pTerrain->SetDefaultMaterial ( "base" );
-
-				// set the new material
-				g_pTerrain->SetMaterial ( cStr ( iCurrentTextureForPaint ).Get ( ) );
-			}
-			*/
 			bUpdateTerrainMaterials = false;
 		}
 
-#else
-		ImGui::PushItemWidth(-10);
-		char * current_terrain = NULL;
-		if (t.visuals.terrainindex < g.terrainstylemax) current_terrain = t.terrainstylebank_s[t.visuals.terrainindex].Get();
-		if (!current_terrain) current_terrain = "NA";
-
-		if (ImGui::BeginCombo("##SelectTerrainCombo", current_terrain)) // The second parameter is the label previewed before opening the combo.
-		{
-			for (int terrainindex = 1; terrainindex <= g.terrainstylemax; terrainindex++)
-			{
-				if (t.terrainstylebank_s[terrainindex].Len() > 0 && t.terrainstylebank_s[terrainindex] != "custom")
-				{
-					bool is_selected = false;
-					if (t.terrainstylebank_s[terrainindex].Get() == current_terrain)
-						is_selected = true;
-					if (ImGui::Selectable(t.terrainstylebank_s[terrainindex].Get(), is_selected))
-					{
-						//Change Terrain.
-						bool bNewTextureValid = true;
-
-						#ifdef ENABLECUSTOMTERRAIN
-						if (t.terrainstylebank_s[terrainindex] == "CUSTOM")
-						{
-							if (FileExist(cstr(g.mysystem.levelBankTestMap_s + TEXTURE_D_NAME).Get()) == 0)
-							{
-								extern bool bTriggerMessage;
-								extern char cTriggerMessage[MAX_PATH];
-								bNewTextureValid = false;
-								strcpy(cTriggerMessage, "Custom Terrain Not Found.");
-								bTriggerMessage = true;
-							}
-						}
-						#endif
-						if (bNewTextureValid) 
-						{
-							g.projectmodified = 1;
-							current_terrain = t.terrainstylebank_s[terrainindex].Get();
-
-							//Get old so we can delete later. (they take up some mem).
-							cstr sOldTerrainTextureLocation = terrain_getterrainfolder();
-
-							g.terrainstyleindex = terrainindex;
-							t.visuals.terrainindex = g.terrainstyleindex;
-							if (g.terrainstyleindex > g.terrainstylemax)  g.terrainstyleindex = g.terrainstylemax;
-							t.visuals.terrain_s = t.terrainstylebank_s[g.terrainstyleindex];
-							t.gamevisuals.terrain_s = t.visuals.terrain_s;
-							t.gamevisuals.terrainindex = t.visuals.terrainindex; //for save fpm
-							terrain_changestyle();
-
-							//Load new terrain textures
-							int iTex = 5; //Terrain plate.
-
-							//PE: First Delete old internal image.
-							deleteinternaltexture(cstr(sOldTerrainTextureLocation + "\\" + TEXTURE_D_NAME).Get());
-
-							cstr sTerrainTextureLocation = terrain_getterrainfolder();
-							//PE: Delete current if we had been switched to custom.
-							//deleteinternaltexture(cstr(sTerrainTextureLocation + "\\" + TEXTURE_D_NAME).Get());
-							removeinternalimage(terrainbuild.iTexturePanelImg[iTex]);
-
-							terrainbuild.iTexturePanelImg[iTex] = loadinternalimage(cstr(sTerrainTextureLocation + "\\" + TEXTURE_D_NAME).Get());
-							if (terrainbuild.iTexturePanelImg[iTex] == 0)
-							{
-								terrainbuild.iTexturePanelImg[iTex] = loadinternalimage(cstr(sTerrainTextureLocation + "\\texture_D.dds").Get());
-								if (terrainbuild.iTexturePanelImg[iTex] == 0)
-								{
-									// means the terrain texture is missing, report this and switch to default to avoid crash
-									terrain_initstyles_reset();
-									grass_initstyles_reset();
-									sTerrainTextureLocation = terrain_getterrainfolder();
-									terrainbuild.iTexturePanelImg[iTex] = loadinternalimage(cstr(sTerrainTextureLocation + "\\" + TEXTURE_D_NAME).Get());
-								}
-							}
-							terrainbuild.terrainstyle = g.terrainstyle_s;
-							terrainbuild.iTexPlateImage = terrainbuild.iTexturePanelImg[iTex];
-
-							//if (t.terrainstylebank_s[terrainindex] == "CUSTOM") {
-							terrain_generatesupertexture(false);
-							//}
-
-							visuals_justshaderupdate();
-							// if change sky, regenerate env map
-							t.visuals.refreshskysettingsfromlua = true;
-							cubemap_generateglobalenvmap();
-							t.visuals.refreshskysettingsfromlua = false;
-
-						}
-					}
-					if (is_selected)
-						ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndCombo();
-		}
-		ImGui::PopItemWidth();
-		ImGui::Indent(-10);
-
-
-		ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (plate_width*0.5), 0.0f));
-		int indent = (w*0.5) - (plate_width*0.5);
-		if (indent < 10)
-			indent = 10;
-		ImGui::Indent(indent);
-
-
-		ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0.0f, 4.0f));
-
-		if (terrainbuild.iTexPlateImage <= 0) {
-			ImGui::Text("");
-		}
-		int n = 0;
-		for (int y = 0; y < 4; y++)
-		{
-			for (int x = 0; x < 4; x++)
-			{
-
-				if (terrainbuild.iTexPlateImage > 0) {
-
-					ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-					ImVec2 padding = { 2.0, 2.0 };
-					ImVec4 bg_col = { 0.0, 0.0, 0.0, 1.0 };
-					const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(media_icon_size, media_icon_size));
-					window->DrawList->AddRectFilled(image_bb.Min, image_bb.Max, ImGui::GetColorU32(bg_col), 0.0f, 15);
-
-					if (current_mode == TOOL_PAINTTEXTURE && terrainbuild.iCurrentTexture == n) {
-						ImVec2 padding = { 4.0, 4.0 };
-						const ImRect image_bb((window->DC.CursorPos - padding), window->DC.CursorPos + padding + ImVec2(media_icon_size, media_icon_size));
-						window->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-
-					if (n == 0) {
-						CheckTutorialAction("TOOL_TERRAIN_SAND", -20.0f); //Tutorial: check if we are waiting for this action
-					}
-					ImGui::PushID(terrainbuild.iTexPlateImage + n + 200000);
-					if (ImGui::ImgBtn(terrainbuild.iTexPlateImage, ImVec2(media_icon_size, media_icon_size), ImVec4(0.0, 0.0, 0.0, 1.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, n + 1, 4, 4, false, false, false, true)) {
-
-						if (n == 0 && bTutorialCheckAction) TutorialNextAction();
-
-						terrainbuild.iCurrentTexture = n;
-						//Change to selected terrainpaintermode
-						if (current_mode != TOOL_PAINTTEXTURE) {
-
-							if (terrainbuild.iCurrentTexture < 8)
-								t.terrain.terrainpaintermode = 6;
-							else if (terrainbuild.iCurrentTexture < 12)
-								t.terrain.terrainpaintermode = 7;
-							else if (terrainbuild.iCurrentTexture < 15)
-								t.terrain.terrainpaintermode = 8;
-							else
-								t.terrain.terrainpaintermode = 9;
-
-						}
-					}
-					if (skib_terrain_frames_execute == 0 && ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
-						terrainbuild.iCurrentTexture = n;
-						if (current_mode != TOOL_PAINTTEXTURE) {
-							if (terrainbuild.iCurrentTexture < 8)
-								t.terrain.terrainpaintermode = 6;
-							else if (terrainbuild.iCurrentTexture < 12)
-								t.terrain.terrainpaintermode = 7;
-							else if (terrainbuild.iCurrentTexture < 15)
-								t.terrain.terrainpaintermode = 8;
-							else
-								t.terrain.terrainpaintermode = 9;
-						}
-						delay_terrain_execute = 1; //@Lee remove this line if you dont want to support changing textures.
-					}
-
-					ImGui::PopID();
-					if (x != 3)
-						ImGui::SameLine();
-
-					if (delay_terrain_execute == 0 && ImGui::IsItemHovered()) {
-						ImVec2 cursor_pos = ImGui::GetIO().MousePos;
-						ImVec2 tooltip_offset(10.0f, ImGui::GetFontSize()*1.5);
-						ImVec2 tooltip_position = cursor_pos;
-						if (tooltip_position.x + 210 > GetDesktopWidth())
-							tooltip_position.x -= 210;
-						tooltip_position.x += tooltip_offset.x;
-						tooltip_position.y += tooltip_offset.y;
-						ImGui::SetNextWindowPos(tooltip_position);
-						ImGui::SetNextWindowContentWidth(204.0f);
-						ImGui::BeginTooltip();
-						float icon_ratio;
-						int icon_size = 204;
-						ImGui::ImgBtn(terrainbuild.iTexPlateImage, ImVec2(icon_size, icon_size), ImVec4(0.0, 0.0, 0.0, 1.0), ImVec4(1.0, 1.0, 1.0, 1.0), ImVec4(0.8, 0.8, 0.8, 0.8), ImVec4(0.8, 0.8, 0.8, 0.8), 0, n + 1, 4, 4, false, false, false, true);
-						//char hchar[MAX_PATH];
-						//ImGui::Text("%s", hchar);
-						ImGui::EndTooltip();
-
-					}
-
-				}
-				n++;
-			}
-		}
-
-		ImGui::Indent(-indent);
-		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-
-#endif
-#ifdef WICKEDENGINE
 		ImGui::Indent(-10);
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-#endif
 
 	}
 }
@@ -4785,15 +3836,12 @@ void imgui_Customize_Terrain_v3(int mode)
 {
 	int wflags = ImGuiTreeNodeFlags_DefaultOpen;
 	if (mode == 1) wflags = ImGuiTreeNodeFlags_None;
-	//if (pref.bAutoClosePropertySections && mode == 1 && iLastOpenHeader != 2)
-		//ImGui::SetNextItemOpen(false, ImGuiCond_Always);
 
 	float media_icon_size = 40.0f;
 	float w = ImGui::GetWindowContentRegionWidth();
 	float plate_width = (media_icon_size + 6.0) * 4.0f;
 	if (ImGui::StyleCollapsingHeader("Palette", wflags))
 	{
-		//if (mode == 1) iLastOpenHeader = 2;
 		//Drpo down.
 		ImGui::Indent(10);
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
@@ -4878,7 +3926,6 @@ void imgui_Customize_Terrain_v3(int mode)
 			}
 
 			init_terrain_selections();
-			//bUpdateTerrainMaterials = true;
 			//PE: We now activate if not exists, when selecting, so no need to reset all textures on a fresh palette.
 			bUpdateTerrainMaterials = false;
 		}
@@ -4898,7 +3945,6 @@ void imgui_Customize_Terrain_v3(int mode)
 
 #ifdef DISPLAY4x4
 		ImGui::Indent(-10);
-		//ImGui::Indent(4);
 
 		static float fLast4x4Height = 228.0;
 		static float fLastMaxY = 0.0;
@@ -4920,7 +3966,6 @@ void imgui_Customize_Terrain_v3(int mode)
 		ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0.0, 2.0));
 
 		ImGui::Columns(4, "##terrain4x4columns", false);  //false no border
-		//ImGui::Indent(4);
 
 #endif
 
@@ -4936,7 +3981,6 @@ void imgui_Customize_Terrain_v3(int mode)
 					//Load in image.
 					image_setlegacyimageloading(true);
 					SetMipmapNum(1); //PE: mipmaps not needed.
-					//t.terrain.imagestartindex = 63600
 					if (ImageExist(sTerrainTexturesID[iL]) == 1) DeleteImage(sTerrainTexturesID[iL]);
 
 					// sTerrainTextures stores as (uncompressed) to speed up material loading as raw data, but 
@@ -4955,12 +3999,11 @@ void imgui_Customize_Terrain_v3(int mode)
 						}
 					}
 					LoadImage(pCompressedVersionIfAny, sTerrainTexturesID[iL], 0, g.gdividetexturesize);
-					//LoadImageSize(pCompressedVersionIfAny, sTerrainTexturesID[iL], 512,512); //Takes to long.
 					if (ImageExist(sTerrainTexturesID[iL]) == 1)
 					{
-						//sTerrainTexturesID[iL] = t.terrain.imagestartindex + 80 + iL;
 					}
-					else {
+					else 
+					{
 						//Load failed, clear texture slot.
 						t.visuals.sTerrainTextures[iL] = "";
 						t.gamevisuals.sTerrainTextures[iL] = t.visuals.sTerrainTextures[iL];
@@ -5074,9 +4117,6 @@ void imgui_Customize_Terrain_v3(int mode)
 
 						iLargerPreviewIconSize &= 0xfffe;
 
-						//iLargerPreviewIconSize = (iLargerPreviewIconSize / 8) * 8;
-						//if (iLargerPreviewIconSize < 8) iLargerPreviewIconSize = 8;
-
 						ImGui::SetBlurMode(true);
 						if (ImGui::ImgBtn(sTerrainTexturesID[iL], ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize), ImColor(0, 0, 0, 255)))
 						{
@@ -5133,52 +4173,6 @@ void imgui_Customize_Terrain_v3(int mode)
 
 						bool bInContext = false;
 						static int iCurrentTerrainContext = -1;
-						/*
-						if (iCurrentTerrainContext == -1 || iCurrentTerrainContext == iL)
-						{
-							if (ImGui::BeginPopupContextWindow())
-							{
-								iCurrentTerrainContext = iL;
-								bInContext = true;
-								if (ImGui::MenuItem("Change Texture"))
-								{
-									iSelectTexture = iL;
-									iCurrentTerrainContext = -1;
-								}
-								if (ImGui::MenuItem("Change Texture Name"))
-								{
-									bTextureNameWindow[iL] = true;
-									iCurrentTerrainContext = -1;
-								}
-								if (ImGui::MenuItem("Select Texture"))
-								{
-									if (iL == 0 && bTutorialCheckAction) TutorialNextAction();
-									if (iL == 2 && bTutorialCheckAction) TutorialNextAction();
-
-									iCurrentTextureForPaint = sTerrainSelectionID[iL]; //iL;
-								}
-
-								if (iL != 0)
-								{
-									if (ImGui::MenuItem("Delete Texture"))
-									{
-										t.visuals.sTerrainTextures[iL] = ""; //delete image in next run.
-										t.gamevisuals.sTerrainTextures[iL] = t.visuals.sTerrainTextures[iL];
-										g.projectmodified = 1;
-										bUpdateTerrainMaterials = true;
-										if (iCurrentTextureForPaint == iL)
-											iCurrentTextureForPaint--;
-
-										iCurrentTerrainContext = -1;
-									}
-								}
-								ImGui::EndPopup();
-							}
-							else {
-								iCurrentTerrainContext = -1;
-							}
-						}
-						*/
 
 						if (!bInContext && ImGui::IsItemHovered())
 						{
@@ -5211,30 +4205,6 @@ void imgui_Customize_Terrain_v3(int mode)
 					//					sLabel = cStr("##tradio") + cStr(iL);
 					//					float checkwidth = ImGui::GetFontSize()*1.5;
 					//					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (checkwidth*0.5), 0.0f));
-
-					if (iOldMaterial != iCurrentTextureForPaint)
-					{
-						/* g_pTerrain no longer used
-						if (g_pTerrain)
-						{
-							cstr sTextureName = cStr(iCurrentTextureForPaint);
-							//Only add material when user select it, save mem and faster loading.
-							if (g_pTerrain->FindMaterial(sTextureName.Get()) == nullptr)
-							{
-								//Not found try to load it.
-								g_pTerrain->AddMaterial(sTextureName.Get(), t.visuals.sTerrainTextures[sTerrainSelectionID[iCurrentTextureForPaint]].Get());
-
-							}
-							if (g_pTerrain->FindMaterial(sTextureName.Get()) != nullptr)
-							{
-								g_pTerrain->SetDefaultMaterial("base");
-
-								g_pTerrain->SetMaterial(sTextureName.Get());
-							}
-							iOldMaterial = iCurrentTextureForPaint;
-						}
-						*/
-					}
 
 					ImGui::NextColumn();
 
@@ -5345,14 +4315,12 @@ void imgui_Customize_Terrain_v3(int mode)
 			else {
 				//Delete old image.
 				if (ImageExist(sTerrainTexturesID[iL]) == 1) DeleteImage(sTerrainTexturesID[iL]);
-				//sTerrainTexturesID[iL] = 0;
 			}
 
 		}
 
 #ifdef DISPLAY4x4
 
-		//ImGui::Indent(-4);
 		ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0.0, 3.0));
 
 		ImGui::EndChild();
@@ -5507,36 +4475,6 @@ void imgui_Customize_Terrain_v3(int mode)
 
 		if (bUpdateTerrainMaterials)
 		{
-			/* g_pTerrain no longer used
-			if (g_pTerrain)
-			{
-				// THIS TAKES 4 SECONDS DURING THE LAUNCH (OUCH)
-				// I would move this to a thread and have it done in the background
-				// though Paul may redo the whole terrain code with the updated design so not need at this stage to optimize this
-
-				// this is going to clear all current materials in the list, ideally it should not do this
-				g_pTerrain->ClearMaterials(false);
-				for (int iL = 0; iL < 32; iL++)
-				{
-					if (t.visuals.sTerrainTextures[iL] != "")
-					{
-						//PE: When reload , selection id must fit.
-						sTerrainSelectionID[iL] = iL;
-
-						// add a material, given this is already in use for the palette we should share
-						// the pixel data as this function is going to make its own copy and it will slow
-						// things down, not good
-						g_pTerrain->AddMaterial(cStr(iL).Get(), t.visuals.sTerrainTextures[iL].Get());
-					}
-				}
-
-				// due to materials being cleared aside from the base we must reset it
-				g_pTerrain->SetDefaultMaterial("base");
-
-				// set the new material
-				g_pTerrain->SetMaterial(cStr(iCurrentTextureForPaint).Get());
-			}
-			*/
 			bUpdateTerrainMaterials = false;
 		}
 
@@ -5937,7 +4875,6 @@ void imgui_Customize_Tree_v3(int mode)
 					SetMipmapNum(1); //PE: mipmaps not needed.
 					if (ImageExist(sTreeTexturesID[iL]) == 1) DeleteImage(sTreeTexturesID[iL]);
 					LoadImage(sTreeTextures[iL].Get(), sTreeTexturesID[iL], 0, g.gdividetexturesize);
-					//LoadImageSize(pCompressedVersionIfAny, sTreeTexturesID[iL], 512,512); //Takes to long.
 					if (!ImageExist(sTreeTexturesID[iL]) == 1)
 					{
 						//Load failed, clear texture slot.
@@ -5972,7 +4909,6 @@ void imgui_Customize_Tree_v3(int mode)
 					if (w > control_width) {
 						//PE: fit perfectly with window width.
 						iLargerPreviewIconSize = (w - 20.0) / 4.0;
-						//iLargerPreviewIconSize -= 6.0; //Padding.
 						iLargerPreviewIconSize -= 10.0; //Padding.
 						if (iLargerPreviewIconSize > 70) iLargerPreviewIconSize = 70;
 					}
@@ -5983,7 +4919,6 @@ void imgui_Customize_Tree_v3(int mode)
 
 						cStr sLabelChild = cStr("##Tree4x4") + cStr(iL);
 
-						//ImVec2 content_avail = { iLargerPreviewIconSize*imageScaleX + 1.0f ,iLargerPreviewIconSize + 1.0f };
 						ImVec2 content_avail = { iLargerPreviewIconSize + 1.0f ,iLargerPreviewIconSize + 1.0f };
 
 						//style.WindowPadding
@@ -6001,8 +4936,6 @@ void imgui_Customize_Tree_v3(int mode)
 
 						if (ImGui::ImgBtn(sTreeTexturesID[iL], ImVec2(iLargerPreviewIconSize*imageScaleX, iLargerPreviewIconSize), ImColor(0, 0, 0, 255), ImColor(255, 255, 255, 255), ImColor(220, 220, 220, 220), ImColor(220, 220, 220, 220),-1,0,0,0))
 						{
-							//ggtrees_global_params.paint_tree_type = iL;
-							//ggtrees_global_params.paint_tree_bitfield = 1 << iL; // multiple bits can be set
 							//PE: Toggle
 							if (ggtrees_global_params.paint_tree_bitfield & (1ULL << iL))
 								ggtrees_global_params.paint_tree_bitfield &= ~(1ULL << iL);
@@ -6073,15 +5006,6 @@ void imgui_Customize_Tree_v3(int mode)
 		}
 
 		ImGui::EndChild();
-//		if (bGotSelection)
-//		{
-//			//tool_selected_col
-//			ImVec4 test = ImVec4(1.0,0.0,0.0,1.0);
-//			//ImGui::GetCurrentWindow()->DrawList->AddRect(image_selected_bb.Min, image_selected_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-//			ImGui::PushClipRect(image_selected_bb.Min, image_selected_bb.Max, false);
-//			ImGui::GetCurrentWindow()->DrawList->AddRect(image_selected_bb.Min, image_selected_bb.Max, ImGui::GetColorU32(test), 0.0f, 15, 4.0f);
-//			ImGui::PopClipRect();
-//		}
 
 		ImGui::GetStyle().WindowPadding = oldwinstylemain;
 		ImGui::GetStyle().FramePadding = oldstylemain;
@@ -6097,7 +5021,6 @@ void imgui_Customize_Tree_v3(int mode)
 			int iAction = askBoxCancel("This will randomize all your trees, are you sure?", "Confirmation"); //1==Yes 2=Cancel 0=No
 			if (iAction == 1)
 			{
-				//ggtrees_global_params.paint_density //PE: Perhaps make this random ?
 				GGTrees::GGTrees_RepopulateInstances(); //PE: Needed to get new random positions.
 			}
 		}
@@ -6481,7 +5404,6 @@ void imgui_Customize_Vegetation(int mode)
 		ImGui::Indent(10);
 		ImGui::PushItemWidth(-10);
 
-		#ifdef WICKEDENGINE
 		if (iDeleteSingleGrassTextures > 0) 
 		{
 			if (ImageExist(iDeleteSingleGrassTextures))
@@ -6547,9 +5469,6 @@ void imgui_Customize_Vegetation(int mode)
 
 			// save out reset grass plate choices
 			visuals_save ( );
-
-			// reset grass type choices to paint with
-			grass_resetchoices();
 		}
 
 		// find last slot used
@@ -6580,7 +5499,6 @@ void imgui_Customize_Vegetation(int mode)
 					//Load in image.
 					image_setlegacyimageloading(true);
 					SetMipmapNum(1); //PE: mipmaps not needed.
-					//t.terrain.imagestartindex = 63600
 					if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1) DeleteImage(t.terrain.imagestartindex + 180 + iL);
 					LoadImage(t.visuals.sGrassTextures[iL].Get(), t.terrain.imagestartindex + 180 + iL, 0, g.gdividetexturesize);
 					if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1)
@@ -6629,9 +5547,7 @@ void imgui_Customize_Vegetation(int mode)
 							t.gamevisuals.sGrassTexturesName[iL] = t.visuals.sGrassTexturesName[iL];
 							bGrassNameWindow[iL] = false;
 						}
-						#ifdef WICKEDENGINE
 						if (ImGui::MaxIsItemFocused()) bImGuiGotFocus = true;
-						#endif
 
 						ImGui::PopItemWidth();
 						ImGui::Indent(-10);
@@ -6748,7 +5664,6 @@ void imgui_Customize_Vegetation(int mode)
 										iCurrentContext = -1;
 									}
 								}
-								//ImGui::TextCenter(materialname.Get());
 								ImGui::EndPopup();
 							}
 							else {
@@ -6772,7 +5687,6 @@ void imgui_Customize_Vegetation(int mode)
 
 					float checkwidth = ImGui::GetFontSize()*1.5;
 					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (checkwidth*0.5), 0.0f));
-					//ImGui::Checkbox(sLabel.Get(), &bCurrentGrassTextureForPaint[iL]);
 
 					if (bCurrentGrassTextureForPaint[iL]) //sTerrainTexturesID[iL] - t.terrain.imagestartindex - 80)
 					{
@@ -6933,7 +5847,6 @@ void imgui_Customize_Vegetation(int mode)
 			{
 				cStr tOldDir = GetDir();
 				char * cFileSelected;
-				//cFileSelected = (char *)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "All\0*.*\0DDS\0*_color.dds\0PNG\0*_color.png\0JPEG\0*_color.jpg\0TGA\0*_color.tga\0BMP\0*_color.bmp\0\0\0", sGrassTextureFolder.Get(), NULL);
 				cFileSelected = (char *)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "DDS\0*_color.dds\0\0\0", sGrassTextureFolder.Get(), NULL);
 				SetDir(tOldDir.Get());
 
@@ -6996,34 +5909,9 @@ void imgui_Customize_Vegetation(int mode)
 								break;
 							}
 						}
-						/* not needed
-						bool bHasNormalAndSurface = false;
-						char pTestIfHasNormalAndSurface[MAX_PATH];
-						strcpy(pTestIfHasNormalAndSurface, g.fpscrootdir_s.Get());
-						strcat(pTestIfHasNormalAndSurface, "\\Files\\grassbank\\");
-						strcat(pTestIfHasNormalAndSurface, pChosenGrassSrcFile);
-						strcat(pTestIfHasNormalAndSurface, "_normal.dds");
-						if (FileExist(pTestIfHasNormalAndSurface) == 1)
-						{
-							strcpy(pTestIfHasNormalAndSurface, g.fpscrootdir_s.Get());
-							strcat(pTestIfHasNormalAndSurface, "\\Files\\grassbank\\");
-							strcat(pTestIfHasNormalAndSurface, pChosenGrassSrcFile);
-							strcat(pTestIfHasNormalAndSurface, "_surface.dds");
-							if (FileExist(pTestIfHasNormalAndSurface) == 1)
-							{
-								bHasNormalAndSurface = true;
-							}
-						}
-						if (bHasNormalAndSurface == false)
-						{
-							// turns out the reduced _color texture had no equivilant normal or surface texture
-							strcpy(pChosenGrassSrcFile, pFullGrassSrcFile);
-						}
-						*/
 
 						// replace grass image in grass plate
 						bool bGrassPlateChanged = false;
-						//for (int iGrassTexSet = 0; iGrassTexSet < 3; iGrassTexSet++) // no more normal or surface
 						for (int iGrassTexSet = 0; iGrassTexSet < 1; iGrassTexSet++)
 						{
 							// determine destination grass plate
@@ -7031,8 +5919,6 @@ void imgui_Customize_Vegetation(int mode)
 							strcpy(pDestTerrainTextureFile, g.fpscrootdir_s.Get());
 							strcat(pDestTerrainTextureFile, "\\Files\\levelbank\\testmap\\grass");
 							if (iGrassTexSet == 0) strcat(pDestTerrainTextureFile, "_coloronly.dds");
-							//if (iGrassTexSet == 1) strcat(pDestTerrainTextureFile, "_normal.dds");
-							//if (iGrassTexSet == 2) strcat(pDestTerrainTextureFile, "_surface.dds");
 
 							// construct grass texture filenames to insert
 							char pTexFileToLoad[MAX_PATH];
@@ -7049,8 +5935,6 @@ void imgui_Customize_Vegetation(int mode)
 								strcat(pTexFileToLoad, pChosenGrassSrcFile);
 							}
 							if (iGrassTexSet == 0) strcat(pTexFileToLoad, "_color.dds");
-							//if (iGrassTexSet == 1) strcat(pTexFileToLoad, "_normal.dds");
-							//if (iGrassTexSet == 2) strcat(pTexFileToLoad, "_surface.dds");
 
 							// do the insert
 							int iGrassType = iL;
@@ -7064,174 +5948,16 @@ void imgui_Customize_Vegetation(int mode)
 						{
 							// must remove pre-stored reference to any previous grass_color texture set
 							WickedCall_DeleteImage("levelbank\\testmap\\grass_coloronly.dds");
-							//WickedCall_DeleteImage("levelbank\\testmap\\grass_normal.dds");
-							//WickedCall_DeleteImage("levelbank\\testmap\\grass_surface.dds");
-
-							// Reload grass plate textures on all grass objects
-							grass_setgrassimage();
 						}
 					}
 				}
 			}
 			bUpdateGrassMaterials = false;
 		}
-		#else
-		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-		char * current_veg = NULL;// t.vegstylebank_s[g.vegstyleindex].Get();
-		if (g.vegstyleindex <= g.vegstylemax) current_veg = t.vegstylebank_s[g.vegstyleindex].Get();
-		if (!current_veg) current_veg = "NA";
-		if (ImGui::BeginCombo("##SelectVegetationCombo", current_veg)) // The second parameter is the label previewed before opening the combo.
-		{
-
-			for (int vegindex = 1; vegindex <= g.vegstylemax; vegindex++)
-			{
-
-				if (t.vegstylebank_s[vegindex].Len() > 0)
-				{
-					bool is_selected = false;
-					if (t.vegstylebank_s[vegindex].Get() == current_veg)
-						is_selected = true;
-					if (ImGui::Selectable(t.vegstylebank_s[vegindex].Get(), is_selected)) {
-
-
-						//Test display veg.
-						//grass_setgrassgridandfade();
-						//grass_init();
-						//t.completelyfillvegarea = 1;
-						t.terrain.grassupdateafterterrain = 1;
-						grass_loop();
-						t.terrain.grassupdateafterterrain = 0;
-
-						g.projectmodified = 1;
-						//	current_veg = t.terrainstylebank_s[vegindex].Get(); a bug?
-						current_veg = t.vegstylebank_s[vegindex].Get();
-
-						g.vegstyleindex = vegindex;
-						g.vegstyle_s = t.vegstylebank_s[g.vegstyleindex];
-
-						t.visuals.vegetationindex = g.vegstyleindex;
-						t.visuals.vegetation_s = t.vegstylebank_s[g.vegstyleindex];;
-						t.gamevisuals.vegetationindex = t.visuals.vegetationindex;
-						t.gamevisuals.vegetation_s = t.visuals.vegetation_s;
-						grass_changevegstyle();
-						bUpdateVeg = true;
-					}
-					if (is_selected)
-						ImGui::SetItemDefaultFocus();
-				}
-			}
-
-			ImGui::EndCombo();
-		}
-		ImGui::PopItemWidth();
-		#endif
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-		#ifdef WICKEDENGINE
 		// no need to toggle veg, we ALWAYS 'may' need it!
 		bEnableVeg = true;
-		#else
-		//ImGui::Text("Display Vegetation:");
-		//ImGui::SameLine();
-		//ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-		//ImGui::SetCursorPos(ImVec2(136, ImGui::GetCursorPosY()));
-		if (ImGui::Checkbox("Display Vegetation##DisplayVeg", &bEnableVeg)) {
-			if (bEnableVeg) {
-				iLastUpdateVeg = 0;
-				bUpdateVeg = true;
-			}
-		}
-		#endif
-#ifndef WICKEDENGINE
-		if (bEnableVeg) 
-		{
-			int iTextRightPos = 116; //136
-			//PE: Now use new RangeSlider.
-			/*
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Spray Minimum:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##VegRandomMin", &g_fvegRandomMin, 0.0, 100.0))
-			{
-				if (g_fvegRandomMin > g_fvegRandomMax) g_fvegRandomMax = g_fvegRandomMin;
-			}
-			ImGui::PopItemWidth();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Spray Maximum:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##VegRandomMax", &g_fvegRandomMax, 0.0, 100.0))
-			{
-				if (g_fvegRandomMax < g_fvegRandomMin) g_fvegRandomMin = g_fvegRandomMax;
-			}
-			ImGui::PopItemWidth();
-			*/
-		
-			ImGui::PushItemWidth(-10);
-			static float fval1=20.0, fval2 = 80.0;
-			ImVec2 vOldPos = ImGui::GetCursorPos();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Height:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::RangeSlider("##VegHeight", g_fvegRandomMin, g_fvegRandomMax, 100.0f);
-			ImGui::SetCursorPos(ImVec2(vOldPos.x, ImGui::GetCursorPosY()+9));
-			ImGui::PopItemWidth();
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Vegetation Draw Height Range");
-
-
-			//PE: These is still Overall and not when spraying, so keep them as is for now.
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Overall Quantity:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##VegOverallQuantity", &t.gamevisuals.VegQuantity_f, 0.0, 100.0))
-			{
-				iLastUpdateVeg = Timer();
-				bUpdateVeg = true;
-			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Overall Vegetation Quantity");
-			ImGui::PopItemWidth();
-
-			//PE: Overall Height: is not used anymore in MAX.
-#ifndef WICKEDENGINE
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Overall Height:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##VegOverallHeight", &t.gamevisuals.VegHeight_f, 0.0, 100.0))
-			{
-				iLastUpdateVeg = Timer();
-				bUpdateVeg = true;
-			}
-			ImGui::PopItemWidth();
-#endif
-
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-			ImGui::Text("Overall Width:");
-			ImGui::SameLine();
-			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-			ImGui::SetCursorPos(ImVec2(iTextRightPos, ImGui::GetCursorPosY()));
-			ImGui::PushItemWidth(-10);
-			if (ImGui::SliderFloat("##VegOverallWidth", &t.gamevisuals.VegWidth_f, 0.0, 100.0))
-			{
-				iLastUpdateVeg = Timer();
-				bUpdateVeg = true;
-			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Set Overall Vegetation Width");
-			ImGui::PopItemWidth();
-		}
-#endif
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
 		ImGui::Indent(-10);
@@ -7353,7 +6079,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 					const char *bNoneGrass = pestrcasestr(t.visuals.sGrassTextures[iL].Get(), "/none");
 					image_setlegacyimageloading(true);
 					SetMipmapNum(1); //PE: mipmaps not needed.
-					//t.terrain.imagestartindex = 63600
 					if (!bNoneGrass)
 					{
 						if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1) DeleteImage(t.terrain.imagestartindex + 180 + iL);
@@ -7402,7 +6127,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 					if (w > control_width) {
 						//PE: fit perfectly with window width.
 						iLargerPreviewIconSize = (w - 20.0) / 4.0;
-						//iLargerPreviewIconSize -= 6.0; //Padding.
 						iLargerPreviewIconSize -= 8.0; //Padding.
 						if (iLargerPreviewIconSize > 70) iLargerPreviewIconSize = 70;
 					}
@@ -7422,7 +6146,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 
 						if (ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize), ImColor(0, 0, 0, 255)))
 						{
-							//iSelectGrassTexture = iL;
 							//Now do toggle selection.
 							if (bCurrentGrassTextureForPaint[iL])
 								bCurrentGrassTextureForPaint[iL] = false;
@@ -7455,7 +6178,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 
 					float checkwidth = ImGui::GetFontSize()*1.5;
 					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (checkwidth*0.5), 0.0f));
-					//ImGui::Checkbox(sLabel.Get(), &bCurrentGrassTextureForPaint[iL]);
 
 					if (bCurrentGrassTextureForPaint[iL])
 					{
@@ -7463,10 +6185,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 						const ImRect image_bb((vSelectionDraw - padding), vSelectionDraw + padding + ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize));
 						draw_selections[iL].bActive = true;
 						draw_selections[iL].image_bb = image_bb;
-						//PE: Cant draw here, as Column background will overwrite part of the rect.
-						//ImGui::GetCurrentWindow()->DrawList->PushClipRect(image_bb.Min, image_bb.Max, true);
-						//ImGui::GetCurrentWindow()->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 3.0f);
-						//ImGui::GetCurrentWindow()->DrawList->PopClipRect();
 						values |= mask;
 					}
 					else
@@ -7507,7 +6225,6 @@ void imgui_Customize_Vegetation_v3(int mode)
 			if (draw_selections[iL].bActive)
 			{
 				//curposy
-				//ImGui::GetCurrentWindow()->DrawList->PushClipRect(draw_selections[iL].image_bb.Min, draw_selections[iL].image_bb.Max, true);
 				ImGui::GetCurrentWindow()->DrawList->PushClipRect(cliprect.Min, cliprect.Max, true);
 				ImGui::GetCurrentWindow()->DrawList->AddRect(draw_selections[iL].image_bb.Min, draw_selections[iL].image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
 				ImGui::GetCurrentWindow()->DrawList->PopClipRect();
@@ -7534,669 +6251,10 @@ void imgui_Customize_Vegetation_v3(int mode)
 		ImGui::Indent(-10);
 	}
 }
-/*
-//PE: Just keep a backup of old setup.
-void imgui_Customize_Vegetation_v3_old(int mode)
-{
-	int wflags = ImGuiTreeNodeFlags_DefaultOpen;
-	if (mode == 1) wflags = ImGuiTreeNodeFlags_None;
-	if (pref.bAutoClosePropertySections && mode == 1 && iLastOpenHeader != 3)
-		ImGui::SetNextItemOpen(false, ImGuiCond_Always);
-
-	float w = ImGui::GetWindowContentRegionWidth();
-
-	//Customize Vegetation
-	if (ImGui::StyleCollapsingHeader("Palette", wflags)) {
-
-		if (mode == 1) iLastOpenHeader = 3;
-
-		ImGui::Indent(10);
-		ImGui::PushItemWidth(-10);
-
-#ifdef WICKEDENGINE
-		if (iDeleteSingleGrassTextures > 0)
-		{
-			if (ImageExist(iDeleteSingleGrassTextures))
-				DeleteImage(iDeleteSingleGrassTextures);
-			iDeleteSingleGrassTextures = 0;
-		}
-		if (iDeleteAllGrassTextures)
-		{
-			iDeleteAllGrassTextures = false;
-			for (int iL = 0; iL < 16; iL++) {
-				if (ImageExist(t.terrain.imagestartindex + 180 + iL))
-					DeleteImage(t.terrain.imagestartindex + 180 + iL);
-			}
-			bUpdateGrassMaterials = true;
-		}
-		if (t.visuals.sGrassTextures[0] == "")
-		{
-			//PE: @Lee-Grass Define default palette here. Also need to update t.gamevisuals :)
-
-			init_grass_selections(); //PE: Set defaults for selection window.
-
-			const char* grass_filenames[16] =
-			{
-				"grassbank/grass1-rainforest.dds",
-				"grassbank/grass2-rainforest.dds",
-				"grassbank/grass3-rainforest.dds",
-				"grassbank/grass4-rainforest.dds",
-				"grassbank/flower red_color.dds",
-				"grassbank/flower white_color.dds",
-				"grassbank/flower yellow_color.dds",
-				"grassbank/short grass 3.dds",
-				"grassbank/tall grass 2_color.dds",
-				"grassbank/tall grass 2 dead_color.dds",
-				"grassbank/tall grass 3_color.dds",
-				"grassbank/tall grass 3 dead_color.dds",
-				"grassbank/tall grass 4_color.dds",
-				"grassbank/tall grass 4 dead_color.dds",
-				"grassbank/tall grass 5_color.dds",
-				"grassbank/tall grass 5 dead_color.dds",
-			};
-
-			const char* grass_shortnames[16] =
-			{
-				"Rain Forest 1.dds",
-				"Rain Forest 2.dds",
-				"Rain Forest 3.dds",
-				"Rain Forest 4.dds",
-				"Red Flower.dds",
-				"White Flower.dds",
-				"Yellow Flower.dds",
-				"Short Grass 3.dds",
-				"Tall Grass 2.dds",
-				"Tall Grass 2 Dead.dds",
-				"Tall Grass 3.dds",
-				"Tall Grass 3 Dead.dds",
-				"Tall Grass 4.dds",
-				"Tall Grass 4 Dead.dds",
-				"Tall Grass 5.dds",
-				"Tall Grass 5 Dead.dds",
-			};
-
-			for (uint32_t i = 0; i < 16; i++)
-			{
-				t.visuals.sGrassTextures[i] = grass_filenames[i];
-				t.visuals.sGrassTexturesName[i] = grass_shortnames[i];
-				t.gamevisuals.sGrassTextures[i] = t.visuals.sGrassTextures[i];
-				t.gamevisuals.sGrassTexturesName[i] = t.visuals.sGrassTexturesName[i];
-			}
-
-			// save out reset grass plate choices
-			visuals_save();
-
-			// reset grass type choices to paint with
-			grass_resetchoices();
-		}
-
-		// find last slot used
-		int iLastSlotUsed = 0;
-		for (int iL = 0; iL < 16; iL++)
-			if (t.visuals.sGrassTextures[iL] != "")
-				if (ImageExist(t.terrain.imagestartindex + 180 + iL))
-					iLastSlotUsed = iL;
-
-		int iUsedImages = 0;
-		float col_start = 90.0f;
-		int iSelectGrassTexture = -1;
-		cStr sGrassTextureFolder = g.rootdir_s + "grassbank\\";
-
-
-#ifdef DISPLAY4x4
-		ImGui::Indent(-10);
-		ImGui::Indent(4);
-		ImGui::Columns(4, "##veg4x4columns", false);  //false no border
-#endif
-
-		for (int iL = 0; iL < 16; iL++)
-		{
-			if (t.visuals.sGrassTextures[iL] != "")
-			{
-				if (!ImageExist(t.terrain.imagestartindex + 180 + iL))
-				{
-					//Load in image.
-					image_setlegacyimageloading(true);
-					SetMipmapNum(1); //PE: mipmaps not needed.
-					//t.terrain.imagestartindex = 63600
-					if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1) DeleteImage(t.terrain.imagestartindex + 180 + iL);
-					LoadImage(t.visuals.sGrassTextures[iL].Get(), t.terrain.imagestartindex + 180 + iL, 0, g.gdividetexturesize);
-					if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1)
-					{
-						sGrassTexturesID[iL] = t.terrain.imagestartindex + 180 + iL;
-					}
-					else
-					{
-						//Load failed, clear texture slot.
-						t.visuals.sGrassTextures[iL] = "";
-						t.gamevisuals.sGrassTextures[iL] = t.visuals.sGrassTextures[iL];
-						g.projectmodified = 1;
-						bUpdateGrassMaterials = true;
-					}
-					SetMipmapNum(-1);
-					image_setlegacyimageloading(false);
-				}
-				else
-				{
-					sGrassTexturesID[iL] = t.terrain.imagestartindex + 180 + iL;
-				}
-				if (ImageExist(sGrassTexturesID[iL]))
-				{
-					iUsedImages++;
-
-
-
-					if (bGrassNameWindow[iL]) {
-						//Ask for a proper name of veg.
-						ImGui::SetNextWindowSize(ImVec2(26 * ImGui::GetFontSize(), 32 * ImGui::GetFontSize()), ImGuiCond_Once);
-						ImGui::SetNextWindowPosCenter(ImGuiCond_Once);
-						cstr sUniqueWinName = cstr("Vegetation Name##ttn") + cstr(iL);
-						ImGui::Begin(sUniqueWinName.Get(), &bGrassNameWindow[iL], 0);
-						ImGui::Indent(10);
-						static char NewTextureName[256];
-						cstr sUniqueInputName = cstr("##InputVegetationName") + cstr(iL);
-						float content_width = ImGui::GetContentRegionAvailWidth() - 10.0;
-						ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(content_width, content_width), ImColor(0, 0, 0, 255));
-						ImGui::PushItemWidth(-10);
-						ImGui::Text("Enter a name for your vegetation:");
-
-						if (ImGui::IsRootWindowOrAnyChildFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-							ImGui::SetKeyboardFocusHere(0);
-
-						if (ImGui::InputText(sUniqueInputName.Get(), t.visuals.sGrassTexturesName[iL].Get(), 250, ImGuiInputTextFlags_EnterReturnsTrue)) {
-							t.gamevisuals.sGrassTexturesName[iL] = t.visuals.sGrassTexturesName[iL];
-							bGrassNameWindow[iL] = false;
-						}
-#ifdef WICKEDENGINE
-						if (ImGui::MaxIsItemFocused()) bImGuiGotFocus = true;
-#endif
-
-						ImGui::PopItemWidth();
-						ImGui::Indent(-10);
-						if (ImGui::GetCurrentWindow()->ScrollbarSizes.x > 0) {
-							//Hitting exactly at the botton could cause flicker, so add some additional lines when scrollbar on.
-							ImGui::Text("");
-							ImGui::Text("");
-						}
-						bImGuiGotFocus = true;
-						ImGui::End();
-					}
-
-
-#ifndef DISPLAY4x4
-					if (iUsedImages < 16 && iL == 0)
-					{
-						float but_gadget_size = ImGui::GetFontSize()*10.0;
-						ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-
-						if (ImGui::StyleButton("Add Texture##Grass", ImVec2(but_gadget_size, 0)))
-						{
-							iSelectGrassTexture = 99;
-						}
-						ImGui::Separator();
-					}
-#endif
-					float path_gadget_size = ImGui::GetFontSize()*3.0;
-					int preview_icon_size = ImGui::GetFontSize();
-
-					//PE: You can only change image slot 0 , not delete it, we need at least one texture.
-					bool bDeleteImage = false;
-					if (iL != 0 && iL == iLastSlotUsed) bDeleteImage = true;
-
-					// chop grassbank from material name 
-					cstr materialname = t.visuals.sGrassTexturesName[iL];
-
-					cStr sLabel = cStr("##InputGrassTexture") + cStr(iL);
-
-					//PE: New do 4x4 coloums here.
-#ifdef DISPLAY4x4
-					int iLargerPreviewIconSize = 28;//PE: 54 , now lowest possible icon
-					float control_width = (iLargerPreviewIconSize + 3.0) * 4.0f + 6.0;
-
-					if (w > control_width) {
-						//PE: fit perfectly with window width.
-						iLargerPreviewIconSize = (w - 20.0) / 4.0;
-						iLargerPreviewIconSize -= 6.0; //Padding.
-						if (iLargerPreviewIconSize > 70) iLargerPreviewIconSize = 70;
-					}
-
-					ImVec2 vSelectionDraw = ImGui::GetCurrentWindow()->DC.CursorPos;
-
-					if (sGrassTexturesID[iL] > 0)
-					{
-						cStr sLabelChild = cStr("##grass4x4") + cStr(iL);
-
-						ImVec2 content_avail = { iLargerPreviewIconSize + 1.0f ,iLargerPreviewIconSize + 1.0f };
-
-						//style.WindowPadding
-						ImVec2 oldstyle = ImGui::GetStyle().FramePadding;
-						ImGui::GetStyle().FramePadding = { 0,0 };
-						ImGui::BeginChild(sLabelChild.Get(), content_avail, false, ImGuiWindowFlags_NoScrollbar);
-
-						if (ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize), ImColor(0, 0, 0, 255)))
-						{
-							//iSelectGrassTexture = iL;
-							//Now do toggle selection.
-							if (bCurrentGrassTextureForPaint[iL])
-								bCurrentGrassTextureForPaint[iL] = false;
-							else
-								bCurrentGrassTextureForPaint[iL] = true;
-
-						}
-
-						bool bInContext = false;
-						static int iCurrentContext = -1;
-						if (iCurrentContext == -1 || iCurrentContext == iL)
-						{
-							if (ImGui::BeginPopupContextWindow())
-							{
-								iCurrentContext = iL;
-								bInContext = true;
-								if (ImGui::MenuItem("Change Vegetation"))
-								{
-									iSelectGrassTexture = iL;
-									iCurrentContext = -1;
-								}
-								if (ImGui::MenuItem("Change Vegetation Name"))
-								{
-									bGrassNameWindow[iL] = true;
-									iCurrentContext = -1;
-								}
-								if (bCurrentGrassTextureForPaint[iL])
-								{
-									if (ImGui::MenuItem("Unselect Vegetation"))
-									{
-										bCurrentGrassTextureForPaint[iL] = false;
-									}
-								}
-								else {
-									if (ImGui::MenuItem("Select Vegetation"))
-									{
-										bCurrentGrassTextureForPaint[iL] = true;
-									}
-								}
-								if (iL != 0)
-								{
-									if (ImGui::MenuItem("Delete Vegetation"))
-									{
-										t.visuals.sGrassTextures[iL] = ""; //delete image in next run.
-										t.gamevisuals.sGrassTextures[iL] = t.visuals.sGrassTextures[iL];
-										g.projectmodified = 1;
-										bUpdateGrassMaterials = true;
-										iCurrentContext = -1;
-									}
-								}
-								//ImGui::TextCenter(materialname.Get());
-								ImGui::EndPopup();
-							}
-							else {
-								iCurrentContext = -1;
-							}
-						}
-						if (!bInContext && ImGui::IsItemHovered())
-						{
-							ImGui::BeginTooltip();
-							ImGui::Text("(This feature is not yet available)");
-							ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(350, 350), ImColor(0, 0, 0, 255), ImColor(220, 220, 220, 220), ImColor(255, 255, 255, 255), ImColor(180, 180, 160, 255), -1, 0, 0, 0, false, false, true);
-							ImGui::TextCenter(materialname.Get());
-							ImGui::Separator();
-							ImGui::EndTooltip();
-						}
-
-						ImGui::EndChild();
-						ImGui::GetStyle().FramePadding = oldstyle;
-
-					}
-					sLabel = cStr("##veg") + cStr(iL);
-
-					float checkwidth = ImGui::GetFontSize()*1.5;
-					ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((ImGui::GetContentRegionAvail().x*0.5) - (checkwidth*0.5), 0.0f));
-					//ImGui::Checkbox(sLabel.Get(), &bCurrentGrassTextureForPaint[iL]);
-
-					if (bCurrentGrassTextureForPaint[iL]) //sTerrainTexturesID[iL] - t.terrain.imagestartindex - 80)
-					{
-						ImVec2 padding = { 2.0, 2.0 };
-						const ImRect image_bb((vSelectionDraw - padding), vSelectionDraw + padding + ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize));
-						ImGui::GetCurrentWindow()->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(tool_selected_col), 0.0f, 15, 2.0f);
-					}
-
-
-					ImGui::NextColumn();
-
-#else
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-
-					//PE: @Lee-Grass bCurrentGrassTextureForPaint[iL] will be true if you need to use it when painting.
-					ImGui::Checkbox(sLabel.Get(), &bCurrentGrassTextureForPaint[iL]);
-
-					ImGui::SameLine();
-					//ImGui::SetCursorPos(ImVec2(col_start, ImGui::GetCursorPosY() - 3));
-					//ImGui::SetCursorPos(ImVec2(col_start-40, ImGui::GetCursorPosY()));
-					int iSmallPreviewYMargin = preview_icon_size / 2;
-					int iLargerPreviewIconSize = preview_icon_size * 2;
-					ImGui::SetCursorPos(ImVec2(col_start - 40, ImGui::GetCursorPosY() - iSmallPreviewYMargin));
-
-					if (sGrassTexturesID[iL] > 0)
-					{
-						if (ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(iLargerPreviewIconSize, iLargerPreviewIconSize), ImColor(0, 0, 0, 255)))
-						{
-							iSelectGrassTexture = iL;
-						}
-						if (ImGui::IsItemHovered())
-						{
-							ImGui::BeginTooltip();
-							ImGui::ImgBtn(sGrassTexturesID[iL], ImVec2(180, 180), ImColor(0, 0, 0, 255));
-							ImGui::EndTooltip();
-						}
-						ImGui::SameLine();
-					}
-
-					int iInputFlags = ImGuiInputTextFlags_EnterReturnsTrue;
-					if (!bDeleteImage)
-						iInputFlags = ImGuiInputTextFlags_ReadOnly;
-
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + iSmallPreviewYMargin));
-					sLabel = cStr(" ##InputGrassTexture") + cStr(iL);
-					ImGui::PushItemWidth(-10 - path_gadget_size);
-					if (ImGui::InputText(sLabel.Get(), &materialname[0], 250, iInputFlags))
-					{
-						if (strlen(materialname) == 0) t.visuals.sGrassTextures[iL] = ""; //delete image in next run.
-						t.gamevisuals.sGrassTextures[iL] = t.visuals.sGrassTextures[iL];
-						g.projectmodified = 1;
-						bUpdateGrassMaterials = true;
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::SameLine();
-					ImGui::PushItemWidth(path_gadget_size);
-					sLabel = cStr("...##InputGrassTexture") + cStr(iL);
-
-					if (ImGui::StyleButton(sLabel.Get()))
-						iSelectGrassTexture = iL;
-
-					ImGui::PopItemWidth();
-
-					if (bDeleteImage)
-					{
-						ImGui::SameLine();
-						sLabel = cStr("X##InputGrassTexture") + cStr(iL);
-						if (ImGui::StyleButton(sLabel.Get()))
-						{
-							t.visuals.sGrassTextures[iL] = ""; //delete image in next run.
-							t.gamevisuals.sGrassTextures[iL] = t.visuals.sGrassTextures[iL];
-							bCurrentGrassTextureForPaint[iL] = false;
-							g.projectmodified = 1;
-							bUpdateGrassMaterials = true;
-							visuals_save();
-						}
-					}
-
-					// squish together as it looks better - can see more grass choices
-					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - iSmallPreviewYMargin * 2));
-#endif
-				}
-			}
-			else
-			{
-				//Delete old image.
-				if (ImageExist(t.terrain.imagestartindex + 180 + iL) == 1) DeleteImage(t.terrain.imagestartindex + 180 + iL);
-				sGrassTexturesID[iL] = 0;
-				bCurrentGrassTextureForPaint[iL] = false;
-			}
-		}
-
-#ifdef DISPLAY4x4
-		ImGui::Indent(-4);
-		ImGui::Columns(1);
-		ImGui::Indent(10);
-
-		if (iUsedImages < 16)
-		{
-			//ImGui::Separator();
-			float but_gadget_size = ImGui::GetFontSize()*10.0;
-			ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-
-			if (ImGui::StyleButton("Add New Vegetation##Grass", ImVec2(but_gadget_size, 0)))
-			{
-				iSelectGrassTexture = 99;
-			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Add New Vegetation (This feature is not yet available)");
-
-			//ImGui::Separator();
-		}
-#endif
-
-		static bool grass_selection_window = false;
-		static int iSelectedGrassTexture = -1;
-		if (iSelectGrassTexture >= 0)
-		{
-			iSelectedGrassTexture = iSelectGrassTexture;
-			grass_selection_window = true;
-			iSelectGrassTexture = 0;
-		}
-		iSelectGrassTexture = imgui_get_selections(grass_selections, grass_selections_text, 1, 280, &grass_selection_window);
-
-		if (iSelectGrassTexture >= 0 && iSelectedGrassTexture >= 0)
-		{
-			bool bNeedFileSelector = false;
-			if (iSelectGrassTexture == 999)
-				bNeedFileSelector = true;
-
-			grass_selection_window = false;
-
-			int iNewGrassIndex = iSelectGrassTexture;
-			iSelectGrassTexture = iSelectedGrassTexture;
-			if (iSelectGrassTexture == 99)
-			{
-				//Find free slot.
-				for (int iL2 = 0; iL2 < 32; iL2++) {
-					if (t.visuals.sGrassTextures[iL2] == "")
-					{
-						iSelectGrassTexture = iL2;
-						break;
-					}
-				}
-			}
-
-			if (!bNeedFileSelector) {
-				t.visuals.sGrassTextures[iSelectGrassTexture] = grass_selections[iNewGrassIndex];
-				if (ImageExist(t.terrain.imagestartindex + 180 + iSelectGrassTexture))
-					iDeleteSingleGrassTextures = t.terrain.imagestartindex + 180 + iSelectGrassTexture;
-				bUpdateGrassMaterials = true;
-				t.visuals.sGrassTexturesName[iSelectGrassTexture] = grass_selections_text[iNewGrassIndex];
-				bGrassNameWindow[iSelectGrassTexture] = true;
-				bCurrentGrassTextureForPaint[iSelectGrassTexture] = true; //PE: Select new added texture.
-			}
-
-			if (bNeedFileSelector)
-			{
-				cStr tOldDir = GetDir();
-				char * cFileSelected;
-				//cFileSelected = (char *)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "All\0*.*\0DDS\0*_color.dds\0PNG\0*_color.png\0JPEG\0*_color.jpg\0TGA\0*_color.tga\0BMP\0*_color.bmp\0\0\0", sGrassTextureFolder.Get(), NULL);
-				cFileSelected = (char *)noc_file_dialog_open(NOC_FILE_DIALOG_OPEN, "DDS\0*_color.dds\0\0\0", sGrassTextureFolder.Get(), NULL);
-				SetDir(tOldDir.Get());
-
-				if (cFileSelected && strlen(cFileSelected) > 0)
-				{
-					char *relonly = (char *)pestrcasestr(cFileSelected, g.rootdir_s.Get());
-					t.visuals.sGrassTextures[iSelectGrassTexture] = cFileSelected;
-					t.visuals.sGrassTexturesName[iSelectGrassTexture] = "";
-					if (relonly)
-					{
-						t.visuals.sGrassTextures[iSelectGrassTexture] = cFileSelected + g.rootdir_s.Len();
-					}
-					g.projectmodified = 1;
-					t.gamevisuals.sGrassTextures[iSelectGrassTexture] = t.visuals.sGrassTextures[iSelectGrassTexture];
-					bUpdateGrassMaterials = true;
-
-					bGrassNameWindow[iSelectGrassTexture] = true;
-
-					//PE: Reload image.
-					if (ImageExist(t.terrain.imagestartindex + 180 + iSelectGrassTexture))
-						iDeleteSingleGrassTextures = t.terrain.imagestartindex + 180 + iSelectGrassTexture;
-
-					bCurrentGrassTextureForPaint[iSelectGrassTexture] = true; //PE: Select new added texture.
-
-				}
-			}
-			iSelectGrassTexture = -1;
-		}
-
-		if (bUpdateGrassMaterials)
-		{
-			//@Lee-Grass update super palette.
-			for (int iL = 0; iL < 16; iL++)
-			{
-				if (t.visuals.sGrassTextures[iL] != "")
-				{
-					if (sGrassChangedTextures[iL] != t.visuals.sGrassTextures[iL])
-					{
-						//Add t.visuals.sGrassTextures[iL] to palette in slot iL
-						sGrassChangedTextures[iL] = t.visuals.sGrassTextures[iL];
-
-						// the chosen grass file
-						char pGrassSrcWorkFile[MAX_PATH];
-						strcpy(pGrassSrcWorkFile, sGrassChangedTextures[iL].Get());
-						pGrassSrcWorkFile[strlen(pGrassSrcWorkFile) - strlen("_color.dds")] = 0;
-						char pGrassSrcFile[MAX_PATH];
-						strcpy(pGrassSrcFile, pGrassSrcWorkFile + strlen("grassbank\\"));
-
-						char pChosenGrassSrcFile[MAX_PATH];
-						strcpy(pChosenGrassSrcFile, pGrassSrcFile);
-
-						// determine grass texture filenames to insert (i.e. take ' dead' from 'grass short dead' and put in pChosenGrassSrcFile as 'grass short')
-						char pFullGrassSrcFile[MAX_PATH];
-						strcpy(pFullGrassSrcFile, pChosenGrassSrcFile);
-						for (int n = strlen(pFullGrassSrcFile) - 1; n > 0; n--)
-						{
-							if (pFullGrassSrcFile[n] == ' ')
-							{
-								pChosenGrassSrcFile[n] = 0;
-								break;
-							}
-						}
-
-						// replace grass image in grass plate
-						bool bGrassPlateChanged = false;
-						//for (int iGrassTexSet = 0; iGrassTexSet < 3; iGrassTexSet++) // no more normal or surface
-						for (int iGrassTexSet = 0; iGrassTexSet < 1; iGrassTexSet++)
-						{
-							// determine destination grass plate
-							char pDestTerrainTextureFile[MAX_PATH];
-							strcpy(pDestTerrainTextureFile, g.fpscrootdir_s.Get());
-							strcat(pDestTerrainTextureFile, "\\Files\\levelbank\\testmap\\grass");
-							if (iGrassTexSet == 0) strcat(pDestTerrainTextureFile, "_coloronly.dds");
-							//if (iGrassTexSet == 1) strcat(pDestTerrainTextureFile, "_normal.dds");
-							//if (iGrassTexSet == 2) strcat(pDestTerrainTextureFile, "_surface.dds");
-
-							// construct grass texture filenames to insert
-							char pTexFileToLoad[MAX_PATH];
-							strcpy(pTexFileToLoad, g.fpscrootdir_s.Get());
-							strcat(pTexFileToLoad, "\\Files\\grassbank\\");
-							if (iGrassTexSet == 0)
-							{
-								// allows an additional word before _color so can use same normal and surface texture maps
-								strcat(pTexFileToLoad, pFullGrassSrcFile);
-							}
-							else
-							{
-								// possibly truncated for normal and surface loading
-								strcat(pTexFileToLoad, pChosenGrassSrcFile);
-							}
-							if (iGrassTexSet == 0) strcat(pTexFileToLoad, "_color.dds");
-							//if (iGrassTexSet == 1) strcat(pTexFileToLoad, "_normal.dds");
-							//if (iGrassTexSet == 2) strcat(pTexFileToLoad, "_surface.dds");
-
-							// do the insert
-							int iGrassType = iL;
-							if (ImageCreateTexturePlate(pDestTerrainTextureFile, iGrassType, pTexFileToLoad, 1, 1) == 1)
-							{
-								// success
-								bGrassPlateChanged = true;
-							}
-						}
-						if (bGrassPlateChanged == true)
-						{
-							// must remove pre-stored reference to any previous grass_color texture set
-							WickedCall_DeleteImage("levelbank\\testmap\\grass_coloronly.dds");
-							//WickedCall_DeleteImage("levelbank\\testmap\\grass_normal.dds");
-							//WickedCall_DeleteImage("levelbank\\testmap\\grass_surface.dds");
-
-							// Reload grass plate textures on all grass objects
-							grass_setgrassimage();
-						}
-					}
-				}
-			}
-			bUpdateGrassMaterials = false;
-		}
-#else
-		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-		char * current_veg = NULL;// t.vegstylebank_s[g.vegstyleindex].Get();
-		if (g.vegstyleindex <= g.vegstylemax) current_veg = t.vegstylebank_s[g.vegstyleindex].Get();
-		if (!current_veg) current_veg = "NA";
-		if (ImGui::BeginCombo("##SelectVegetationCombo", current_veg)) // The second parameter is the label previewed before opening the combo.
-		{
-
-			for (int vegindex = 1; vegindex <= g.vegstylemax; vegindex++)
-			{
-
-				if (t.vegstylebank_s[vegindex].Len() > 0)
-				{
-					bool is_selected = false;
-					if (t.vegstylebank_s[vegindex].Get() == current_veg)
-						is_selected = true;
-					if (ImGui::Selectable(t.vegstylebank_s[vegindex].Get(), is_selected)) {
-
-
-						//Test display veg.
-						//grass_setgrassgridandfade();
-						//grass_init();
-						//t.completelyfillvegarea = 1;
-						t.terrain.grassupdateafterterrain = 1;
-						grass_loop();
-						t.terrain.grassupdateafterterrain = 0;
-
-						g.projectmodified = 1;
-						//	current_veg = t.terrainstylebank_s[vegindex].Get(); a bug?
-						current_veg = t.vegstylebank_s[vegindex].Get();
-
-						g.vegstyleindex = vegindex;
-						g.vegstyle_s = t.vegstylebank_s[g.vegstyleindex];
-
-						t.visuals.vegetationindex = g.vegstyleindex;
-						t.visuals.vegetation_s = t.vegstylebank_s[g.vegstyleindex];;
-						t.gamevisuals.vegetationindex = t.visuals.vegetationindex;
-						t.gamevisuals.vegetation_s = t.visuals.vegetation_s;
-						grass_changevegstyle();
-						bUpdateVeg = true;
-					}
-					if (is_selected)
-						ImGui::SetItemDefaultFocus();
-				}
-			}
-
-			ImGui::EndCombo();
-		}
-		ImGui::PopItemWidth();
-#endif
-
-		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-
-		// no need to toggle veg, we ALWAYS 'may' need it!
-		bEnableVeg = true;
-
-		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-		ImGui::Indent(-10);
-	}
-}
-*/
 
 void imgui_Customize_Weather(int mode)
 {
 #ifdef ALLOW_WEATHER_IN_EDITOR
-	//int wflags = ImGuiTreeNodeFlags_DefaultOpen;
-	//if (mode == 1) wflags = ImGuiTreeNodeFlags_None;
 	//PE: Default to closed.
 	int wflags = ImGuiTreeNodeFlags_None;
 
@@ -8221,12 +6279,6 @@ void imgui_Customize_Weather(int mode)
 		ImGui::PopItemWidth();
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "Weather");
 
-
-		//ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
-		//ImGui::Text("Display Weather:");
-		//ImGui::SameLine();
-		//ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
-		//ImGui::SetCursorPos(ImVec2(136, ImGui::GetCursorPosY()));
 		if (ImGui::Checkbox("Display Weather##DisplayWeather", &bEnableWeather))
 		{
 			reset_env_particles();
@@ -8243,8 +6295,6 @@ void imgui_Customize_Water(int mode)
 {
 	void tab_tab_Column_text(char *text, float fColumn);
 
-	//int wflags = ImGuiTreeNodeFlags_DefaultOpen;
-	//if (mode == 1) wflags = ImGuiTreeNodeFlags_None;
 	//PE: Default to closed.
 	int wflags = ImGuiTreeNodeFlags_None;
 	if (pref.bAutoClosePropertySections && iLastOpenHeader != 32)
@@ -8258,9 +6308,7 @@ void imgui_Customize_Water(int mode)
 		ImGui::Indent(10);
 		float fTabColumnWidth = 120.0f;
 
-		//tab_tab_Column_text("Enable Water", fTabColumnWidth);
 		ImGui::PushItemWidth(-10);
-
 		
 		if (ImGui::Checkbox("Enable Water##v2bEnableWater", &t.visuals.bWaterEnable)) {
 			t.gamevisuals.bWaterEnable = t.visuals.bWaterEnable;
@@ -8312,7 +6360,6 @@ void imgui_Customize_Water(int mode)
 				Wicked_Update_Visuals((void *)&t.visuals);
 			}
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Change the water base color applied as part of the overall effect");
-			//if (ImGui::IsItemHovered()) ImGui::SetTooltip("Water Color");
 
 			ImGui::PopItemWidth();
 
@@ -8381,13 +6428,6 @@ void imgui_Customize_Water(int mode)
 			}
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Water Fog Max Distance");
 			ImGui::PopItemWidth();
-			
-
-			/*
-			wave_amplitude 50
-			patch_length 1000
-			choppy_scale 1.3
-			*/
 		}
 		ImGui::PopItemWidth();
 
@@ -8484,8 +6524,6 @@ void imgui_Customize_Water_V2(int mode)
 
 			ImGui::TextCenter("Water Base Color");
 			ImVec4 mycolor = ImVec4(t.visuals.WaterRed_f / 255.0, t.visuals.WaterGreen_f / 255.0, t.visuals.WaterBlue_f / 255.0, 1.0);
-			//ImGui::TextCenter("Water Color");
-			//ImVec4 mycolor = ImVec4(t.visuals.WaterRed_f / 255.0, t.visuals.WaterGreen_f / 255.0, t.visuals.WaterBlue_f / 255.0, t.visuals.WaterAlpha_f / 255.0);
 
 			bool open_popup = ImGui::ColorButton("##NewV2WickedWaterColor", mycolor, 0, ImVec2(w - 20.0, 0));
 			if (open_popup)
@@ -8517,7 +6555,6 @@ void imgui_Customize_Water_V2(int mode)
 			if (pref.iEnableAdvancedWater)
 			{
 				ImGui::TextCenter("Water Wave Size");
-				/*if (ImGui::SliderFloat("##fWaterWaveAmplitude:", &t.visuals.fWaterWaveAmplitude, 0.0f, 800.0f, "%.1f", 2.0f))*/
 				if (ImGui::MaxSliderInputFloat("##fWaterWaveAmplitude:", &t.visuals.fWaterWaveAmplitude, 0.0f, 800.0f, "Set Water Wave Size", 0, 800))
 				{
 					t.gamevisuals.fWaterWaveAmplitude = t.visuals.fWaterWaveAmplitude;
@@ -8525,7 +6562,6 @@ void imgui_Customize_Water_V2(int mode)
 					g.projectmodified = 1;
 				}
 				ImGui::TextCenter("Water Wind Contribution");
-				//if (ImGui::SliderFloat("##fWaterWindDependency:", &t.visuals.fWaterWindDependency, 0.0f, 1.0f))
 				fTmp = t.visuals.fWaterWindDependency * 100.0f;
 				if (ImGui::MaxSliderInputFloat("##fWaterWindDependency:", &fTmp, 0.0f, 100.0f, "Set Water Wind Contribution", 0, 100.0f))
 				{
@@ -8535,7 +6571,6 @@ void imgui_Customize_Water_V2(int mode)
 					g.projectmodified = 1;
 				}
 				ImGui::TextCenter("Water Tiling Patch Size");
-				//if (ImGui::SliderFloat("##fWaterPatchLength:", &t.visuals.fWaterPatchLength, 10.0f, 300.0f))
 				if (ImGui::MaxSliderInputFloat("##fWaterPatchLength:", &t.visuals.fWaterPatchLength, 10.0f, 300.0f, "Set Water Tile Size", 10.0f, 300.0f))
 				{
 					t.gamevisuals.fWaterPatchLength = t.visuals.fWaterPatchLength;
@@ -8587,9 +6622,6 @@ void imgui_Customize_Water_V2(int mode)
 			//PE: To follow new auto close headers.
 			if (pref.bAutoClosePropertySections)
 			{
-				// Causes bug where you can't sculpt after chaning water height
-				//ggterrain_extra_params.edit_mode = 0;
-				//ggterrain_global_render_params2.flags2 &= ~GGTERRAIN_SHADER_FLAG2_SHOW_BRUSH_SIZE;
 			}
 			else
 			{
@@ -8681,7 +6713,7 @@ void imgui_Customize_Weather_V2(int mode)
 
 		bCHOpen = ImGui::StyleCollapsingHeader("Weather", wflags);
 	}
-	//ImGui::windowTabVisible()
+
 	if (bCHOpen && ImGui::windowTabVisible() ) {
 
 		if (mode != 3)
@@ -8784,25 +6816,6 @@ void imgui_Customize_Weather_V2(int mode)
 			g.projectmodified = 1;
 		}
 		
-		/*
-		if (ImGui::MaxSliderInputFloat("##WickedFogNearest_f", &t.visuals.FogNearest_f, 0.0f, 10000.0f, "Fog Nearest"))
-		{
-			t.gamevisuals.FogNearest_f = t.visuals.FogNearest_f;
-			Wicked_Update_Visuals((void *)&t.visuals);
-		}
-		if (t.visuals.FogDistance_f >= 15000.0f)
-			t.visuals.FogDistance_f = 15000.0f;
-		if (ImGui::MaxSliderInputFloat("##WickedFogDistance_f", &t.visuals.FogDistance_f, 0.0f, 15000.0f, "Fog Distance"))
-		{
-			if (t.visuals.FogDistance_f >= 15000.0f)
-				t.visuals.FogDistance_f = 1000000.0f; //Disable fog.
-			t.gamevisuals.FogDistance_f = t.visuals.FogDistance_f;
-			Wicked_Update_Visuals((void *)&t.visuals);
-		}
-		if (t.visuals.FogDistance_f >= 15000.0f)
-			t.visuals.FogDistance_f = 1000000.0f; //Disable fog.
-		*/
-
 		ImGui::TextCenter("Fog Opacity");
 		if (ImGui::MaxSliderInputFloat("##WickedFogHeight_f", &t.visuals.FogA_f, 0.0f, 1.0f, "Set Fog Opacity"))
 		{
@@ -8811,15 +6824,6 @@ void imgui_Customize_Weather_V2(int mode)
 			Wicked_Update_Visuals((void *)&t.visuals);
 			g.projectmodified = 1;
 		}
-
-		//PE: Wicked fog height is not really usefull , as it dont set the height but turn into a "black" color ?
-		//InWicked we use FogA_f as height.
-		//if (ImGui::SliderFloat("##WickedFogHeight_f", &t.visuals.FogA_f, 0.0f, 2.0f))
-		//{
-		//	t.gamevisuals.FogA_f = t.visuals.FogA_f;
-		//	bVisualUpdated = true;
-		//}
-		//if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fog Height");
 
 		ImGui::TextCenter("Horizon/Fog Color");
 		ImVec4 mycolor = ImVec4(t.visuals.FogR_f / 255.0, t.visuals.FogG_f / 255.0, t.visuals.FogB_f / 255.0, 1.0);
@@ -8844,34 +6848,6 @@ void imgui_Customize_Weather_V2(int mode)
 		ID3D11ShaderResourceView* lpTexture = GetImagePointerView(TOOL_PENCIL);
 		ImVec2 vDrawPos = { ImGui::GetCursorScreenPos().x + (ImGui::GetContentRegionAvail().x - 30.0f) ,ImGui::GetCursorScreenPos().y - (ImGui::GetFontSize()*1.5f) - 3.0f };
 		window->DrawList->AddImage((ImTextureID)lpTexture, vDrawPos, vDrawPos + ImVec2(16, 16), ImVec2(0, 0), ImVec2(1, 1), ImGui::GetColorU32(ImVec4(1, 1, 1, 1)));
-
-
-
-#ifndef REMOVED_EARLYACCESS
-		ImGui::TextCenter("Lighting");
-		if (ImGui::MaxSliderInputFloat("##fWeatherLighting:", &t.visuals.fWeatherLighting, 0.0f, 100.0f, "Set Lighting (This feature is not yet available)"))
-		{
-			t.gamevisuals.fWeatherLighting = t.visuals.fWeatherLighting;
-			Wicked_Update_Visuals((void *)&t.visuals);
-			g.projectmodified = 1;
-		}
-		ImGui::TextCenter("Thunder");
-		if (ImGui::MaxSliderInputFloat("##fWeatherThunder:", &t.visuals.fWeatherThunder, 0.0f, 100.0f, "Set Thunder (This feature is not yet available)"))
-		{
-			t.gamevisuals.fWeatherThunder = t.visuals.fWeatherThunder;
-			Wicked_Update_Visuals((void *)&t.visuals);
-			g.projectmodified = 1;
-		}
-
-		ImGui::TextCenter("Wind");
-		if (ImGui::MaxSliderInputFloat("##fWeatherWind:", &t.visuals.fWeatherWind, 0.0f, 100.0f, "Set Wind (This feature is not yet available)"))
-		{
-			t.gamevisuals.fWeatherWind = t.visuals.fWeatherWind;
-			Wicked_Update_Visuals((void *)&t.visuals);
-			g.projectmodified = 1;
-		}
-
-#endif
 
 		#ifdef POSTPROCESSRAIN
 		//PE: Postprocess rain.
@@ -8962,74 +6938,6 @@ void imgui_Customize_Weather_V2(int mode)
 		}
 		#endif
 
-		#ifdef POSTPROCESSSNOW
-		//PE: Postprocess rain.
-		if (t.visuals.iEnvironmentWeather == 3)
-		{
-			// Hidden for now.
-			/*if (ImGui::StyleCollapsingHeader("Snow Post Process", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::PushItemWidth(-10);
-				if (ImGui::Checkbox("Snow Post Process##setSnowEnabled", &t.visuals.bSnowEnabled)) {
-					t.gamevisuals.bSnowEnabled = t.visuals.bSnowEnabled;
-					if (master_renderer)
-						master_renderer->setSnowEnabled(t.visuals.bSnowEnabled); //PE: test post process shader.
-					g.projectmodified = 1;
-				}
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Snow Post Process");
-				ImGui::PopItemWidth();
-
-				if (t.visuals.bSnowEnabled)
-				{
-					ImGui::PushItemWidth(-10);
-					ImGui::TextCenter("Snow Speed");
-					if (ImGui::SliderFloat("##Snow Speed", &t.visuals.fSnowSpeed, -30.0, 30.0))
-					{
-						t.gamevisuals.fSnowSpeed = t.visuals.fSnowSpeed;
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::PushItemWidth(-10);
-					ImGui::TextCenter("Snow Layers");
-					if (ImGui::SliderFloat("##Snow Layers", &t.visuals.fSnowLayers, 1.0, 20.0))
-					{
-						t.gamevisuals.fSnowLayers = t.visuals.fSnowLayers;
-						master_renderer->setSnowLayers(t.visuals.fSnowLayers);
-					}
-					ImGui::PopItemWidth();
-
-
-					ImGui::PushItemWidth(-10);
-					ImGui::TextCenter("Snow Opacity");
-					if (ImGui::SliderFloat("##Snow Opacity", &t.visuals.fSnowOpacity, 0.0, 1.0))
-					{
-						master_renderer->setSnowOpacity(t.visuals.fSnowOpacity);
-						t.gamevisuals.fSnowOpacity = t.visuals.fSnowOpacity;
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::PushItemWidth(-10);
-					ImGui::TextCenter("Snow Depth");
-					if (ImGui::SliderFloat("##Snow Depth", &t.visuals.fSnowDepth, 0.01, 10.0))
-					{
-						master_renderer->setSnowDepth(t.visuals.fSnowDepth);
-						t.gamevisuals.fSnowDepth = t.visuals.fSnowDepth;
-					}
-					ImGui::PopItemWidth();
-
-					ImGui::PushItemWidth(-10);
-					ImGui::TextCenter("Snow Wind");
-					if (ImGui::SliderFloat("##Snow Wind", &t.visuals.fSnowWind, 0.01, 10.0))
-					{
-						master_renderer->setSnowWindiness(t.visuals.fSnowWind);
-						t.gamevisuals.fSnowWind = t.visuals.fSnowWind;
-					}
-					ImGui::PopItemWidth();
-				}
-			}
-			*/
-		}
-		#endif
 
 		ImGui::Separator();
 
@@ -9167,36 +7075,6 @@ void imgui_Customize_Weather_V2(int mode)
 			}
 		}
 		ImGui::Indent(10);
-
-		if (!bRenderTabTab && !pref.bHideTutorials)
-		{
-#ifndef REMOVED_EARLYACCESS
-			if (ImGui::StyleCollapsingHeader("Tutorial (this feature is incomplete)", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Indent(10);
-				cstr cShowTutorial = "01 - Getting started";
-				char* tutorial_combo_items[] = { "01 - Getting started", "02 - Creating terrain", "03 - Add character and set a path" };
-				SmallTutorialVideo(cShowTutorial.Get(), tutorial_combo_items, ARRAYSIZE(tutorial_combo_items), SECTION_WEATHER);
-				float but_gadget_size = ImGui::GetFontSize()*12.0;
-				float w = ImGui::GetWindowContentRegionWidth() - 20.0;
-				ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-				#ifdef INCLUDESTEPBYSTEP
-				if (ImGui::StyleButton("View Step by Step Tutorial", ImVec2(but_gadget_size, 0)))
-				{
-					bHelp_Window = true;
-					bHelpVideo_Window = true;
-					extern bool bSetTutorialSectionLeft;
-					bSetTutorialSectionLeft = false;
-					strcpy(cForceTutorialName, cShowTutorial.Get());
-				}
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start Step by Step Tutorial");
-				#endif
-
-				ImGui::Indent(-10);
-			}
-#endif
-		}
-
 
 		ImGui::PopItemWidth();
 		ImGui::Indent(-10);
@@ -9336,9 +7214,6 @@ void imgui_Customize_Sky_V2(int mode)
 				fContentHeight = 85; //One line default. and prevent flicker.
 			}
 			vLastRunHeight = { 0 ,fContentHeight };
-			//ImGui::BeginChild("##skybox4x4forscrollbar", vLastRunHeight, false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-			//if (ImGui::GetCurrentWindow()->ScrollbarSizes.x > 0) {
 
 			ImVec2 oldstylemain = ImGui::GetStyle().FramePadding;
 			ImVec2 oldwinstylemain = ImGui::GetStyle().WindowPadding;
@@ -9375,7 +7250,6 @@ void imgui_Customize_Sky_V2(int mode)
 					if ( (w-ImGui::GetCurrentWindow()->ScrollbarSizes.x) > control_width) {
 						//PE: fit perfectly with window width.
 						iLargerPreviewIconSize = ( (w-ImGui::GetCurrentWindow()->ScrollbarSizes.x) - 20.0) / 4.0;
-						//iLargerPreviewIconSize -= 6.0; //Padding.
 						iLargerPreviewIconSize -= 7.0; //Padding.
 						if (iLargerPreviewIconSize > 70) iLargerPreviewIconSize = 70;
 					}
@@ -9443,12 +7317,6 @@ void imgui_Customize_Sky_V2(int mode)
 						ImGui::TextCenter(materialname.Get());
 						ImGui::Separator();
 						ImGui::EndTooltip();
-
-						//ImGui::BeginTooltip();
-						//ImGui::ImgBtn(iSkyIcon, ImVec2(200, 200), ImColor(0, 0, 0, 255), ImColor(220, 220, 220, 220), ImColor(255, 255, 255, 255), ImColor(180, 180, 160, 255), -1, 0, 0, 0, false, false, true);
-						//ImGui::TextCenter(materialname.Get());
-						//ImGui::Separator();
-						//ImGui::EndTooltip();
 					}
 
 					ImGui::EndChild();
@@ -9474,12 +7342,10 @@ void imgui_Customize_Sky_V2(int mode)
 			ImGui::GetStyle().FramePadding = oldstylemain;
 
 			ImGui::EndChild();
-			//ImGui::Indent(-4);
 			ImGui::Indent(2);
 			ImGui::Columns(1);
 			ImGui::Indent(10);
 		}
-
 
 		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
 
@@ -9633,7 +7499,6 @@ void imgui_Customize_Sky_V2(int mode)
 
 		ImGui::TextCenter("Global Probe Brightness");
 		fTmp = t.visuals.fEnvProbeBrightness;
-		//if (ImGui::SliderFloat("##HDRI Brightness", &fTmp, 0.0, 10.0, "%.2f", 1.0f))
 		if (ImGui::MaxSliderInputFloat("##HDRI Brightness", &fTmp, 0.01f, 10.0f, "Specify the brightness of the global environment probe"))
 		{
 			t.visuals.fEnvProbeBrightness = fTmp;
@@ -9667,7 +7532,6 @@ void imgui_Customize_Sky_V2(int mode)
 				WickedCall_UpdateProbes();
 			}
 			ImGui::TextCenter("Cloud Coverage");
-			//if (ImGui::SliderFloat("##V2WickedSkyCloudCoverage", &t.visuals.SkyCloudCoverage, 0.0f, 2.0f))
 			fTmp = t.visuals.SkyCloudCoverage * 100.0f;
 			if (ImGui::MaxSliderInputFloat("##V2WickedSkyCloudCoverage", &fTmp, 0.0f, 200.0f, "How much of the sky is covered with clouds", 0.0f, 200.0f ))
 			{
@@ -9682,11 +7546,8 @@ void imgui_Customize_Sky_V2(int mode)
 			}
 			ImGui::TextCenter("Cloud Height (meters)");
 			float cloudHeight = GGTerrain_UnitsToMeters( t.visuals.SkyCloudHeight );
-			//fTmp = cloudHeight * 0.1f;
 			if (ImGui::SliderFloat("##V2WickedSkyCloudScale", &cloudHeight, -100, 3500, "%.0f", 2.0f))
-			//if (ImGui::MaxSliderInputFloat("##V2WickedSkyCloudScale", &fTmp, -10, 350, "Positions the cloud layer higher up or lower down", -10, 350))
 			{
-				//cloudHeight = fTmp * 10.0f;
 				t.visuals.SkyCloudHeight = GGTerrain_MetersToUnits( cloudHeight );
 				t.gamevisuals.SkyCloudHeight = t.visuals.SkyCloudHeight;
 				weather->cloudScale = t.visuals.SkyCloudHeight;
@@ -9699,7 +7560,6 @@ void imgui_Customize_Sky_V2(int mode)
 			}
 			ImGui::TextCenter("Cloud Thickness (meters)");
 			cloudHeight = GGTerrain_UnitsToMeters( t.visuals.SkyCloudThickness );
-		/*	if (ImGui::SliderFloat("##V2WickedSkyCloudThickness", &cloudHeight, 0, 4000))*/
 			fTmp = cloudHeight * 0.1f;
 			if (ImGui::MaxSliderInputFloat("##V2WickedSkyCloudThickness", &fTmp, 0, 400, "This is how thick the clouds are from top to bottom", 0, 400))
 			{
@@ -9714,7 +7574,6 @@ void imgui_Customize_Sky_V2(int mode)
 				WickedCall_UpdateProbes();
 			}
 			ImGui::TextCenter("Cloud Speed");
-			/*if (ImGui::SliderFloat("##V2WickedSkyCloudSpeed", &t.visuals.SkyCloudSpeed, 0.0f, 50.0f))*/
 			if (ImGui::MaxSliderInputFloat("##V2WickedSkyCloudSpeed", &t.visuals.SkyCloudSpeed, 0.0f, 50.0f, "The cloud movement speed across the sky", 0.0f, 50.0f))
 			{
 				t.gamevisuals.SkyCloudSpeed = t.visuals.SkyCloudSpeed;
@@ -9829,21 +7688,6 @@ void terrain_UpdateInputAndEntities ( void )
 	if ( t.conkit.entityeditmode == 0 )
 	{
 		// Control painter objects
-		
-		/*if ( t.inputsys.k_s == "1" )  t.terrain.terrainpaintermode = 1;
-		if ( t.inputsys.k_s == "2" )  t.terrain.terrainpaintermode = 2;
-		if ( t.inputsys.k_s == "3" )  t.terrain.terrainpaintermode = 3;
-		if ( t.inputsys.k_s == "4" )  t.terrain.terrainpaintermode = 4;
-		if ( t.inputsys.k_s == "5" )  t.terrain.terrainpaintermode = 5;
-		if ( t.inputsys.k_s == "6" )  t.terrain.terrainpaintermode = 6;
-		if ( t.inputsys.k_s == "7" )  t.terrain.terrainpaintermode = 7;
-		if ( t.inputsys.k_s == "8" )  t.terrain.terrainpaintermode = 8;
-		if ( t.inputsys.k_s == "9" )  t.terrain.terrainpaintermode = 9;
-		if ( t.inputsys.k_s == "0" )  t.terrain.terrainpaintermode = 10;
-		csForceKey2 = "1";
-		*/
-
-		// ZJ: Stopped checking actual input. 
 		// From Task:"Some number keys seem to affect the right hand tool section ... This should not happen."
 		if (csForceKey2 == "1")  t.terrain.terrainpaintermode = 1;
 		if (csForceKey2 == "2")  t.terrain.terrainpaintermode = 2;
@@ -9863,7 +7707,6 @@ void terrain_UpdateInputAndEntities ( void )
 		if ( t.inputsys.k_s == "=" && t.terrain.RADIUS_f < g.fTerrainBrushSizeMax )  t.terrain.RADIUS_f = t.terrain.RADIUS_f + ( 25 * t.terrain.ts_f );
 
 		//PE: We will need to add t.entityelement [ t.e ].floorposy again to raise/lower objects when changing terrain.
-
 		if ( t.terrain.terrainpaintermode >= 1 && t.terrain.terrainpaintermode <= 5 )
 		{
 			// this can also undo all InstanceStamp ( constructs )
@@ -9873,11 +7716,7 @@ void terrain_UpdateInputAndEntities ( void )
 			for ( t.e = 1; t.e <= g.entityelementlist; t.e++ )
 			{
 				t.entid = t.entityelement [ t.e ].bankindex;
-				#ifdef WICKEDENGINE
 				if (t.entityelement[t.e].floorposy > -89998 && t.entityelement[t.e].editorlock == false)
-				#else
-				if (t.entityelement[t.e].floorposy > 0 && t.entityelement[t.e].editorlock == false)
-				#endif
 				{
 					t.obj = t.entityelement [ t.e ].obj;
 					if ( g.gridlayershowsingle == 1 )
@@ -9896,7 +7735,6 @@ void terrain_UpdateInputAndEntities ( void )
 						if ( ObjectExist ( t.obj ) == 1 )
 						{
 							//LB: remembers original height from original floor, so can maintain things like items on tables, etc
-							//t.tadjy_f = BT_GetGroundHeight (t.terrain.TerrainID, t.entityelement[t.e].x, t.entityelement[t.e].z) - t.entityelement[t.e].floorposy;
 							t.tadjy_f = BT_GetGroundHeight (t.terrain.TerrainID, t.entityelement[t.e].x, t.entityelement[t.e].z) - t.entityelement[t.e].floorposy;
 							if ( t.tadjy_f != 0 )
 							{
@@ -9922,17 +7760,12 @@ void terrain_UpdateInputAndEntities ( void )
 							}
 						}
 					}
-					#ifdef WICKEDENGINE
 					t.entityelement [ t.e ].floorposy = -90000.0;
-					#else
-					t.entityelement[t.e].floorposy = 0;
-					#endif
 				}
 			}
 			if ( t.trevealallinstancestampentities == 1 )
 			{
 				// we have edited the entities in the game itself, so remove
-				// InstanceStamp (  system for manual entity edit mode )
 				for ( t.e = 1; t.e <= g.entityelementlist; t.e++ )
 				{
 					t.entid = t.entityelement [ t.e ].bankindex;
@@ -9957,66 +7790,6 @@ void terrain_editcontrol ( void )
 {
 	//PE: Update status from input.
 	terrain_UpdateInputAndEntities();
-
-	/* g_pTerrain no longer used
-	// check terrain is valid first
-	if ( !g_pTerrain )
-		return;
-
-	// pass relevant information across to the terrain
-	g_pTerrain->SetEditRadius   ( t.terrain.RADIUS_f );
-
-	// pass the edit position - must make sure these values are different to 0 otherwise it screws up
-	if ( t.inputsys.activemouse )
-	{
-		if ( t.inputsys.localx_f != 0 && t.inputsys.localy_f != 0 )
-			g_pTerrain->SetEditPosition ( t.inputsys.localx_f, t.inputsys.localy_f );
-	}
-
-	g_pTerrain->SetDeltaTime    ( ImGui::GetIO ( ).DeltaTime );
-	g_pTerrain->SetMouseState   ( ( unsigned int ) t.inputsys.mclick );
-
-	if( t.inputsys.keyshift == 1 )
-		g_pTerrain->SetRaiseMode(0);
-	else
-		g_pTerrain->SetRaiseMode    ( iTerrainRaiseMode );
-
-	g_pTerrain->SetEditMode(0);
-
-	if ( current_mode == TOOL_SHAPE )
-	{
-		g_pTerrain->SetEditMode ( MaxTerrain::TERRAIN_EDIT_SCULPT );
-		g_pTerrain->SetBrushMode ( 2 );
-	}
-	else if ( current_mode == TOOL_LEVELMODE )
-	{
-		g_pTerrain->SetEditMode ( MaxTerrain::TERRAIN_EDIT_SCULPT );
-		g_pTerrain->SetBrushMode ( 4 );
-	}
-	else if ( current_mode == TOOL_BLENDMODE )
-	{
-		g_pTerrain->SetEditMode ( MaxTerrain::TERRAIN_EDIT_SCULPT );
-		g_pTerrain->SetBrushMode ( 5 );
-	}
-	else if ( current_mode == TOOL_STOREDLEVEL )
-	{
-		g_pTerrain->SetEditMode ( MaxTerrain::TERRAIN_EDIT_SCULPT );
-		g_pTerrain->SetBrushMode ( 6 );
-	}
-	else if ( current_mode == TOOL_PAINTTEXTURE )
-	{
-		g_pTerrain->SetEditMode ( MaxTerrain::TERRAIN_EDIT_PAINT );
-	}
-	else if ( current_mode == TOOL_RAMPMODE )
-	{
-		// I don't know how this should work with the input. Please note the
-		// actual function is set up and you can call Ramp and pass in the two
-		// points that form the line
-	}
-
-	// allow editing
-	g_pTerrain->Edit ( );
-	*/
 }
 
 void terrain_recordbuffer ( void ) {}
@@ -10031,7 +7804,6 @@ void terrain_renderonly ( void ) {}
 
 float BT_GetGroundHeight ( unsigned long value, float x, float z )
 {
-	#ifdef GGTERRAIN_USE_NEW_TERRAIN
 	extern int g_iDisableTerrainSystem;
 	if (g_iDisableTerrainSystem == 0 && t.visuals.bEnableEmptyLevelMode==false)
 	{
@@ -10048,27 +7820,10 @@ float BT_GetGroundHeight ( unsigned long value, float x, float z )
 		}
 		return GGORIGIN_Y;
 	}
-	#endif
-
-	/* g_pTerrain no longer used
-	// moved this function into here so it's in the same place as the terrain
-	if ( !g_pTerrain ) return g.gdefaultterrainheight;
-
-	// this might be explained by the threads loading things in as you move around as
-	// it will return 0 if meshes are being loaded in, this is because of a clash
-	// and an alteration needs to be made with the way things happen when the thread
-	// is active, see more details here - https://thegamecreators.teamwork.com/#/tasks/20283106
-	float fMikeThisHeightIsNotConsistentAsCameraMovesAbout = g_pTerrain->GetHeight ( x, z );
-	//PE: Only if it fails.
-	if (fMikeThisHeightIsNotConsistentAsCameraMovesAbout == 0.0f)
-		fMikeThisHeightIsNotConsistentAsCameraMovesAbout = g.gdefaultterrainheight;
-	return fMikeThisHeightIsNotConsistentAsCameraMovesAbout;
-	*/
 }
 
 float BT_GetGroundHeight ( unsigned long value, float x, float z, bool dsadsadsa )
 {
-	#ifdef GGTERRAIN_USE_NEW_TERRAIN
 	extern int g_iDisableTerrainSystem;
 	if (g_iDisableTerrainSystem == 0 && t.visuals.bEnableEmptyLevelMode == false)
 	{
@@ -10086,18 +7841,6 @@ float BT_GetGroundHeight ( unsigned long value, float x, float z, bool dsadsadsa
 		}
 		return GGORIGIN_Y;
 	}
-	#endif
-
-	/* g_pTerrain no longer used
-	// moved this function into here so it's in the same place as the terrain - no idea what the final parameter is
-	if ( !g_pTerrain ) return g.gdefaultterrainheight;
-	float fHeight = g_pTerrain->GetHeight(x, z);
-	if (fHeight <= 0) {
-		//PE: g_pTerrain->GetHeight(x, z); dont seam to work when m_bMultithreading is true ?
-		fHeight = g.gdefaultterrainheight;
-	}
-	return fHeight;
-	*/
 }
 
 void terrain_clearterraindirtyregion ( void ) {}
@@ -10116,14 +7859,6 @@ void terrain_load ( char* pLevelBankLocation )
 
 void terrain_save ( char* pLevelBankLocation )
 {
-	/* g_pTerrain no longer used
-	// nothing to save if no terrain
-	if ( !g_pTerrain )
-		return;
-
-	// string passed in points to levelbank\testmap folder used to store all FPM level data
-	g_pTerrain->Save ( pLevelBankLocation );	
-	*/
 }
 
 void terrain_savetextures ( void ) {}
@@ -10153,27 +7888,13 @@ void terrain_quickupdateheightmapfromheightdata ( void )
 	int k = 0;
 }
 void terrain_generatetextureselect ( void ) {}
-void terrain_generatesupertexture ( bool bForceRecalcOfPalette );
 void terrain_generateshadows ( void ) {}
-void generate_terrain ( int seed, int scale, int mchunk_size );
-void DiamondSquare(unsigned x1, unsigned y1, unsigned x2, unsigned y2, float range, unsigned level) ;
 void terrain_start_play ( void ) 
 {
-	/* g_pTerrain no longer used
-	// this must be called to ensure we refresh internal lists
-	if ( !g_pTerrain )
-		return;
-	// thought this would be the place to start physics but calling it here crashes
-	*/
 }
 
 void terrain_stop_play ( void ) 
 {
-	/* g_pTerrain no longer used
-	// this must be called to ensure we refresh internal lists
-	if ( g_pTerrain )
-		g_pTerrain->PrepareLevel ( );
-	*/
 }
 
 void terrain_setfog ( void ) {}
@@ -10183,7 +7904,6 @@ void terrain_updatewatermechanism ( void ) {}
 void terrain_updatewaterphysics ( void ) {}
 void terrain_water_setfog ( void ) {}
 
-#ifdef PROCEDURALTERRAINWINDOW
 
 //Variables to use else where.
 float fTerrainHeightStart = 0.0f; //Meters
@@ -10195,12 +7915,6 @@ float fWaterDepthMeters = -200.0;
 int iTriggerInvalidateAfterFrames = 0;
 void check_new_terrain_parameters(void)
 {
-	//PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
-	//if (ggterrain_extra_params.iProceduralTerrainType == 3 || ggterrain_extra_params.iProceduralTerrainType == 5 || ggterrain_extra_params.iProceduralTerrainType == 7)
-	//	ggtrees_global_params.draw_enabled = 1;
-	//else
-	//	ggtrees_global_params.draw_enabled = 0;
-
 	iTriggerInvalidateAfterFrames = 22; //PE: Also Need to be delayed so new terrain data have been updated.
 	GGTerrain::GGTerrain_InvalidateRegion(-1000000.0, -1000000.0, 1000000.0, 1000000.0, GGTERRAIN_INVALIDATE_ALL);
 
@@ -10245,10 +7959,9 @@ void procedural_set_heightmap_level(void)
 	ggterrain_global_params.fractal_flags = ggterrain_global_params.fractal_flags & ~(GGTERRAIN_FRACTAL_VALLEYS2 | GGTERRAIN_FRACTAL_RIDGES2);
 	ggterrain_global_params.fractal_flags = ggterrain_global_params.fractal_flags & ~(GGTERRAIN_FRACTAL_VALLEYS3 | GGTERRAIN_FRACTAL_RIDGES3);
 
-	// ggtrees_global_params.draw_enabled = 0; //PE: Trees is now only controlled by visual.ini t.visuals.bEndableTreeDrawing
-
 	t.visuals.bWaterEnable = true;
 	t.gamevisuals.bWaterEnable = t.visuals.bWaterEnable;
+
 	Wicked_Update_Visuals((void *)&t.visuals);
 
 	//Create Level
@@ -10301,8 +8014,6 @@ void procedural_set_empty_level(bool bWaterReset)
 		ggterrain_extra_params.iUpdateTrees = 10;
 	}
 }
-
-
 
 void wicked_set_water_level(int water_height)
 {
@@ -10359,10 +8070,6 @@ void procedural_new_level(void)
 	{
 		//PE: Use full available area.
 		preview_size_x = ImGui::GetMainViewport()->Size.x - 300.0;
-		//if (!bUseNoTitleBar)
-		//	preview_size_y = ImGui::GetMainViewport()->Size.y - 80.0;
-		//else
-		//	preview_size_y = ImGui::GetMainViewport()->Size.y - 60.0;
 
 		//PE: without the lower buttons.
 		if (!bUseNoTitleBar)
@@ -10547,7 +8254,6 @@ void procedural_new_level(void)
 			{
 				#ifdef DIGAHOLE
 				//PE: No changes when we have a hole to hwnd :)
-				//t.visuals.bDisableSkybox = false; //PE: Test dynamic sky.
 				#else
 				//PE: Clouds look strange in take screenshot mode ? must disable for now!
 				t.visuals.skyindex = 0; //Disable clouds. just use static skybox settings (new sky not really activated).
@@ -11883,8 +9589,6 @@ void procedural_new_level(void)
 						{
 							iLastTreeGrassSettings = 3;
 							//PE: Default tree and grass setup.
-							// ZJ: Removed dead tree from forest biome.
-							//ggtrees_global_params.paint_tree_bitfield = 17195597825; //Forest
 							ggtrees_global_params.paint_tree_bitfield = 7340033; //Forest
 							ggtrees_global_params.paint_scale_random_low = 40.0; //Default Scale Min.
 							ggtrees_global_params.paint_scale_random_high = 200.0; //Default Scale Max.
@@ -12234,11 +9938,9 @@ void procedural_new_level(void)
 					if (ImGui::StyleButton("Empty", ImVec2(fButSizeX, fButSizeY)))
 					{
 						if (bRandomizeTimeOfDay && iRandomThemeChoice == 0) iRandomTimeOfDayChoice = (rand() % 7);
-						//if (iRandomThemeChoice == 0) bSelectRandomSkybox = true;
 						bSelectNightSkybox = true;
 						iSelectedThemeChoice = 8;
 
-						// sets ggterrain_global_params.iProceduralTerrainType to 0
 						t.showeditortrees = t.gamevisuals.bEndableTreeDrawing = t.visuals.bEndableTreeDrawing = 0;
 						t.showeditorveg = t.gamevisuals.bEndableGrassDrawing = t.visuals.bEndableGrassDrawing = 0;
 						t.showeditorterrain = t.gamevisuals.bEndableTerrainDrawing = t.visuals.bEndableTerrainDrawing = 1;
@@ -12405,7 +10107,6 @@ void procedural_new_level(void)
 
 							// more terrain settings
 							ggterrain_extra_params.iProceduralTerrainType = item.proceduralterraintype;
-							//ggterrain_global_params.fractal_initial_amplitude = 1.0f;
 
 							// set atmospheric loop
 							char pAtmosLoopFile[MAX_PATH];
@@ -12448,9 +10149,6 @@ void procedural_new_level(void)
 							ImGui::GetCurrentWindow()->DrawList->AddRect(image_bb.Min, image_bb.Max, ImGui::GetColorU32(outline_color), 0.0f, 15, 2.0f);
 						}
 						if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select Custom Biome Theme");
-
-						// more custom biomes?
-						//ImGui::SameLine();
 					}
 					ggterrain_global_render_params2.editable_size = feditable_size;
 					ImGui::PopItemWidth();
@@ -12535,7 +10233,6 @@ void procedural_new_level(void)
 						ImGui::PushItemWidth(numericboxwidth);
 						if (ImGui::InputFloat("##UI2TerrainEditableSizeKilometersText", &fTmp, 0, 0, "%.1f Km"))
 						{
-							//ggterrain_global_render_params2.editable_size = fTmp * 39.3701 * 1000.0f;
 							ggterrain_global_render_params2.editable_size = GGTerrain_MetersToUnits(fTmp / 2.0) * 1000.0f;
 							fSnapShotModeCameraY = fTmp * 48000.0f;
 						}
@@ -12593,11 +10290,8 @@ void procedural_new_level(void)
 								ImGui::TextCenter("Valley Depth (meters)");
 								meterValue = GGTerrain_UnitsToMeters(ggterrain_global_params.minHeight);
 								if(ImGui::MaxSliderInputFloatPower("##MinHeightRange", &meterValue, 0.0f, 1000.0f, 0, 0, 1000, 60, 2.0f, 2 ))
-								//if (ImGui::SliderFloat("##MinHeightRange", &meterValue, 0.0f, 1000.0f, "%.2f"))
-								{
-									ggterrain_global_params.minHeight = GGTerrain_MetersToUnits(meterValue);
-									bTriggerStableY = true;
-								}
+								ggterrain_global_params.minHeight = GGTerrain_MetersToUnits(meterValue);
+								bTriggerStableY = true;
 							}
 							ImGui::PopItemWidth();
 
@@ -13612,7 +11306,6 @@ void procedural_new_level(void)
 				ImGui::SetWindowFontScale(1.4);
 				ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(0.0, 3.0));
 				float fButtonSizeX = (ImGui::GetContentRegionAvailWidth() - 1.0f);
-				//if (ImGui::StyleButton("Generate Terrain for Level", ImVec2(fButtonSizeX, 0.0f)))
 				ImVec2 texthere = ImGui::GetCursorPos();
 				if (ImGui::StyleButton("##Generate Terrain for Level", ImVec2(fButtonSizeX, ImGui::GetFontSize()*3.0)))
 				{
@@ -13680,7 +11373,6 @@ void procedural_new_level(void)
 									t.editorfreeflight.c.x_f = x;
 									t.editorfreeflight.c.z_f = z;
 									t.editorfreeflight.s = t.editorfreeflight.c;
-									//PositionCamera(x, t.gridentityposy_f, z);
 									bLandFound = true;
 									newLevelCamera.set = 1;
 									newLevelCamera.x = x; newLevelCamera.y = fNewYPos; newLevelCamera.z = z;
@@ -13752,10 +11444,6 @@ void procedural_new_level(void)
 									extern int g_iAddEntitiesModeFrom;
 									g_iAddEntitiesModeFrom = g.entidmaster + 1;
 									cstr entProfileToAdd_s = "_markers\\BehaviorHidden.fpe";
-
-									//PE: For now all systemwide_lua need to be hidden
-									//if(t.entityelement[i].y >= -9999) //PE: Hidden default = -999999
-									//	entProfileToAdd_s = "_markers\\Behavior.fpe";
 
 									int iFoundMatchEntID = 0;
 									for (int entid = 1; entid <= g.entidmaster; entid++)
@@ -13976,17 +11664,6 @@ void procedural_new_level(void)
 				if (iQuitProceduralLevel == 0)
 					bProceduralLevel = false;
 			}
-
-			// LB: Disagree with this, ALL LEVELS must have a name and FPM or bad things happen!
-			/*
-			if (!bProceduralLevelFromStoryboard)
-			{
-				//Started from editor , just go back.
-				bProceduralLevel = false;
-				iQuitProceduralLevel = 0;
-				bTriggerTerrainSaveAsWindow = false;
-			}
-			*/
 		}
 		if (!bProceduralLevel)
 		{
@@ -14011,7 +11688,6 @@ void procedural_new_level(void)
 				DeleteBitmapEx(99);
 			}
 
-			//if (ImageExist(TERRAINGENERATOR_IMAGE)) DeleteImage(TERRAINGENERATOR_IMAGE);
 			if (ObjectExist(TERRAINGENERATOR_OBJECT)) DeleteObject(TERRAINGENERATOR_OBJECT);
 
 			//Restore fog.
@@ -14119,9 +11795,7 @@ void procedural_new_level(void)
 	//#### END Procedural Preview. ####
 	//#################################
 }
-#endif
 
-#ifdef WICKEDENGINE
 void PositionCameraForNewLevel()
 {
 	if (newLevelCamera.set)
@@ -14136,7 +11810,6 @@ void PositionCameraForNewLevel()
 		newLevelCamera.set = 0;
 	}
 }
-#endif
 
 #ifdef CUSTOMTEXTURES
 void ChooseTerrainTextureFolder(char* folder)
@@ -14226,12 +11899,10 @@ void ChooseTerrainTextureFolder(char* folder)
 					// Extract filename only from the source file and copy to new location
 					std::string newFilename = destination;
 					const char* filePath = file.c_str() + sourceDirectoryLength;
-					//char* filePath = strstr((char*)file.c_str(), folder);
 					if (filePath)
 					{
 						// Check if the file is contained within another folder (will need to create the directory in the writable folder)
 						char subfolder[MAX_PATH];
-						/*strcpy(subfolder, filePath + folderLength);*/
 						strcpy(subfolder, filePath);
 						bool bIsFolder = false;
 						for (int i = strlen(subfolder) - 1; i >= 0; i--)
@@ -14318,12 +11989,6 @@ void ChooseTerrainTextureFolder(char* folder)
 				if (PathExist(fullPath) == 0)
 				{
 					// for now, no warning, just silent fail
-					//extern bool bTriggerMessage;
-					//extern char cTriggerMessage[MAX_PATH];
-					//bTriggerMessage = true;
-					//strcpy(cTriggerMessage, "Could not load terrain materials. Reverting to default settings.");
-					//ResetTextureSettings();
-					//SetDir(oldDir.Get());
 					return;
 				}
 			}
@@ -14494,7 +12159,6 @@ void LoadTerrainTextureFolder(LPSTR pFile)
 				else
 				{
 					// Default choice of textures
-					//GGTerrain::GGTerrain_ReloadTextures();
 					g_iDeferTextureUpdateToNow = 1;
 				}
 			}
@@ -14563,11 +12227,8 @@ void ResetTextureSettings()
 		}
 		t.visuals.sTerrainTextures[i] = "";
 	}
-	//cstr oldDir = GetDir();
-	//SetDir(g.fpscrootdir_s.Get());
-	//GGTerrain::GGTerrain_ReloadTextures();
-	//SetDir(oldDir.Get());
 	g_iDeferTextureUpdateToNow = 1;
+
 	// Trigger update of material sounds
 	extern bool g_bMapMatIDToMatIndexAvailable;
 	g_bMapMatIDToMatIndexAvailable = false;

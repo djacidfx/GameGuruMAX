@@ -1,4 +1,4 @@
--- Door Rotate v28 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v29 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -172,6 +172,9 @@ function door_rotate_main(e)
 			door.isunlocked = true
 		end
 	else
+		if g_Entity[e]['haskey'] == 0 then
+			door.isunlocked = false
+		end
 		-- if spawned, unlocked, then activated, and AUTO, can trigger an auto open!
 		if GetEntitySpawnAtStart(e) == 1 and g_Entity[e]['activated'] == 1 then
 			g_Entity[e]['activated'] = 0

@@ -14,6 +14,7 @@
 #include "GGTerrain/GGGrass.h"
 #include "tracers/TracerManager.h"
 using namespace Tracers;
+
 // For profiling
 #ifdef OPTICK_ENABLE
 #include "optick.h"
@@ -75,18 +76,13 @@ public:
 			lock.Release();
 			if (g_bTriggerSomeGameLogic == true)
 			{
-				// physics on thread causes crashes and need of thread locking, so commented out for now
-				// savely moved out of main thread
-				//auto range1 = wiProfiler::BeginRangeCPU("Extra - Logic - Physics");
-				//physics_loop ();
-				//wiProfiler::EndRange(range1);
-
-				auto range2 = wiProfiler::BeginRangeCPU("Extra - Logic - Intersects");
+				// now on own thread, not a major performance drain - no need to monitor these!
+				//auto range2 = wiProfiler::BeginRangeCPU("Extra - Logic - Intersects");
 				ProcessIntersectDatabaseExtraThreadItemList();
-				wiProfiler::EndRange(range2);
-				auto range3 = wiProfiler::BeginRangeCPU("Extra - Logic - Visibility");
+				//wiProfiler::EndRange(range2);
+				//auto range3 = wiProfiler::BeginRangeCPU("Extra - Logic - Visibility");
 				entity_lua_getentityplrvisible_processlist();
-				wiProfiler::EndRange(range3);
+				//wiProfiler::EndRange(range3);
 
 				g_iCountNumberOfExtraThreadCalls++;
 				g_bTriggerSomeGameLogic = false;

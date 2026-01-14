@@ -1421,6 +1421,8 @@ luaMessage** ppLuaMessages = NULL;
 						if (t.entityelement[iEntityIndex].collected != 0)
 						{
 							t.entityelement[iEntityIndex].collected = 0;
+							extern void darklua_refreshhaskeystatefor(LPSTR);
+							darklua_refreshhaskeystatefor(t.entityelement[iEntityIndex].eleprof.name_s.Get());
 							t.entityelement[iEntityIndex].x += 999999;
 							t.entityelement[iEntityIndex].y += 999999;
 							t.entityelement[iEntityIndex].z += 999999;
@@ -1445,6 +1447,8 @@ luaMessage** ppLuaMessages = NULL;
 				entity_lua_collisionoff();
 				t.e = store;
 				t.entityelement[iEntityIndex].collected = (int)fabs(iCollectState);
+				extern void darklua_refreshhaskeystatefor(LPSTR);
+				darklua_refreshhaskeystatefor(t.entityelement[iEntityIndex].eleprof.name_s.Get());
 				t.entityelement[iEntityIndex].x -= 999999;
 				t.entityelement[iEntityIndex].y -= 999999;
 				t.entityelement[iEntityIndex].z -= 999999;
@@ -2411,7 +2415,17 @@ luaMessage** ppLuaMessages = NULL;
 				t.entityelement[ iEntityIndex ].soundset3 =	loadinternalsoundcore( t.entityelement[ iEntityIndex ].eleprof.soundset3_s.Get(), 1 );
 			}
 		}
-		t.entityelement[iEntityIndex].soundset4 = 0;
+		//t.entityelement[iEntityIndex].soundset4 = 0;
+		if (iSlotIndex == 4)
+		{
+			t.entityelement[iEntityIndex].eleprof.soundset4a_s = pString;
+			if (setSound)
+			{
+				if (t.entityelement[iEntityIndex].soundset4 > 0) deleteinternalsound(t.entityelement[iEntityIndex].soundset4);
+				t.entityelement[iEntityIndex].soundset4 = loadinternalsoundcore(t.entityelement[iEntityIndex].eleprof.soundset4a_s.Get(), 1);
+			}
+		}
+
 		if (iSlotIndex == 5)
 		{
 			t.entityelement[iEntityIndex].eleprof.soundset5_s = pString;
@@ -2448,7 +2462,7 @@ luaMessage** ppLuaMessages = NULL;
 		if ( iSlotIndex == 1 ) pString = t.entityelement[iEntityIndex].eleprof.soundset1_s.Get();
 		if ( iSlotIndex == 2 ) pString = t.entityelement[iEntityIndex].eleprof.soundset2_s.Get();
 		if ( iSlotIndex == 3 ) pString = t.entityelement[iEntityIndex].eleprof.soundset3_s.Get();
-		if ( iSlotIndex == 4 ) pString = t.entityelement[iEntityIndex].eleprof.soundset5_s.Get();
+		if ( iSlotIndex == 4 ) pString = t.entityelement[iEntityIndex].eleprof.soundset4a_s.Get();
 		if ( iSlotIndex == 5 ) pString = t.entityelement[iEntityIndex].eleprof.soundset5_s.Get();
 		if ( iSlotIndex == 6 ) pString = t.entityelement[iEntityIndex].eleprof.soundset6_s.Get();
 	}
@@ -2585,6 +2599,12 @@ luaMessage** ppLuaMessages = NULL;
 				pObject->fAnimFrame = WickedCall_GetObjectFrame(pObject);
 				#endif
 				if (pObject->fAnimFrame >= t.smoothanim[iObjID].fn - iChopFramesOffThEnd)
+				{
+					iReturnValue = 1;
+				}
+
+				// detects when animation stopped
+				if (WickedCall_GetObjectPlaying(pObject)==false)
 				{
 					iReturnValue = 1;
 				}
@@ -2898,7 +2918,14 @@ luaMessage** ppLuaMessages = NULL;
 	t.entid = entid; entity_fillgrideleproffromprofile();
 	//LB: an copy over material changes from the cloned entiy element
 	t.grideleprof.WEMaterial = t.entityelement[iEntityIndex].eleprof.WEMaterial;
+	
+	extern bool bNextObjectMustBeClone;
+	bNextObjectMustBeClone = true;
+	
 	entity_addentitytomap ();
+	
+	bNextObjectMustBeClone = false;
+
 	t.e = t.tupdatee;
 	t.entityelement[t.e].eleprof = t.entityelement[iEntityIndex].eleprof;
 	t.entityelement[t.e].scalex = t.entityelement[iEntityIndex].scalex;
@@ -5247,7 +5274,7 @@ int GetSoundPlaying(lua_State* L)
 	if (v == 1) tsnd = t.entityelement[e].soundset1;
 	if (v == 2) tsnd = t.entityelement[e].soundset2;
 	if (v == 3) tsnd = t.entityelement[e].soundset3;
-	if (v == 4) tsnd = t.entityelement[e].soundset5;
+	if (v == 4) tsnd = t.entityelement[e].soundset4;
 	if (v == 5) tsnd = t.entityelement[e].soundset5;
 	if (v == 6) tsnd = t.entityelement[e].soundset6;
 	int iPlaying = 0;
@@ -5330,7 +5357,7 @@ int GetEntityRawSound(lua_State *L)
 	if (iSoundSlot == 1) iRawSoundIndex = t.entityelement[iE].soundset1;
 	if (iSoundSlot == 2) iRawSoundIndex = t.entityelement[iE].soundset2;
 	if (iSoundSlot == 3) iRawSoundIndex = t.entityelement[iE].soundset3;
-	if (iSoundSlot == 4) iRawSoundIndex = t.entityelement[iE].soundset5;
+	if (iSoundSlot == 4) iRawSoundIndex = t.entityelement[iE].soundset4;
 	if (iSoundSlot == 5) iRawSoundIndex = t.entityelement[iE].soundset5;
 	if (iSoundSlot == 6) iRawSoundIndex = t.entityelement[iE].soundset6;
 	lua_pushnumber ( L , iRawSoundIndex );
@@ -6565,6 +6592,11 @@ int LuaConvert2DTo3D(lua_State* L)
 	
 	float x = (fX * g_dwScreenWidth) / 100.0f;
 	float y = (fY * g_dwScreenHeight) / 100.0f;
+
+	//PE: Wicked GetPickRay use dpi so must add it here.
+	const float dpiscaling = (float)GetDpiForWindow(g_pGlob->hWnd) / 96.0f;
+	x /= dpiscaling;
+	y /= dpiscaling;
 
 	float fOutX = 0, fOutY = 0, fOutZ = 0;
 	float fDirX = 0, fDirY = 0, fDirZ = 0;
@@ -8620,6 +8652,80 @@ int SetInventoryItemSlot(lua_State* L)
 	}
 	return 0;
 }
+
+void darklua_refreshhaskeystatefor(LPSTR keyobjectname)
+{
+	// all checks case insensitive
+	cstr checkthisname = Lower(keyobjectname);
+
+	// called when a collected state changes (i.e. a key) but need to allow all doors (haskey users) to refresh without messing up other haskey states
+	for (int e = 1; e <= g.entityelementlist; e++)
+	{
+		//  check if demilited key
+		t.masterkeyname_s = Lower(t.entityelement[e].eleprof.usekey_s.Get());
+		if (Len(t.masterkeyname_s.Get()) > 0)
+		{
+			t.tmultikey = 0;
+			for (int n = 1; n <= Len(t.masterkeyname_s.Get()); n++)
+			{
+				if (cstr(Mid(t.masterkeyname_s.Get(), n)) == ";")
+				{
+					t.tmultikey = 1;
+				}
+			}
+			//  Is USEKEY Collected?
+			bool bNeedToRefreshDoor = false;
+			if (t.tmultikey == 0)
+			{
+				//  (SINGLE)
+				for (int te = 1; te <= g.entityelementlist; te++)
+				{
+					if (stricmp(checkthisname.Get(), Lower(t.entityelement[te].eleprof.name_s.Get())) == NULL)
+					{
+						if (cstr(Lower(t.entityelement[te].eleprof.name_s.Get())) == t.masterkeyname_s)
+						{
+							bNeedToRefreshDoor = true; break;
+						}
+					}
+				}
+			}
+			else
+			{
+				//  (MULTIPLE)
+				int n = 1;
+				while (n <= Len(t.masterkeyname_s.Get()))
+				{
+					t.keyname_s = "";
+					while (n <= Len(t.masterkeyname_s.Get()))
+					{
+						if (cstr(Mid(t.masterkeyname_s.Get(), n)) == ";")  break;
+						t.keyname_s = t.keyname_s + Mid(t.masterkeyname_s.Get(), n);
+						++n;
+					}
+					//  look for this key
+					int ttokay = 0;
+					for (int te = 1; te <= g.entityelementlist; te++)
+					{
+						if (stricmp(checkthisname.Get(), Lower(t.entityelement[te].eleprof.name_s.Get())) == NULL)
+						{
+							if (cstr(Lower(t.entityelement[te].eleprof.name_s.Get())) == t.keyname_s)
+							{
+								ttokay = 1; break;
+							}
+						}
+					}
+					//  any key not found means overall master key not valid
+					if (ttokay == 0)  bNeedToRefreshDoor = true;
+					++n;
+				}
+			}
+			if (bNeedToRefreshDoor == true)
+			{
+				t.entityelement[e].lua.haskey = 0;
+			}
+		}
+	}
+}
 int MoveInventoryItem (lua_State* L)
 {
 	lua = L;
@@ -8745,9 +8851,18 @@ int MoveInventoryItem (lua_State* L)
 						if (item.e > 0)
 						{
 							if (bothplayercontainersto == 0 || bothplayercontainersto == 1)
+							{
+								if (bothplayercontainersto == 0) t.entityelement[item.e].collected = 1;
+								if (bothplayercontainersto == 1) t.entityelement[item.e].collected = 2;
+								darklua_refreshhaskeystatefor(t.entityelement[item.e].eleprof.name_s.Get());
 								t.entityelement[item.e].active = 1;
+							}
 							else
+							{
 								t.entityelement[item.e].active = 0;
+								t.entityelement[item.e].collected = 0;
+								darklua_refreshhaskeystatefor(t.entityelement[item.e].eleprof.name_s.Get());
+							}
 						}
 						break;
 					}
@@ -11589,6 +11704,22 @@ int SetSunIntensity(lua_State* L)
 	return 1;
 }
 
+int GetSunColorRed(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunRed_f);
+	return 1;
+}
+int GetSunColorGreen(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunGreen_f);
+	return 1;
+}
+int GetSunColorBlue(lua_State* L)
+{
+	lua_pushnumber(L, t.visuals.SunBlue_f);
+	return 1;
+}
+
 int GetSunIntensity(lua_State* L)
 {
 	lua_pushnumber(L, t.visuals.SunIntensity_f);
@@ -14291,6 +14422,10 @@ void addFunctions()
 	lua_register(lua, "SetSunIntensity", SetSunIntensity);
 	lua_register(lua, "GetSunIntensity", GetSunIntensity);
 
+	lua_register(lua, "GetSunColorBlue", GetSunColorBlue);
+	lua_register(lua, "GetSunColorGreen", GetSunColorGreen);
+	lua_register(lua, "GetSunColorRed", GetSunColorRed);
+
 	// Lighting
 	lua_register(lua, "SetExposure", SetExposure);
 	lua_register(lua, "GetExposure", GetExposure);
@@ -14786,7 +14921,6 @@ DARKLUA_API void LuaCall()
 	if ( ppLuaStates==NULL ) return;
 	if ( ppLuaStates[id] == NULL )
 	{
-
 		//add to error list
 		StringList item;
 		strcpy ( item.fileName , functionName );
@@ -14805,6 +14939,7 @@ DARKLUA_API void LuaCall()
 	WriteToDebugLog ( "functionResults" , functionResults );
 	WriteToDebugLog ( "===========" , true );
 #endif
+	GG_CRASH_CONTEXT("LuaCall", "functionName=%s functionParams=%d", functionName, functionParams);
 
 	lua = ppLuaStates[id]->state;
 
@@ -14905,6 +15040,7 @@ DARKLUA_API void LuaCallSilent()
 	WriteToDebugLog ( "functionResults" , functionResults );
 	WriteToDebugLog ( "===========" , true );
 #endif
+	GG_CRASH_CONTEXT("LuaCall", "functionName=%s functionParams=%d", functionName, functionParams);
 
 	lua = ppLuaStates[id]->state;
 
@@ -15076,6 +15212,8 @@ DARKLUA_API void LuaCallSilent()
     // run the Lua script string
 	int a = 0;
 
+	GG_CRASH_CONTEXT("LuaExecute", "pString=%s id=%d", pString, id);
+
 	a = luaL_loadbuffer(lua, pString, strlen(pString), pString) ||	lua_pcall(lua, 0, 0, 0);
 	if (a) 
 	{
@@ -15114,6 +15252,8 @@ DARKLUA_API void LuaCallSilent()
 
     // run the Lua script string
 	int a = 0;
+
+	GG_CRASH_CONTEXT("LuaExecute", "pString=%s", pString);
 
 	a = luaL_loadbuffer(lua, pString, strlen(pString), pString) ||	lua_pcall(lua, 0, 0, 0);
 	if (a) 

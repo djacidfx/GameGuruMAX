@@ -196,8 +196,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir>C:\Users\leeba\Documents\GGMAXWriteArea2\My Games\Naelurec - Moltaren Mysteries\</OutDir>
-    <TargetName>Naelurec - Moltaren Mysteries</TargetName>
+    <OutDir>D:\DEV\DOWNLOADS\GGMAXTEST\mipastu medieval\</OutDir>
+    <TargetName>mipastu medieval</TargetName>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)SDK\DirectXTex\DirectXTex;$(SolutionDir)SDK\OGG\include;$(SolutionDir)SDK\DirectX\Include;$(SolutionDir)SDK\DirectX;$(SolutionDir)SDK\DB3\;$(SolutionDir)SDK\BaseClasses\;$(SolutionDir)SDK\OpenXR\include;$(SolutionDir)SDK\OPTICK\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)SDK\PhotonSDK\Common-cpp\lib\;$(SolutionDir)SDK\PhotonSDK\LoadBalancing-cpp\lib\;$(SolutionDir)SDK\PhotonSDK\Photon-cpp\lib\;$(SolutionDir)SDK\DirectX\Lib\x64\;$(SolutionDir)SDK\OGG\lib64\Release\;$(SolutionDir)SDK\Steamworks SDK\redistributable_bin\win64\;$(SolutionDir)SDK\DirectXTex\DirectXTex\Bin\Desktop_2022\x64\Release\;$(SolutionDir)SDK\OpenXR\lib64\Release;$(SolutionDir)SDK\OPTICK\lib\x64\release;$(LibraryPath)</LibraryPath>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
@@ -524,10 +524,7 @@
     <ClInclude Include="..\GameGuru\Include\M-Bulletholes.h" />
     <ClInclude Include="..\GameGuru\Include\M-CharacterCreatorPlus.h" />
     <ClInclude Include="..\GameGuru\Include\M-CharacterCreatorPlusTTS.h" />
-    <ClInclude Include="..\GameGuru\Include\M-CharacterKit.h" />
     <ClInclude Include="..\GameGuru\Include\M-CharacterSound.h" />
-    <ClInclude Include="..\GameGuru\Include\M-ConstructionKit.h" />
-    <ClInclude Include="..\GameGuru\Include\M-ConstructionKitEdit.h" />
     <ClInclude Include="..\GameGuru\Include\M-DAINew.h" />
     <ClInclude Include="..\GameGuru\Include\M-Debug.h" />
     <ClInclude Include="..\GameGuru\Include\M-Decal.h" />
@@ -535,7 +532,6 @@
     <ClInclude Include="..\GameGuru\Include\M-Entity.h" />
     <ClInclude Include="..\GameGuru\Include\M-Explosion&amp;Fire.h" />
     <ClInclude Include="..\GameGuru\Include\M-Game.h" />
-    <ClInclude Include="..\GameGuru\Include\M-Grass.h" />
     <ClInclude Include="..\GameGuru\Include\M-GridEdit.h" />
     <ClInclude Include="..\GameGuru\Include\M-GridEditB.h" />
     <ClInclude Include="..\GameGuru\Include\M-Gun.h" />
@@ -569,7 +565,6 @@
     <ClInclude Include="..\GameGuru\Include\M-WelcomeSystem.h" />
     <ClInclude Include="..\GameGuru\Include\M-Widget.h" />
     <ClInclude Include="..\GameGuru\Include\M-Workshop.h" />
-    <ClInclude Include="..\GameGuru\Include\MapEditor.h" />
     <ClInclude Include="..\GameGuru\Include\miniz.h" />
     <ClInclude Include="..\GameGuru\Include\preprocessor-moreflags.h" />
     <ClInclude Include="..\GameGuru\Include\Types.h" />
@@ -708,10 +703,7 @@
     <ClCompile Include="..\GameGuru\Source\M-Bulletholes.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-CharacterCreatorPlus.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-CharacterCreatorPlusTTS.cpp" />
-    <ClCompile Include="..\GameGuru\Source\M-CharacterKit.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-CharacterSound.cpp" />
-    <ClCompile Include="..\GameGuru\Source\M-ConstructionKit.cpp" />
-    <ClCompile Include="..\GameGuru\Source\M-ConstructionKitEdit.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-DAINew.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Debug.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Decal.cpp" />
@@ -719,7 +711,6 @@
     <ClCompile Include="..\GameGuru\Source\M-Entity.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Explosion&amp;Fire.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Game.cpp" />
-    <ClCompile Include="..\GameGuru\Source\M-Grass.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-GridEdit.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-GridEditB.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Gun.cpp" />
@@ -753,7 +744,6 @@
     <ClCompile Include="..\GameGuru\Source\M-WelcomeSystem.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Widget.cpp" />
     <ClCompile Include="..\GameGuru\Source\M-Workshop.cpp" />
-    <ClCompile Include="..\GameGuru\Source\MapEditor.cpp" />
     <ClCompile Include="..\GameGuru\Source\miniz.c" />
     <ClCompile Include="..\GameGuru\Source\sha1.cpp" />
     <ClCompile Include="..\GameGuru\Source\sha2.cpp" />
@@ -854,6 +844,58 @@
     <Image Include="Wicked-MAX.ico" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="GGTerrain\CustomShaders\damageBloodPS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="GGTerrain\CustomShaders\damageBloodVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseTEST|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugTEST|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForEpic|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForEdu|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForSteam|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="GGTerrain\CustomShaders\objectPS_custom_water.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseForDEV|x64'">$(GG_MAX_BUILD_PATH)\Max\shaders\%(Filename).cso</ObjectFileOutput>
