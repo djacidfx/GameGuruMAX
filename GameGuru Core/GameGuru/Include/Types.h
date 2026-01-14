@@ -4118,7 +4118,7 @@ struct visualstype
 		 bThreadedPhysics = false;
 		 bReflectionsLowestLOD = false;
 
-		 g_bDelayedShadows = false;
+		 g_bDelayedShadows = true;
 		 g_bDelayedShadowsLaptop = false;
 
 		 fsetBloomThreshold = 2.0f;
@@ -4153,7 +4153,7 @@ struct visualstype
 		 SkyCloudSpeed = 3.0f;
 
 		 iShadowSpotResolution = 512;
-		 iShadowSpotCascadeResolution = 2048;
+		 iShadowSpotCascadeResolution = 1024;
 		 iShadowPointResolution = 512;
 		 iShadowPointMax = 16;
 		 iShadowSpotMax = 8;
@@ -4344,7 +4344,7 @@ struct visualsdatastoragetype
 		bThreadedPhysics = false;
 		bReflectionsLowestLOD = false;
 
-		g_bDelayedShadows = false;
+		g_bDelayedShadows = true;
 		g_bDelayedShadowsLaptop = false;
 
 		bBloomEnabled = false;

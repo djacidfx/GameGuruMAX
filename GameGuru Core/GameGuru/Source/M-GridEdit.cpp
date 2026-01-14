@@ -1761,7 +1761,7 @@ void SetGlobalGraphicsSettings( int level ) // 0=lowest, 1=medium, 2=high, 3=ult
 			t.visuals.bLightShafts = true;
 			t.visuals.bLensFlare = true;
 			t.visuals.bReflectionsEnabled = true;
-			t.visuals.iShadowSpotCascadeResolution = 2048;
+			t.visuals.iShadowSpotCascadeResolution = 1024;
 			t.visuals.iShadowPointMax = 12;
 			t.visuals.iShadowPointResolution = 512;
 			t.visuals.iShadowSpotMax = 8;

@@ -828,10 +828,13 @@ Texture texPagesNormalsRoughnessAO; // R8G8 = normals, B8 = roughness, A8 = ambi
 Texture texReadBackCompute;
 #define NUM_READ_BACK_TEXTURES 3 // must be at least 2 to avoid GPU stalls, 3 seems to be safest
 Texture texReadBackStaging[ NUM_READ_BACK_TEXTURES ];
-uint32_t currReadBackTex = 0;
-uint32_t readBackValid = 0;
+//uint32_t currReadBackTex = 0;
+static std::atomic<uint32_t> g_currReadBackTex{ 0 };
 static constexpr uint32_t READBACK_INVALID = 0xFFFFFFFFu;
 std::atomic<uint32_t> g_lastReadBackWrittenIndex{ READBACK_INVALID };
+static std::atomic<uint32_t> g_lastQueuedReadbackIndex{ READBACK_INVALID }; // slot we most recently queued a copy+query for
+static ID3D11Query* g_readbackTimestampQuery[NUM_READ_BACK_TEXTURES] = {};
+static ID3D11Query* g_readbackDisjointQuery = nullptr;
 
 // page generator variables
 RenderPass renderPassPhysicalTex;
@@ -7285,6 +7288,47 @@ int GGTerrain_Init( wiGraphics::CommandList cmd )
 	return 1;
 }
 
+void GGTerrain_RecreateReadbackResources(ID3D11Device* dev)
+{
+	assert(dev != nullptr);
+
+	// --- invalidate state FIRST ---
+	g_lastQueuedReadbackIndex.store(READBACK_INVALID, std::memory_order_release);
+
+	// --- destroy queries ---
+	for (uint32_t i = 0; i < NUM_READ_BACK_TEXTURES; ++i)
+	{
+		if (g_readbackTimestampQuery[i])
+		{
+			g_readbackTimestampQuery[i]->Release();
+			g_readbackTimestampQuery[i] = nullptr;
+		}
+	}
+
+	if (g_readbackDisjointQuery)
+	{
+		g_readbackDisjointQuery->Release();
+		g_readbackDisjointQuery = nullptr;
+	}
+
+	// --- recreate timestamp queries ---
+	for (uint32_t i = 0; i < NUM_READ_BACK_TEXTURES; ++i)
+	{
+		D3D11_QUERY_DESC qd = {};
+		qd.Query = D3D11_QUERY_TIMESTAMP;
+
+		HRESULT hr = dev->CreateQuery(&qd, &g_readbackTimestampQuery[i]);
+		assert(SUCCEEDED(hr) && g_readbackTimestampQuery[i] != nullptr);
+	}
+
+	// --- recreate disjoint query ---
+	D3D11_QUERY_DESC dj = {};
+	dj.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+
+	HRESULT hr = dev->CreateQuery(&dj, &g_readbackDisjointQuery);
+	assert(SUCCEEDED(hr) && g_readbackDisjointQuery != nullptr);
+}
+
 void GGTerrain_WindowResized()
 {
 	uint32_t screenWidth = master.masterrenderer.GetWidth3D();
@@ -7301,9 +7345,12 @@ void GGTerrain_WindowResized()
 	}
 
 	pageGenerationList.Clear();
-	readBackValid = 0;
-	currReadBackTex = 0;
+	g_currReadBackTex = 0;
 	g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
+
+	// After recreating texReadBackCompute and texReadBackStaging[]
+	ID3D11Device* d3dDevice = (ID3D11Device*)wiRenderer::GetDevice()->GetDeviceForIMGUI();
+	GGTerrain_RecreateReadbackResources(d3dDevice);
 }
 
 void GGTerrain_DrawPages( CommandList cmd )
@@ -7692,9 +7739,10 @@ void GGTerrain_CheckPageShift()
 	if ( ggterrain.ShouldRegeneratePages() )
 	{
 		pageGenerationList.Clear();
-		readBackValid = 0;
-		currReadBackTex = 0;
+		g_currReadBackTex = 0;
 		g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
+		ID3D11Device* d3dDevice = (ID3D11Device*)wiRenderer::GetDevice()->GetDeviceForIMGUI();
+		GGTerrain_RecreateReadbackResources(d3dDevice);
 
 		// wipe out page memory and start again
 		pagesFree.Clear();
@@ -7745,9 +7793,10 @@ void GGTerrain_CheckPageShift()
 	else if ( ggterrain.ShouldShiftPages() )
 	{
 		pageGenerationList.Clear();
-		readBackValid = 0;
-		currReadBackTex = 0;
+		g_currReadBackTex = 0;
 		g_lastReadBackWrittenIndex.store(READBACK_INVALID, std::memory_order_release);
+		ID3D11Device* d3dDevice = (ID3D11Device*)wiRenderer::GetDevice()->GetDeviceForIMGUI();
+		GGTerrain_RecreateReadbackResources(d3dDevice);
 
 		// shift page memory
 		for( uint32_t y = 0; y < physPagesY; y++ )
@@ -7948,57 +7997,67 @@ void GGTerrain_CheckPageShift()
 	ggterrain.PagesUpdated();
 }
 
-void GGTerrain_CheckReadBack()
+void GGTerrain_CheckReadBack(wiGraphics::CommandList cmd)
 {
 	GraphicsDevice* device = wiRenderer::GetDevice();
 
 	GGTerrainLODSet* pCurrLODs = ggterrain.GetCurrentLODs();
 	uint32_t numLODLevels = pCurrLODs->GetNumLevels();
 		
-	if ( readBackValid )
+	if ( true )
 	{
 		uint32_t texWidth = texReadBackCompute.GetDesc().Width;
 		uint32_t texHeight = texReadBackCompute.GetDesc().Height;
 
-		auto rangeTotal = wiProfiler::BeginRangeCPU( "Max - Terrain Read Back (All)" );
-		auto range = wiProfiler::BeginRangeCPU( "Max - Terrain Read Back Collect" );
-		
 		pagesNeeded.Setup( texWidth, texHeight );
 		
 		Mapping mapping;
 		mapping._flags = Mapping::FLAG_READ;
 		mapping.size = texWidth * texHeight * sizeof(uint32_t);
 
-		/*
-		//LB: log this in the crash log buffer for known events where "device->Map(..." crashes some DX11 drivers
-		GG_CRASH_CONTEXT("GGTerrain_CheckReadBack", "TerrainReadBack Map: rbValid=%u currReadBackTex=%u stagingGPURes=%p mapFlags=%08X mapSize=%zu computeDesc{W=%u H=%u Fmt=%u} stagingDesc{W=%u H=%u Fmt=%u Usage=%u Bind=%08X CPU=%08X Misc=%08X Mips=%u Arr=%u Samp=%u}", \
-			(unsigned)readBackValid, (unsigned)currReadBackTex, (void*)&texReadBackStaging[currReadBackTex], \
-			(unsigned)mapping._flags, (size_t)mapping.size, \
-			(unsigned)texReadBackCompute.GetDesc().Width, (unsigned)texReadBackCompute.GetDesc().Height, (unsigned)texReadBackCompute.GetDesc().Format, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().Width, (unsigned)texReadBackStaging[currReadBackTex].GetDesc().Height, (unsigned)texReadBackStaging[currReadBackTex].GetDesc().Format, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().Usage, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().BindFlags, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().CPUAccessFlags, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().MiscFlags, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().MipLevels, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().ArraySize, \
-			(unsigned)texReadBackStaging[currReadBackTex].GetDesc().SampleCount);
-		*/
+		ID3D11DeviceContext* g_d3dImmediateCtx = (ID3D11DeviceContext*)wiRenderer::GetDevice()->GetImmediateForIMGUI();
+		if (!g_d3dImmediateCtx) return;
 
-		//LB: Basically, 'currReadBackTex' could be damn well anything, lastReadBackWrittenIndex is “last slot we queued a CopyResource into”
-		//device->Map(&texReadBackStaging[currReadBackTex], &mapping);
-		uint32_t last = g_lastReadBackWrittenIndex.load(std::memory_order_acquire);
-		if (last == READBACK_INVALID)
-		{
-			// Skip: no known-good completed copy has been published since the last reset.
-			wiProfiler::EndRange(range);
-			wiProfiler::EndRange(rangeTotal);
+		uint32_t lastQueued = g_lastQueuedReadbackIndex.load(std::memory_order_acquire);
+		if (lastQueued == READBACK_INVALID)
 			return;
+		lastQueued %= NUM_READ_BACK_TEXTURES;
+
+		// 1) Ensure the disjoint bracket for this readback is complete:
+		if (g_readbackDisjointQuery)
+		{
+			D3D11_QUERY_DATA_TIMESTAMP_DISJOINT dj = {};
+			HRESULT hdr = g_d3dImmediateCtx->GetData(
+				g_readbackDisjointQuery, &dj, sizeof(dj), D3D11_ASYNC_GETDATA_DONOTFLUSH
+			);
+
+			if (hdr != S_OK) return;       // not finished yet
+			if (dj.Disjoint) return;       // GPU frequency changed; be strict and skip
 		}
-		last %= NUM_READ_BACK_TEXTURES;
-		uint32_t safe = (last + NUM_READ_BACK_TEXTURES - 1) % NUM_READ_BACK_TEXTURES;
-		//GG_CRASH_CONTEXT("ReadBack Index Check", "currReadBackTex=%u last=%u safe=%u", currReadBackTex, last, safe);
-		if (readBackValid) device->Map(&texReadBackStaging[safe], &mapping); // really really respect readBackValid!!
+
+		// 2) Find most recent slot with a completed timestamp:
+		int chosen = -1;
+		for (uint32_t step = 0; step < NUM_READ_BACK_TEXTURES; ++step)
+		{
+			uint32_t idx = (lastQueued + NUM_READ_BACK_TEXTURES - step) % NUM_READ_BACK_TEXTURES;
+			ID3D11Query* q = g_readbackTimestampQuery[idx];
+			if (!q) continue;
+
+			UINT64 ts = 0;
+			HRESULT hr = g_d3dImmediateCtx->GetData(q, &ts, sizeof(ts), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+			if (hr == S_OK)
+			{
+				chosen = (int)idx;
+				break;
+			}
+		}
+		if (chosen < 0) return;
+
+		auto rangeTotal = wiProfiler::BeginRangeCPU("Max - Terrain Read Back (All)");
+		auto range = wiProfiler::BeginRangeCPU("Max - Terrain Read Back Collect");
+
+		GG_CRASH_CONTEXT_NO_FLAG("GGTerrain_CheckReadBack Check", "frame=%u chosen=%u", wiRenderer::GetDevice()->GetFrameCount(), chosen);
+		device->Map(&texReadBackStaging[chosen], &mapping);
 
 		if ( !mapping.data )
 		{
@@ -8052,7 +8111,7 @@ void GGTerrain_CheckReadBack()
 			}
 		}
 #endif
-		device->Unmap( &texReadBackStaging[safe] );
+		device->Unmap( &texReadBackStaging[chosen] );
 
 		wiProfiler::EndRange( range );
 		range = wiProfiler::BeginRangeCPU( "Max - Terrain Read Back Sort" );
@@ -9904,7 +9963,7 @@ void GGTerrain_Update( float playerX, float playerY, float playerZ, wiGraphics::
 	{
 		// CPU only side of the read back, GPU side is done in prepass render
 		GGTerrain_CheckPageShift();
-		GGTerrain_CheckReadBack(); 
+		GGTerrain_CheckReadBack(cmd); 
 	}
 
 	for( int i = 0; i < (int)pageRefreshList.NumItems(); i++ )
@@ -10308,13 +10367,11 @@ int GGTerrain_GetMaterialIndex( float x, float z )
 	return ggterrain_local_render_params.baseLayerMaterial & 0xFF;
 }
 
-// must be extern "C" to allow /alternatename linker flag to be set correctly
-// called from WickedEngine RenderPath3D::Render()
-extern "C" void GGTerrain_VirtualTexReadBack( Texture texReadBack, uint32_t sampleCount, wiGraphics::CommandList cmd )
+extern "C" void GGTerrain_VirtualTexReadBack(Texture texReadBack, uint32_t sampleCount, wiGraphics::CommandList cmd)
 {
 	if (!ggterrain_update_enabled) return;
 	if (!ggterrain_initialised) return;
-	if (!ggterrain_draw_enabled) return; //Needed if we render to diffrent backbuffers, currReadBackTex get out of sync.
+	if (!ggterrain_draw_enabled) return;
 
 	GraphicsDevice* device = wiRenderer::GetDevice();
 
@@ -10329,25 +10386,32 @@ extern "C" void GGTerrain_VirtualTexReadBack( Texture texReadBack, uint32_t samp
 	if (sampleCount > 1) device->BindComputeShader(&shaderReadBackMSCS, cmd);
 	else device->BindComputeShader(&shaderReadBackCS, cmd);
 
-	device->BindConstantBuffer( CS, &terrainConstantBuffer, 2, cmd );
+	device->BindConstantBuffer(CS, &terrainConstantBuffer, 2, cmd);
 
 	device->Dispatch((desc.Width + 7) / 8, (desc.Height + 7) / 8, 1, cmd);
 
 	device->UnbindResources(50, 1, cmd);
 	device->UnbindUAVs(0, 1, cmd);
 
-	device->CopyResource(&texReadBackStaging[currReadBackTex], &texReadBackCompute, cmd);
+	// --- pick slot index ONCE, without mutating atomic weirdly ---
+	const uint32_t slot = g_currReadBackTex.fetch_add(1, std::memory_order_relaxed) % NUM_READ_BACK_TEXTURES;
 
-	//LB: ring buffer violates when 'currReadBackTex' can be arbitarily reset to zero (so store the ACTUAL GOOD LAST COPY!)
-	g_lastReadBackWrittenIndex.store(currReadBackTex, std::memory_order_release);
+	device->CopyResource(&texReadBackStaging[slot], &texReadBackCompute, cmd);
 
-	currReadBackTex++;
-	if (currReadBackTex >= NUM_READ_BACK_TEXTURES)
-	{
-		readBackValid = 1; // can only read back once the GPU has completed one cycle of writes
-		currReadBackTex = 0;
-		// g_lastReadBackWrittenIndex is still valid from historical copies, thie above is just a wrap :)
-	}
+	// --- timestamp gating (safe for deferred contexts) ---
+	ID3D11DeviceContext* ctx = (ID3D11DeviceContext*)wiRenderer::GetDevice()->GetDeviceContext(cmd);
+
+	if (g_readbackDisjointQuery)
+		ctx->Begin(g_readbackDisjointQuery);
+
+	ID3D11Query* tsq = g_readbackTimestampQuery[slot];
+	if (tsq)
+		ctx->End(tsq); // TIMESTAMP query is written by End()
+
+	if (g_readbackDisjointQuery)
+		ctx->End(g_readbackDisjointQuery);
+
+	g_lastQueuedReadbackIndex.store(slot, std::memory_order_release);
 
 	wiProfiler::EndRange(range);
 	device->EventEnd(cmd);
