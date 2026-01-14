@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Control v93 by Necrym59 and Lee
+-- NPC Control v94 by Necrym59 and Lee
 -- DESCRIPTION: The attached NPC will be controlled by this behavior.
 -- DESCRIPTION: [SENSE_TEXT$="Who's that ..an intruder??"]
 -- DESCRIPTION: [SENSE_RANGE=500(0,2000)]
@@ -168,6 +168,7 @@ local setframes = {}
 local dist = {}
 local tmphit = {}
 local deathifusedno = {}
+local has_hit_player = {}
 
 g_GibsEnabled = 0
 g_ShowObjectDebugVisuals = 0
@@ -327,6 +328,7 @@ function npc_control_init_name(e,name)
 	dist[e] = 0
 	tmphit[e] = 0
 	deathifusedno[e] = 0
+	has_hit_player[e] = 0
 	math.randomseed(os.time())
 	math.random(); math.random(); math.random()
 end
@@ -363,6 +365,7 @@ function npc_control_main(e)
 		pathdelay[e] = g_Time + 3000
 		regen[e] = g_Time + 3000
 		idlestate_choice[e] = math.random(1,5)
+		if has_hit_player[e] == nil then has_hit_player[e] = 0 end -- Initialize gate
 		LoadGlobalSound("audiobank\\user\\" ..name1[e].. ".wav", g_Entity[e])
 		if npc_control[e].npc_can_shoot == 3 then SetAttachmentVisible(e,0) end -- 1 sets the entities attachment to be visible (such as their weapon), 0 switches it off
 		status[e] = "endinit"
@@ -788,6 +791,7 @@ function npc_control_main(e)
 			animonce[e] = 0
 			RotateToPlayer(e)
 			if attkonce[e] == 0 then
+				has_hit_player[e] = 0 -- Added to ensure gate's open
 				if npc_control[e].npc_can_shoot == 2 then --can Melee
 					SetAnimationName(e,npc_control[e].attack1_animation)
 					ModulateSpeed(e,npc_control[e].npc_anim_speed)
@@ -879,20 +883,34 @@ function npc_control_main(e)
 				end
 			end
 
-			if ishit[e] == 1 and GetPlayerDistance(e) < npc_control[e].attack_range then
+		if ishit[e] == 1 and GetPlayerDistance(e) < npc_control[e].attack_range then
+			if has_hit_player[e] == 0 then -- GATE CHECK
 				StopSound(e,0)
 				PlaySound(e,1)
-				svolume_last[e] = 1
-				if npc_control[e].random_damage == 1 and ishit[e] == 1 then	HurtPlayer(-1,math.random(1,npc_control[e].attack_damage)) end
-				if npc_control[e].random_damage == 2 then HurtPlayer(-1,npc_control[e].attack_damage) end
+				svolume_last[e] = 1            
+				-- Damage Calculation
+				local final_dmg = npc_control[e].attack_damage
+				if npc_control[e].random_damage == 1 then 
+					final_dmg = math.random(1, npc_control[e].attack_damage) 
+				end            
+				HurtPlayer(-1, final_dmg)            
+				-- Visual/Feedback effects
 				GamePlayerControlAddShakeTrauma(math.random(30.9,35.9))
 				GamePlayerControlAddShakePeriod(90.0)
 				GamePlayerControlAddShakeFade (1.9)
 				GamePlayerControlSetShakeTrauma(2.4)
-				GamePlayerControlSetShakePeriod(100.0)
-				ishit[e] = 0
-				attack_delay[e] = GetTimer(e) + 1000
-			end
+				GamePlayerControlSetShakePeriod(100.0)            
+				has_hit_player[e] = 1 -- CLOSE GATE
+			end        
+			ishit[e] = 0
+			attack_delay[e] = GetTimer(e) + 1000
+		end
+
+		-- RESET GATE: When the animation is no longer on a hit frame, open the gate for the next swing
+		if g_Entity[e]['frame'] ~= frameadjust1[e] and g_Entity[e]['frame'] ~= frameadjust2[e] and g_Entity[e]['frame'] ~= frameadjust3[e] then
+			has_hit_player[e] = 0
+		end
+ 
 		end
 		if GetPlayerDistance(e) < npc_control[e].attack_range and g_Entity[e]['plrvisible'] == 0 then
 			state[e] = "pursue"
