@@ -8471,8 +8471,8 @@ void mapeditorexecutable_loop(void)
 								}
 
 								// can never have a grid size below one
-								if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
-								if (pref.fEditorGridSizeZ <= 1) pref.fEditorGridSizeZ = 1.0f;
+								if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
+								if (pref.fEditorGridSizeZ <= 0.1f) pref.fEditorGridSizeZ = 0.1f;
 							}
 						}
 
@@ -26306,7 +26306,7 @@ void GridPopup(ImVec2 wpos)
 					ImGui::PopItemWidth();
 
 					// can never have a grid size below one
-					if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
+					if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
 
 					// and all grid dimensions the same!
 					pref.fEditorGridOffsetX = 0;
@@ -26413,9 +26413,9 @@ void GridPopup(ImVec2 wpos)
 					}
 
 					// can never have a grid size below one
-					if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
-					if (pref.fEditorGridSizeY <= 1) pref.fEditorGridSizeY = 1.0f;
-					if (pref.fEditorGridSizeZ <= 1) pref.fEditorGridSizeZ = 1.0f;
+					if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
+					if (pref.fEditorGridSizeY <= 0.1f) pref.fEditorGridSizeY = 0.1f;
+					if (pref.fEditorGridSizeZ <= 0.1f) pref.fEditorGridSizeZ = 0.1f;
 				}
 			}
 		}
