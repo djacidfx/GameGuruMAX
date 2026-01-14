@@ -47012,6 +47012,9 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 		int iMinDraw = -1;
 		int iMaxDraw =  1;
 		bool bTriggerVideoNextScreen = false;
+		bool bOnlyOneButtonHighlight = false;
+		bool bOnlyOneButtonMouseRelease = false;
+
 		for(int early = iMinDraw; early <= iMaxDraw; early++ )
 		{
 			for (int i = 0; i < Storyboard_ActiveWidgets.size(); i++)
@@ -47111,7 +47114,11 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 					bool bHovered = false;
 					if (ImGui::IsItemHovered())
 					{
-						bHovered = true;
+						if (!bOnlyOneButtonHighlight)
+						{
+							bHovered = true;
+							bOnlyOneButtonHighlight = true;
+						}
 					}
 					//Button Image
 					ID3D11ShaderResourceView* lpTexture = GetImagePointerView(Storyboard.Nodes[nodeid].widget_normal_thumb_id[index]);
@@ -47749,7 +47756,13 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 							{
 								// non VR
 								if (ImGui::IsMouseHoveringRect(rMonitorArea.Min + widget_pos - vLargerGrabArea, rMonitorArea.Min + widget_pos + widget_size + vLargerGrabArea)) bIsPointerHoveringOver = true;
-								if (ImGui::IsMouseReleased(0)) bIsPointerReleased = true;
+								if (ImGui::IsMouseReleased(0))
+								{
+									if (!bOnlyOneButtonMouseRelease)
+									{
+										bIsPointerReleased = true;
+									}
+								}
 							}
 						}
 						if (bIsPointerHoveringOver || bTriggerVideoNextScreen)
@@ -47785,6 +47798,7 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 									iRet = STORYBOARD_ACTIONS_RETURNVALUETOLUA;
 									if (stricmp(Storyboard.Nodes[nodeid].lua_name, "savegame.lua") == 0)
 									{
+										bOnlyOneButtonMouseRelease = true;
 										if (strlen(Storyboard.Nodes[nodeid].screen_music) > 0) //PE: Only stop music if we have our own.
 											bLuaPageClosing = true;
 									}
@@ -47792,6 +47806,7 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 									{
 										if (index >= 1 && index <= 8)
 										{
+											bOnlyOneButtonMouseRelease = true;
 											if (!pestrcasestr(LoadGameTitle[index], "EMPTY PROGRESS SLOT"))
 											{
 												if (strlen(Storyboard.Nodes[nodeid].screen_music) > 0) //PE: Only stop music if we have our own.
