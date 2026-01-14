@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Wicked Particle Emmitter - Area v4 
+-- Wicked Particle Emmitter - Area v5 by Necrym and Lee
 -- DESCRIPTION: Will display particle at and around this objects area.
 -- DESCRIPTION: Attach to an object and activate by a linked switch or zone or set is active.
 -- DESCRIPTION: [WPEFILE$="particlesbank//wpe//firearea.pe"]
@@ -22,9 +22,9 @@ function wpe_area_properties(e, wpefile, isactive, offsety,offsetx,offsetz)
 	wpearea[e].wpefile = wpefile
 	wpearea[e].effectid = WParticleEffectLoad(wpefile)
 	wpearea[e].isactive = isactive	or 0
-	wpearea[e].offsety = offsety
-	wpearea[e].offsetx = offsetx
-	wpearea[e].offsetz = offsetz
+	wpearea[e].offsety = offsety or 0
+	wpearea[e].offsetx = offsetx or 0
+	wpearea[e].offsetz = offsetz or 0
 end
 
 function wpe_area_init(e)

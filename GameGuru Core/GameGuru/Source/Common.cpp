@@ -271,6 +271,10 @@ void common_init ( void )
 			SetWriteSameAsRoot(false);
 		else
 			SetWriteSameAsRoot(true);
+
+		// when running a standalone game, never show object and limb warnings (rogue LUA script calls etc)
+		extern bool g_bDisplayObjectAndLimbWarnings;
+		g_bDisplayObjectAndLimbWarnings = false;
 	}
 
 	// new image loading system uses both legacy for IMGUI and wicked for rest
@@ -3101,6 +3105,9 @@ void FPSC_LoadSETUPINI (bool bUseMySystemFolder)
 
 					extern int g_iDisableWParticleSystem;
 					t.tryfield_s = "disablewparticlesystem"; if (t.field_s == t.tryfield_s) g_iDisableWParticleSystem = t.value1;
+
+					extern int g_iDisableCrashLogSystem;
+					t.tryfield_s = "disablecrashlogsystem"; if (t.field_s == t.tryfield_s) g_iDisableCrashLogSystem = t.value1;
 				}
 			}
 		}
@@ -3561,7 +3568,7 @@ void FPSC_Setup(void)
 				if (iValidCode <= 0)
 				{
 					// serial code expired
-///MessageBoxA(NULL, "Build has expired! Find out more at https://www.game-guru.com/max", "Activation Error", MB_OK);
+					///MessageBoxA(NULL, "Build has expired! Find out more at https://www.game-guru.com/max", "Activation Error", MB_OK);
 					if (iValidCode == -1)
 					{
 						// no internet connection so cannot check key, just quit!
@@ -6186,6 +6193,14 @@ void GetSetupIniEarly( void )
 						g_iDisableWParticleSystem = 1;
 					}
 				}				
+				if (pestrcasestr(t, "disablecrashlogsystem"))
+				{
+					if (pestrcasestr(t, "1"))
+					{
+						extern int g_iDisableCrashLogSystem;
+						g_iDisableCrashLogSystem = 1;
+					}
+				}
 			}
 			fclose(file);
 		}

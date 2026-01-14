@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Resource Node v19 by Necrym59
+-- Resource Node v20 by Necrym59
 -- DESCRIPTION: Allows to use this object as a resource node to give the player the selected resource item.
 -- DESCRIPTION: [@NODE_TYPE=1(1=Growth, 2=Extraction)]
 -- DESCRIPTION: [@NODE_TOOL_NAME$=-1(0=AnyWeaponList)] Specific Weapon/Tool to use - (No Weapon=Any)
@@ -14,6 +14,7 @@
 -- DESCRIPTION: [NODE_TOOL_PROMPT$="Tool required to extract Resources"]
 -- DESCRIPTION: [!NODE_SCALER=1]
 -- DESCRIPTION: [!HIDE_NODE=0]
+-- DESCRIPTION: [!RESOURCE_SCALING=0]
 -- DESCRIPTION: <Sound0> for harvest/extraction sound
 
 local P = require "scriptbank\\physlib"
@@ -33,6 +34,7 @@ local node_use_prompt				= {}
 local node_tool_prompt				= {}
 local node_scaler					= {}
 local hide_node						= {}
+local resource_scaling				= {}
 local resource_entity_no			= {}
 
 local newposx		= {}
@@ -56,9 +58,10 @@ local healthcheck	= {}
 local terrainheight	= {}
 local surfaceheight	= {}
 local nodewidth		= {}
+local nodeheight	= {}
 local wait			= {}
 
-function resource_node_properties(e, node_type, node_tool_name, node_respawn_time, node_respawns, node_resource_quantity, resource_spawn_time, resource_spawn_spread, resource_entity_name, node_use_range,  node_use_prompt, node_tool_prompt, node_scaler, hide_node)
+function resource_node_properties(e, node_type, node_tool_name, node_respawn_time, node_respawns, node_resource_quantity, resource_spawn_time, resource_spawn_spread, resource_entity_name, node_use_range,  node_use_prompt, node_tool_prompt, node_scaler, hide_node, resource_scaling)
 	resnode[e].node_type = node_type
 	resnode[e].node_tool_name = tostring(GetWeaponName(node_tool_name-1))
 	resnode[e].node_respawn_time = node_respawn_time
@@ -72,6 +75,7 @@ function resource_node_properties(e, node_type, node_tool_name, node_respawn_tim
 	resnode[e].node_tool_prompt	= node_tool_prompt
 	resnode[e].node_scaler = node_scaler or 1
 	resnode[e].hide_node = hide_node or 0
+	resnode[e].resource_scaling = resource_scaling or 0
 	resnode[e].resource_entity_no = 0
 end
 
@@ -90,6 +94,7 @@ function resource_node_init(e)
 	resnode[e].node_tool_prompt	= "Tool required to extract Resources"
 	resnode[e].node_scaler = 1
 	resnode[e].hide_node = 0
+	resnode[e].resource_scaling = 0	
 	resnode[e].resource_entity_no = 0	
 
 	newEntn[e] = 0
@@ -107,6 +112,7 @@ function resource_node_init(e)
 	terrainheight[e] = 0
 	surfaceheight[e] = 0
 	nodewidth[e] = 0
+	nodeheight[e] = 0	
 	healthcheck[e] = starthealth[e]
 	wait[e] = math.huge	
 	SetEntityAlwaysActive(e,1)
@@ -151,6 +157,7 @@ function resource_node_main(e)
 		local Ent = g_Entity[e]
 		local dims = P.GetObjectDimensions(Ent.obj)
 		nodewidth[e] = dims.w
+		nodeheight[e] = dims.h
 		status[e] = "start"
 	end
 	
@@ -251,19 +258,32 @@ function resource_node_main(e)
 		end
 	end	
 
-	if status[e] == "create_resource" and resnode[e].resource_entity_no ~= 0 then			
+	if status[e] == "create_resource" and resnode[e].resource_entity_no ~= 0 then
+		newposx[e] = g_Entity[e]['x'] + nodewidth[e]
+		newposy[e] = g_Entity[e]['y'] + nodeheight[e]
+		newposz[e] = g_Entity[e]['z'] + nodewidth[e]
+		terrainheight[e] = GetTerrainHeight(newposx[e],newposz[e])
+		surfaceheight[e] = GetSurfaceHeight(newposx[e],newposy[e],newposz[e])
 		if doonce[e] == 0 and created[e] < resnode[e].node_resource_quantity then
 			local etoclone = resnode[e].resource_entity_no
 			newEntn[e] = SpawnNewEntity(etoclone)
+			if resnode[e].resource_scaling == 1 then 
+				Scale(newEntn[e],math.random(40,120))
+			end	
 			Show(newEntn[e])
 			GravityOff(newEntn[e])
 			CollisionOff(newEntn[e])
 			if resnode[e].node_type == 1 then
 				if resnode[e].resource_spawn_spread == 0 then 
 					local newya = math.random(0,360)
-					newposx[e] = g_Entity[e]['x'] + nodewidth[e]
-					newposy[e] = g_Entity[e]['y']
-					newposz[e] = g_Entity[e]['z'] + nodewidth[e]
+					terrainheight[e] = GetTerrainHeight(newposx[e],newposz[e])
+					surfaceheight[e] = GetSurfaceHeight(newposx[e],newposy[e],newposz[e])
+					if surfaceheight[e] > terrainheight[e] then
+						newposy[e] = surfaceheight[e]
+					else
+						newposy[e] = terrainheight[e]
+					end
+					ResetPosition(newEntn[e],newposx[e],newposy[e],newposz[e])
 				end	
 				if resnode[e].resource_spawn_spread > 0 then 
 					local newya = math.random(0,360)
@@ -276,8 +296,9 @@ function resource_node_main(e)
 					else
 						newposy[e] = terrainheight[e]
 					end
+					ResetPosition(newEntn[e],newposx[e],newposy[e],newposz[e])
 				end
-			end	
+			end
 			if resnode[e].node_type == 2 then
 				local newya = math.random(0,360)
 				newposx[e] = g_Entity[e]['x'] + math.cos(newya) * math.random(-resnode[e].resource_spawn_spread,resnode[e].resource_spawn_spread)
@@ -288,9 +309,9 @@ function resource_node_main(e)
 					newposy[e] = surfaceheight[e] + math.random(10,30)
 				else
 					newposy[e] = terrainheight[e] + math.random(10,30)
-				end				
+				end
+				ResetPosition(newEntn[e],newposx[e],newposy[e],newposz[e])
 			end			
-			ResetPosition(newEntn[e],newposx[e],newposy[e],newposz[e])
 			CollisionOn(newEntn[e])
 			GravityOn(newEntn[e])
 			cntEntn[e] = cntEntn[e] + 1

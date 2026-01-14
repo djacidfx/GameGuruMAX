@@ -1667,11 +1667,12 @@ void physics_player_init ( void )
 	//  Player start height (marker or no)
 	t.tbestterrainplayery_f = BT_GetGroundHeight(t.terrain.TerrainID, t.terrain.playerx_f, t.terrain.playerz_f) + t.terrain.adjaboveground_f;
 
-	//  also ensure ABOVE water Line (  )
-	if (  t.tbestterrainplayery_f<t.terrain.waterliney_f+20+t.terrain.adjaboveground_f ) 
-	{
-		t.tbestterrainplayery_f=t.terrain.waterliney_f+20+t.terrain.adjaboveground_f;
-	}
+	// LB: Probably some request/rationalle to always start above water line, but new request wants to start underwater if marker is underwater :)
+	// also ensure ABOVE water Line
+	//if (  t.tbestterrainplayery_f<t.terrain.waterliney_f+20+t.terrain.adjaboveground_f ) 
+	//{
+	//	t.tbestterrainplayery_f=t.terrain.waterliney_f+20+t.terrain.adjaboveground_f;
+	//}
 	if (  t.terrain.playery_f == 0 ) 
 	{
 		t.terrain.playery_f=t.tbestterrainplayery_f;
@@ -2560,20 +2561,23 @@ void physics_player_takedamage ( void )
 				float fhalfdamagebacktoenemy = t.tdamage / 2.0f;
 
 				// but repel their damage back to the attacker
-				t.ttte = t.te;
-				t.tdamage = fhalfdamagebacktoenemy;
-				t.tdamageforce = 0.0f;
-				t.brayx1_f = CameraPositionX();
-				t.brayy1_f = CameraPositionY();
-				t.brayz1_f = CameraPositionZ();
-				t.brayx2_f = t.entityelement[t.te].x;
-				t.brayy2_f = t.entityelement[t.te].y;
-				t.brayz2_f = t.entityelement[t.te].z;
-				t.tallowanykindofdamage = 0;
-				t.twhox_f = t.brayx1_f;
-				t.twhoz_f = t.brayz1_f;
-				t.tdamagesource = 1;
-				entity_applydamage ();
+				if (t.te > 0 && t.te < t.entityelement.size())
+				{
+					t.ttte = t.te;
+					t.tdamage = fhalfdamagebacktoenemy;
+					t.tdamageforce = 0.0f;
+					t.brayx1_f = CameraPositionX();
+					t.brayy1_f = CameraPositionY();
+					t.brayz1_f = CameraPositionZ();
+					t.brayx2_f = t.entityelement[t.te].x;
+					t.brayy2_f = t.entityelement[t.te].y;
+					t.brayz2_f = t.entityelement[t.te].z;
+					t.tallowanykindofdamage = 0;
+					t.twhox_f = t.brayx1_f;
+					t.twhoz_f = t.brayz1_f;
+					t.tdamagesource = 1;
+					entity_applydamage ();
+				}
 
 				// and mark an actual player block
 				if (g_iSuccessfullyBlockedAtTime == 0)

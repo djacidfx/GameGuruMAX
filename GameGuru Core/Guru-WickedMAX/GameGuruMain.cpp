@@ -76,12 +76,13 @@ public:
 			lock.Release();
 			if (g_bTriggerSomeGameLogic == true)
 			{
-				auto range2 = wiProfiler::BeginRangeCPU("Extra - Logic - Intersects");
+				// now on own thread, not a major performance drain - no need to monitor these!
+				//auto range2 = wiProfiler::BeginRangeCPU("Extra - Logic - Intersects");
 				ProcessIntersectDatabaseExtraThreadItemList();
-				wiProfiler::EndRange(range2);
-				auto range3 = wiProfiler::BeginRangeCPU("Extra - Logic - Visibility");
+				//wiProfiler::EndRange(range2);
+				//auto range3 = wiProfiler::BeginRangeCPU("Extra - Logic - Visibility");
 				entity_lua_getentityplrvisible_processlist();
-				wiProfiler::EndRange(range3);
+				//wiProfiler::EndRange(range3);
 
 				g_iCountNumberOfExtraThreadCalls++;
 				g_bTriggerSomeGameLogic = false;

@@ -88,8 +88,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// Keep an eye for Unhandled Exceptions!
 	InitCrashHandler();
 
-	//causeCrash();
-
 	// Command line store
 	std::wstring your_wchar_in_ws(lpCmdLine);
 	std::string your_wchar_in_str(your_wchar_in_ws.begin(), your_wchar_in_ws.end());
@@ -209,6 +207,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//PE: need setup.ini before any logic.
 	void GetSetupIniEarly(void);
 	GetSetupIniEarly();
+
+	// once Wicked Initiailised we can provide the device and addres of the debug log function call
+	char* pMyLogSrtring = GetCrashHandlerDebugLogRef();
+	extern int g_iDisableCrashLogSystem;
+	if ( g_iDisableCrashLogSystem == 0 )
+	{
+		// use "disablecrashlogsystem" in SETUP.INI to disable this as it has a performance hit!
+		wiRenderer::GetDevice()->SetSpecialGGDebugLog(pMyLogSrtring);
+	}
 
 	// Main application loop
 	MSG msg = { 0 };

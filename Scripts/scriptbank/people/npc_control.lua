@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Control v91 by Necrym59
+-- NPC Control v93 by Necrym59 and Lee
 -- DESCRIPTION: The attached NPC will be controlled by this behavior.
 -- DESCRIPTION: [SENSE_TEXT$="Who's that ..an intruder??"]
 -- DESCRIPTION: [SENSE_RANGE=500(0,2000)]
@@ -168,23 +168,25 @@ local setframes = {}
 local dist = {}
 local tmphit = {}
 local deathifusedno = {}
+
 g_GibsEnabled = 0
+g_ShowObjectDebugVisuals = 0
 
 function npc_control_properties(e, sense_text, sense_range, sense_mode, npc_can_flee, idle_time, attack_range, attack_damage, random_damage, npc_can_roam, roam_range, npc_anim_speed, npc_move_speed, npc_run_speed, npc_turn_speed, npc_can_shoot, idle1_animation,  idle2_animation, walk_animation, run_animation, threat_animation, attack1_animation, attack1_hitframe, attack2_animation, attack2_hitframe, attack3_animation, attack3_hitframe, shoot_animation, hurt_animation, death1_animation, death2_animation, lastflag_animation, lastflag_time, lastflag_loop, force_move, npc_tilting, on_death, ifused, diagnostics)
-	npc_control[e].sense_text = sense_text
-	npc_control[e].sense_range = sense_range
-	npc_control[e].sense_mode = sense_mode
-	npc_control[e].npc_can_flee = npc_can_flee
-	npc_control[e].idle_time = idle_time
-	npc_control[e].attack_range = attack_range
-	npc_control[e].attack_damage = attack_damage
-	npc_control[e].random_damage = random_damage
+	npc_control[e].sense_text = sense_text or ""
+	npc_control[e].sense_range = sense_range or 500
+	npc_control[e].sense_mode = sense_mode or 1
+	npc_control[e].npc_can_flee = npc_can_flee or 2
+	npc_control[e].idle_time = idle_time or 3000
+	npc_control[e].attack_range = attack_range or 100
+	npc_control[e].attack_damage = attack_damage or 10
+	npc_control[e].random_damage = random_damage or 1
 	npc_control[e].npc_can_roam = npc_can_roam or 1
-	npc_control[e].roam_range = roam_range
-	npc_control[e].npc_anim_speed = npc_anim_speed
-	npc_control[e].npc_move_speed = npc_move_speed
-	npc_control[e].npc_run_speed = npc_run_speed
-	npc_control[e].npc_turn_speed = npc_turn_speed
+	npc_control[e].roam_range = roam_range or 500
+	npc_control[e].npc_anim_speed = npc_anim_speed or 0.8
+	npc_control[e].npc_move_speed = npc_move_speed or 100
+	npc_control[e].npc_run_speed = npc_run_speed or 100
+	npc_control[e].npc_turn_speed = npc_turn_speed or 100
 	npc_control[e].npc_can_shoot = npc_can_shoot or 2
 	npc_control[e].idle1_animation = "=" .. tostring(idle1_animation)
 	npc_control[e].idle2_animation = "=" .. tostring(idle2_animation)
@@ -192,22 +194,22 @@ function npc_control_properties(e, sense_text, sense_range, sense_mode, npc_can_
 	npc_control[e].run_animation = "=" .. tostring(run_animation)
 	npc_control[e].threat_animation = "=" .. tostring(threat_animation)
 	npc_control[e].attack1_animation = "=" .. tostring(attack1_animation)
-	npc_control[e].attack1_hitframe = attack1_hitframe
+	npc_control[e].attack1_hitframe = attack1_hitframe or 10
 	npc_control[e].attack2_animation = "=" .. tostring(attack2_animation)
-	npc_control[e].attack2_hitframe = attack2_hitframe
+	npc_control[e].attack2_hitframe = attack2_hitframe or 10
 	npc_control[e].attack3_animation = "=" .. tostring(attack3_animation)
-	npc_control[e].attack3_hitframe = attack3_hitframe
+	npc_control[e].attack3_hitframe = attack3_hitframe or 10
 	npc_control[e].shoot_animation = "=" .. tostring(shoot_animation)
 	npc_control[e].hurt_animation = "=" .. tostring(hurt_animation)
 	npc_control[e].death1_animation = "=" .. tostring(death1_animation)
 	npc_control[e].death2_animation = "=" .. tostring(death2_animation)
 	npc_control[e].lastflag_animation = "=" .. tostring(lastflag_animation)
-	npc_control[e].lastflag_time = lastflag_time
-	npc_control[e].lastflag_loop = lastflag_loop
+	npc_control[e].lastflag_time = lastflag_time or 3000
+	npc_control[e].lastflag_loop = lastflag_loop or 2
 	npc_control[e].force_move = force_move or 2
 	npc_control[e].npc_tilting = npc_tilting or 1
 	npc_control[e].on_death = on_death or 1
-	npc_control[e].ifused = string.lower(ifused)
+	npc_control[e].ifused = string.lower(ifused) or ""
 	npc_control[e].diagnostics = diagnostics or 0
 end
 
@@ -224,7 +226,7 @@ function npc_control_init_name(e,name)
 	npc_control[e].random_damage = 1
 	npc_control[e].npc_can_roam = 1
 	npc_control[e].roam_range = 500
-	npc_control[e].npc_anim_speed = 0.5
+	npc_control[e].npc_anim_speed = 0.8
 	npc_control[e].npc_move_speed = 100
 	npc_control[e].npc_run_speed = 110
 	npc_control[e].npc_turn_speed = 100
@@ -330,7 +332,6 @@ function npc_control_init_name(e,name)
 end
 
 function npc_control_main(e)
-
 	CollisionOn(e)
 	if status[e] == "init" then
 		if npc_control[e].ifused ~= "" and deathifusedno[e] == 0 then
@@ -345,7 +346,7 @@ function npc_control_main(e)
 			end
 		end	
 		allegiance[e] = GetEntityAllegiance(e) -- (0-enemy, 1-ally, 2-neutral)
-		SetAnimationSpeed(e,npc_control[e].npc_anim_speed)
+		SetAnimationSpeed(e,1.0) --SetAnimationSpeed(e,npc_control[e].npc_anim_speed) WAS being used for both ModulateSpeed and SetAnimationSpeed! Messes Up legacy! Fix At 1.0
 		SetEntityMoveSpeed(e,npc_control[e].npc_move_speed)
 		SetEntityTurnSpeed(e,npc_control[e].npc_turn_speed)
 		SetPreExitValue(e,0)
@@ -1238,11 +1239,10 @@ function npc_control_main(e)
 			end
 		end
 	end
-
 	--Diagnostic text -----------------------------------
-	if npc_control[e].diagnostics == 1 then
+	if npc_control[e].diagnostics == 1 or (g_ShowObjectDebugVisuals == 1 and GetPlayerDistance(e) < 500) then
 		local ex,ey,ez,ax,ay,az = GetEntityPosAng(e)
-		Text(2,30,3,"Entity : " ..name1[e])
+		Text(2,30,3,"Entity "..e..": " ..name1[e])
 		if allegiance[e] == 0 then Text(2,32,3,"Allegiance : Enemy") end
 		if allegiance[e] == 1 then Text(2,32,3,"Allegiance : Ally") end
 		if allegiance[e] == 2 then Text(2,32,3,"Allegiance : Neutral") end

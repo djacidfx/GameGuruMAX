@@ -1808,11 +1808,21 @@ void gun_control ( void )
 		{
 			if ( gun_getstartandfinish ( false ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1820,6 +1830,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].action.start2;
@@ -1874,11 +1885,21 @@ void gun_control ( void )
 		{
 			if ( gun_getzoomstartandfinish ( ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1886,6 +1907,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].zoomaction.start2;
@@ -1924,11 +1946,21 @@ void gun_control ( void )
 		{
 			if (  t.tmeleeanim == 0 ) 
 			{
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 				// new true random selection of melee
-				t.tempmeani = 1 + Rnd(2);
-				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == t.tlastmeleeanim ) 
+				if (animchoicemode != 2)
+				{
+					t.tempmeani = 1 + Rnd(2);
+					if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0) t.tempmeani = 1;
+					if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0) t.tempmeani = 1;
+				}
+				else
+				{
+					t.tempmeani = t.tlastmeleeanim;
+				}
+				if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 				{
 					t.tempmeani = t.tlastmeleeanim + 1;
 					if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -1936,6 +1968,7 @@ void gun_control ( void )
 				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
 				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
 				t.tlastmeleeanim = t.tempmeani;
+
 				if ( t.tempmeani == 1 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].meleeaction.start;
@@ -1977,11 +2010,21 @@ void gun_control ( void )
 			{
 				if (  t.tmeleeanim == 0 ) 
 				{
+					// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+					int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 					// new true random selection of melee
-					t.tempmeani = 1 + Rnd(2);
-					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == t.tlastmeleeanim ) 
+					if (animchoicemode != 2)
+					{
+						t.tempmeani = 1 + Rnd(2);
+						if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0) t.tempmeani = 1;
+						if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0) t.tempmeani = 1;
+					}
+					else
+					{
+						t.tempmeani = t.tlastmeleeanim;
+					}
+					if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 					{
 						t.tempmeani = t.tlastmeleeanim + 1;
 						if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -1989,6 +2032,7 @@ void gun_control ( void )
 					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
 					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
 					t.tlastmeleeanim = t.tempmeani;
+
 					if ( t.tempmeani == 1 )
 					{
 						t.gstart=g.firemodes[t.gunid][g.firemode].emptyaction.start;
@@ -2761,7 +2805,8 @@ void gun_control ( void )
 	if (  t.gunmode == 103 ) 
 	{
 		t.gunmode=104;
-		if (  g.firemodes[t.gunid][g.firemode].settings.equipment == 1 ) 
+		bool bAbortRestOfGunModeCode = false;
+		if (  g.firemodes[t.gunid][g.firemode].settings.equipment == 1 )
 		{
 			if (  GetNumberOfFrames(t.currentgunobj) == 0  )  t.tgunactivateequipment = 1;
 		}
@@ -2771,58 +2816,95 @@ void gun_control ( void )
 			{
 				if (  g.firemodes[t.gunid][g.firemode].settings.flaklimb == -1 ) 
 				{
-					t.gunflash=1 ; t.gunshoot=1 ; g.guntimercount=g.firemodes[t.gunid][g.firemode].settings.firerate/2;
-				}
-			}
-		}
-		if ( g.firemodes[t.gunid][g.firemode].settings.doesnotuseammo == 0 )
-		{
-			t.weaponammo[g.weaponammoindex+g.ammooffset]=t.weaponammo[g.weaponammoindex+g.ammooffset]-1; 
-		}
-		--t.gunburst;
-		if ( t.gun[t.gunid].settings.smokelimb != -1 || t.gun[t.gunid].settings.smokelimb==-2 ) {  t.gunsmoke = 1 ; g.gunsmokecount = g.firemodes[t.gunid][g.firemode].settings.firerate/2; }
-		if ( g.firemodes[t.gunid][g.firemode].settings.equipment == 0 )
-		{
-			// trigger sound
-			if ( t.gun[t.gunid].settings.alternate == 0 ) 
-			{
-				t.tgunsoundindex=1  ; gun_picksndvariant ( );
-			}
-			else
-			{
-				t.sndid=t.gunsound[t.gunid][1].altsoundid;
-			}
-			if (  t.sndid>0 ) 
-			{
-				if (  SoundExist(t.sndid) == 1 ) 
-				{
-					if (  t.gautomatic.s>0 && t.gun[t.gunid].settings.alternate == 0 || t.gautomatic.s>0 && t.gun[t.gunid].settings.alternate == 1 && t.gun[t.gunid].settings.alternateisray == 1 ) 
+					// we can delay the shot if flagged
+					bool bDoTheShotNow = true;
+					if (g.firemodes[t.gunid][g.firemode].settings.delayedshot > 0)
 					{
-						gun_LoopObject (  t.currentgunobj,t.gautomatic.s,t.gautomatic.e );
-						t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-						gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
-						if (  t.gunmodeloopsnd>0 ) 
+						bDoTheShotNow = false;
+						bAbortRestOfGunModeCode = true;
+						static int iDelayState = 0;
+						if (iDelayState == 0)
 						{
-							if (  SoundExist(t.gunmodeloopsnd) == 1  )  StopSound (  t.gunmodeloopsnd );
-						}
-						t.fireloopend = g.firemodes[t.gunid][g.firemode].sound.fireloopend;
-						if ( t.fireloopend >= 0 )
-						{
-							// fireloop for automatic weapons
-							PlaySoundOffset ( t.sndid, t.fireloopend  ); 
-							LoopSound ( t.sndid, 0, t.fireloopend );
-							t.gunmodeloopsnd=t.sndid ; t.gunmodeloopstarted=Timer();
+							// start our count
+							iDelayState = Timer();
 						}
 						else
 						{
-							// when fireloop is negative, we use 'single instance' shots
-							// and use negative value as MS time between instance plays
-							PlaySound ( t.sndid );
-							t.gunmodeloopsnd=0; t.gunmodeloopstarted=Timer();
+							if (Timer() > iDelayState + g.firemodes[t.gunid][g.firemode].settings.delayedshot)
+							{
+								// wait until the delay has been made
+								bAbortRestOfGunModeCode = false;
+								bDoTheShotNow = true;
+								iDelayState = 0;
+
+								// as we have interupted the fire anim, ensure we do not restart from the beginning
+								t.gfinish.s = GetFrame(t.currentgunobj);
+							}
 						}
-						t.tvolume_f = 100.0f;// 95.0;
-						t.tvolume_f = t.tvolume_f * t.audioVolume.soundFloat;
-						SetSoundVolume ( t.sndid, t.tvolume_f );
+						if (bDoTheShotNow == false)
+						{
+							// stay here until we get the nod to shoot
+							t.gunmode = 103;
+						}
+					}
+					if (bDoTheShotNow == true )
+					{
+						t.gunflash = 1; t.gunshoot = 1; g.guntimercount = g.firemodes[t.gunid][g.firemode].settings.firerate / 2;
+					}
+				}
+			}
+		}
+		if (bAbortRestOfGunModeCode == false)
+		{
+			if (g.firemodes[t.gunid][g.firemode].settings.doesnotuseammo == 0)
+			{
+				t.weaponammo[g.weaponammoindex + g.ammooffset] = t.weaponammo[g.weaponammoindex + g.ammooffset] - 1;
+			}
+			--t.gunburst;
+			if (t.gun[t.gunid].settings.smokelimb != -1 || t.gun[t.gunid].settings.smokelimb == -2) { t.gunsmoke = 1; g.gunsmokecount = g.firemodes[t.gunid][g.firemode].settings.firerate / 2; }
+			if (g.firemodes[t.gunid][g.firemode].settings.equipment == 0)
+			{
+				// trigger sound
+				if (t.gun[t.gunid].settings.alternate == 0)
+				{
+					t.tgunsoundindex = 1; gun_picksndvariant ();
+				}
+				else
+				{
+					t.sndid = t.gunsound[t.gunid][1].altsoundid;
+				}
+				if (t.sndid > 0)
+				{
+					if (SoundExist(t.sndid) == 1)
+					{
+						if (t.gautomatic.s > 0 && t.gun[t.gunid].settings.alternate == 0 || t.gautomatic.s > 0 && t.gun[t.gunid].settings.alternate == 1 && t.gun[t.gunid].settings.alternateisray == 1)
+						{
+							gun_LoopObject (t.currentgunobj, t.gautomatic.s, t.gautomatic.e);
+							t.currentgunanimspeed_f = t.genericgunanimspeed_f;
+							gun_SetObjectSpeed (t.currentgunobj, t.currentgunanimspeed_f);
+							if (t.gunmodeloopsnd > 0)
+							{
+								if (SoundExist(t.gunmodeloopsnd) == 1)  StopSound (t.gunmodeloopsnd);
+							}
+							t.fireloopend = g.firemodes[t.gunid][g.firemode].sound.fireloopend;
+							if (t.fireloopend >= 0)
+							{
+								// fireloop for automatic weapons
+								PlaySoundOffset (t.sndid, t.fireloopend);
+								LoopSound (t.sndid, 0, t.fireloopend);
+								t.gunmodeloopsnd = t.sndid; t.gunmodeloopstarted = Timer();
+							}
+							else
+							{
+								// when fireloop is negative, we use 'single instance' shots
+								// and use negative value as MS time between instance plays
+								PlaySound (t.sndid);
+								t.gunmodeloopsnd = 0; t.gunmodeloopstarted = Timer();
+							}
+							t.tvolume_f = 100.0f;// 95.0;
+							t.tvolume_f = t.tvolume_f * t.audioVolume.soundFloat;
+							SetSoundVolume (t.sndid, t.tvolume_f);
+						}
 					}
 				}
 			}

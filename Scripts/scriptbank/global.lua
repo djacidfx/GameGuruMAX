@@ -45,6 +45,7 @@ ai_cover_slot = {}
 weapon_name = {}
 
 -- Globals (passed-in)
+g_ShowObjectDebugVisuals = 0
 g_GameStateChange = 0
 g_PlayerPosX = 0
 g_PlayerPosY = 0

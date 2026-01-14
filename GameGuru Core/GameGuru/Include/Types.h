@@ -2319,6 +2319,7 @@ struct lightingtype
 //  LUA Global Vars
 struct luaglobaltype
 {
+	bool showobjectdebugvisuals;
 	int gamestatechange;
 	int setanim;
 	int loopmode;
@@ -2343,6 +2344,7 @@ struct luaglobaltype
 	// Constructor
 	luaglobaltype ( )
 	{
+		 showobjectdebugvisuals = false;
 		 gurumeditationprompt_s = "";
 		 gurumeditationprompttime = 0;
 		 scriptprompt3dFaceCamera = false;
@@ -7399,10 +7401,14 @@ struct gunsettingstype
 	cStr tracer_imagefile;
 	uint32_t tracer_WPEId;
 	bool fake_reload;
+	int delayedshot;
+	int animchoicemode;
 
 	// Constructor
 	gunsettingstype ( )
 	{
+		 animchoicemode = 0;
+		 delayedshot = 0;
 		 iVRWeaponLimbOfWeapon = 0;
 		 iVRWeaponStaticFrame = 0;
 		 iVRWeaponMode = 0;

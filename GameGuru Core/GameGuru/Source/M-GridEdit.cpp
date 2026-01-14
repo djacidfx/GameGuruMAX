@@ -323,6 +323,7 @@ int g_iUseLODObjects = 1;
 bool bDisableLODLoad = false;
 int g_iDisableTerrainSystem = 0;
 int g_iDisableWParticleSystem = 0;
+int g_iDisableCrashLogSystem = 0;
 bool bSprayMoveWithMouse = false;
 
 
@@ -1271,6 +1272,7 @@ void mapeditorexecutable_init ( void )
 	LoadImage("editors\\uiv3\\hub-commtut-0-placeholder.png", HUB_COMMTUT0);
 	LoadImage("editors\\uiv3\\hub-commtut-1-bmi.png", HUB_COMMTUT1);
 	LoadImage("editors\\uiv3\\hub-commtut-2-plemsoft.png", HUB_COMMTUT2);
+	LoadImage("editors\\uiv3\\hub-commtut-3-extreme.png", HUB_COMMTUT3);
 
 	LoadImage("editors\\uiv3\\image-icon.png", SCREENEDITOR_IMAGE);
 	LoadImage("editors\\uiv3\\text-icon.png", SCREENEDITOR_TEXT);

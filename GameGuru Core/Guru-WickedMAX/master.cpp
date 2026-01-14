@@ -300,6 +300,12 @@ void CreateVRControllerObjects( void )
 	wiScene::GetScene().Merge( localScene );
 }
 
+__declspec(noinline) void ForceCrash_AccessViolation()
+{
+	volatile int* p = nullptr;
+	*p = 123; // writes to null -> 0xC0000005
+}
+
 void Master::Initialize()
 {
 #ifdef OPTICK_ENABLE
