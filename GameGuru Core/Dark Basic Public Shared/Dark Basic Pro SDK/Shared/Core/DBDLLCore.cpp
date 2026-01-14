@@ -1352,6 +1352,15 @@ void ShowMemDebug(void)
 		if(memupdatecount % 10 == 0)
 			fGBMemUsed = (float)SMEMAvailable(1) / 1024.0 / 1024.0;
 
+		//PE: For debug to see cloned object ( not instanced ).
+		//#ifdef DISPLAYCLONES
+		//static bool bBoxDebug = false;
+		//static int iHiddenObjects = 0;
+		//int iSpot = 0, iPoint = 0;
+		//int occ = 0;
+		//int DrawOccludedObjects(bool bDebug, bool bBox = false, int* bHiddenObjects = nullptr, int* spot = nullptr, int* point = nullptr);
+		//occ = DrawOccludedObjects(true, bBoxDebug, &iHiddenObjects, &iSpot, &iPoint);
+
 #ifdef INCLUDEVRAM
 		//PE: Always show dedicated VRAM + system RAM GPU use.
 		static float tvram = 0;

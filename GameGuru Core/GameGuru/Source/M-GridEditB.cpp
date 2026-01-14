@@ -23,6 +23,7 @@
 #ifdef PETESTING
 #include "..\Imgui\imgui_demo.cpp"
 #endif
+//#define DISPLAYCLONES
 
 // Globals
 extern int iGenralWindowsFlags ;
@@ -51253,11 +51254,19 @@ int DrawOccludedObjects(bool bDebug,bool bBox, int* iHiddenObjects, int* spot, i
 						sFrame* pFrame = pObject->ppFrameList[i];
 						if (pFrame && pFrame->pMesh)
 						{
+							bool bShowClones = false;
+#ifdef DISPLAYCLONES
+							if (!pFrame->pMesh->bInstanced)
+							{
+								bShowClones = true;
+							}
+#endif							
+
 							uint64_t rootEntity = pFrame->wickedobjindex;
 							ObjectComponent* object = wiScene::GetScene().objects.GetComponent(rootEntity);
 							if (object)
 							{
-								if (object->IsOccluded() || object->IsCulled())
+								if (object->IsOccluded() || object->IsCulled() || bShowClones)
 								{
 									if(object->IsOccluded())
 										total++;
@@ -51266,8 +51275,11 @@ int DrawOccludedObjects(bool bDebug,bool bBox, int* iHiddenObjects, int* spot, i
 
 										XMFLOAT3 center = object->center; // aabb.getCenter();
 										void DrawDot(char* text, float x, float y, float z);
-
-										if(t.entityelement[t.e].bankindex > 0 && t.entityprofile[t.entityelement[t.e].bankindex].ischaracter)
+										if (bShowClones)
+										{
+											DrawDot("CLONE", center.x, center.y, center.z);
+										}
+										else if(t.entityelement[t.e].bankindex > 0 && t.entityprofile[t.entityelement[t.e].bankindex].ischaracter)
 											DrawDot("*", center.x, center.y, center.z);
 										else if(object->IsCulled())
 											DrawDot(".", center.x, center.y, center.z);
