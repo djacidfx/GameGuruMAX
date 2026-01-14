@@ -4279,7 +4279,8 @@ void entity_createobj ( void )
 								Master_WEMaterial->dwBaseColor[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.dwBaseColor[iMesh] ||
 								Master_WEMaterial->dwEmmisiveColor[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.dwEmmisiveColor[iMesh] ||
 								Master_WEMaterial->fNormal[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fNormal[iMesh] ||
-								Master_WEMaterial->fAlphaRef[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fAlphaRef[iMesh])
+								Master_WEMaterial->fAlphaRef[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fAlphaRef[iMesh] ||
+								Master_WEMaterial->fEmissive[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fEmissive[iMesh] )
 							{
 								bUseInstancing = false;
 								break;
