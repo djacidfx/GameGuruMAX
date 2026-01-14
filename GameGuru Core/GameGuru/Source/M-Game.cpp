@@ -2730,10 +2730,9 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							sprintf(tmp, "Project t.game.jumplevel_s : %s", nextlevel.c_str());
 							timestampactivity(0, tmp);
 							t.game.jumplevel_s = nextlevel.c_str();
-							//PE: Make sure we do not run GameLoopLoadStats when not loading a game but linking directly.
-							extern bool g_Storyboard_Starting_New_Level;
-							g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
 
+							//PE: Door collision not working on second level, fixed in script.
+							//PE: https://github.com/Dark-Basic-Software-Limited/GameGuruRepo/issues/6246
 						}
 					}
 				}
