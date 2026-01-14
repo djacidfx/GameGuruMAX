@@ -1,4 +1,4 @@
--- Collect Object v11
+-- Collect Object v12
 -- DESCRIPTION: Will allow collection of an object. Object must be set to 'Collectable'.
 -- DESCRIPTION: [PICKUP_TEXT$="E to collect"]
 -- DESCRIPTION: [PICKUP_RANGE=80(1,100)]
@@ -79,8 +79,7 @@ function collect_object_main(e)
 	if collect_object[e].pickup_style == 1 and PlayerDist < collect_object[e].pickup_range then
 		if GetEntityCollectable(e) == 1 or GetEntityCollectable(e) == 2 then
 			if GetEntityCollected(e) == 0 then
-				if collect_object[e].prompt_display == 1 then PromptLocal(e,collect_object[e].collected_text) end
-				if collect_object[e].prompt_display == 2 then Prompt(collect_object[e].collected_text) end
+				PromptDuration(collect_object[e].collected_text,1000)
 				PlaySound(e,0)
 				PerformLogicConnections(e)
 				SetEntityCollected(e,1)
@@ -98,12 +97,17 @@ function collect_object_main(e)
 		if PlayerDist < collect_object[e].pickup_range and tEnt[e] == e and GetEntityVisibility(e) == 1 then
 			if GetEntityCollectable(tEnt[e]) == 1 or GetEntityCollectable(tEnt[e]) == 2 then
 				if GetEntityCollected(tEnt[e]) == 0 then
-					if collect_object[e].prompt_display == 1 then PromptLocal(e,collect_object[e].pickup_text) end
-					if collect_object[e].prompt_display == 2 then Prompt(collect_object[e].pickup_text) end
+					if collect_object[e].item_highlight < 3 then 
+						if collect_object[e].prompt_display == 1 then PromptLocal(e,collect_object[e].pickup_text) end
+						if collect_object[e].prompt_display == 2 then Prompt(collect_object[e].pickup_text) end
+					end	
+					if collect_object[e].item_highlight == 3 then
+						if collect_object[e].prompt_display == 1 then TextCenterOnX(50,54,1,collect_object[e].pickup_text) end
+						if collect_object[e].prompt_display == 2 then Prompt(collect_object[e].pickup_text) end
+					end	
 					if g_KeyPressE == 1 then
 						PlaySound(e,0)
-						if collect_object[e].prompt_display == 1 then PromptLocal(e,collect_object[e].collected_text) end
-						if collect_object[e].prompt_display == 2 then Prompt(collect_object[e].collected_text) end
+						PromptDuration(collect_object[e].collected_text,1000)
 						PerformLogicConnections(e)
 						SetEntityCollected(tEnt[e],1)
 						g_ResnodeCollected = e
