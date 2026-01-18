@@ -1,4 +1,4 @@
--- Door Sliding v35 - Necrym59 and Lee
+-- Door Sliding v36 - Necrym59 and Lee
 -- DESCRIPTION: Open and close a sliding door. 
 -- DESCRIPTION: [MOVE_ANGLE=0(0,360)] 
 -- DESCRIPTION: [MOVE_DISTANCE=90] 
@@ -183,6 +183,9 @@ function door_sliding_main(e)
 	-- only having a key can unlock a door
 	if g_Entity[e]['haskey'] == 1 then 
 		door.IsUnlocked = true
+	end
+	if g_Entity[e]['haskey'] == 0 then 
+		door.IsUnlocked = false
 	end
 	
 	-- if was spawned at start, and activated here, reset activation so initial activation was just to unlock the door

@@ -22,10 +22,7 @@
 #include "G-Lighting.h"
 #include "M-AudioVolume.h"
 #include "M-Bulletholes.h"
-#include "M-characterkit.h"
 #include "M-CharacterSound.h"
-#include "M-ConstructionKit.h"
-#include "M-ConstructionKitEdit.h"
 #include "M-Debug.h"
 #include "M-Decal.h"
 #include "M-EBE.h"
@@ -54,7 +51,6 @@
 #include "M-Sliders.h"
 #include "M-MP.h"
 #include "M-Sky.h"
-#include "M-Grass.h"
 #include "M-TerrainNew.h"
 #include "M-DAINew.h"
 #include "M-Titles.h"
@@ -65,13 +61,8 @@
 #include "M-UndoSys.h"
 #include "M-UndoSys-Object.h"
 #include "M-UndoSys-Terrain.h"
-#include "MapEditor.h"
 #include "Types.h"
 
-#ifdef BUILDINGEDITOR
-//#include "BuildingEditor/BuildingEditor.h"
-#include "..\..\..\BuildingEditor\BuildingEditor.h"
-#endif
 
 // Engine Includes
 #include "CTextC.h"
@@ -105,11 +96,7 @@
 #include "LightMapper.h"
 #include "SimonReloaded.h"
 #include "SoftwareCulling.h"
-#ifdef PHOTONMP
 #include "PhotonCommands.h"
-#else
-#include "SteamCommands.h"
-#endif
 
 #include ".\..\..\Guru-WickedMAX\wickedcalls.h"
 #include "GGVR.h"
@@ -124,7 +111,6 @@ struct sRubberBandType
 	int e;
 	float x, y, z;
 	GGQUATERNION quatAngle;
-	#ifdef WICKEDENGINE
 	int iGroupID;
 	int iParentGroupID;
 	float px, py, pz;
@@ -132,16 +118,11 @@ struct sRubberBandType
 	int quatmode;
 	float quatx, quaty, quatz, quatw;
 	float scalex, scaley, scalez;
-	#endif
 };
 
 struct mysystemtype
 {
-	#ifdef WICKEDENGINE
 	// using new DocWrite system
-	#else
-	bool bUsingMySystemFolder;
-	#endif
 	cstr root_s;
 	cstr levelBankTestMap_s;
 	cstr levelBankTestMapAbs_s;
@@ -155,9 +136,7 @@ struct mysystemtype
 struct Sglobals
 {
 	globalstype globals;
-	#ifdef VRTECH
 	vrglobalstype vrglobals;
-	#endif
 	mysystemtype mysystem;
 	int characterSoundCurrentPlayingNumber;
 	cstr characterSoundCurrentPlayingType_s;
@@ -502,7 +481,6 @@ struct Sglobals
 	std::vector<sRubberBandType> entityrubberbandlist;
 	std::vector<sRubberBandType> thumbentityrubberbandlist;
 	std::vector<entityundotype> entityrubberbandlistundo;
-	//float fForceYRotationOfRubberBandFromKeyPress;
 	int explosionstressed;
 	int filecollectionmax;
 	int gamerealtimeobjoffset;
@@ -533,9 +511,7 @@ struct Sglobals
 	float plroffsetangley_f;
 	float plroffsetanglez_f;
 	float prevwaterheight_f;
-	#ifdef STORYBOARD
 	bool bUseStoryBoardSetup;
-	#endif
 	cstr projectfilename_s;
 	cstr serveripaddress_s;
 	int silentsoundoffset;
@@ -803,6 +779,7 @@ struct Sglobals
 	int gdisplaydepth;
 	int gdisplaywidth;
 	int gexportassets;
+	int gdisablefulldecaleffects;
 	int ggodmodestate;
 	int glightmaxsize;
 	int glightquality;
@@ -1253,11 +1230,6 @@ struct Sglobals
 	int physicssecondariesoffsetend;
 	int physicsdebugdraweroffset;
 	bool isGameBeingPlayed;
-	#ifdef BUILDINGEDITOR
-	int buildingeditorimgoffset;
-	int buildingeditorobjoffset;
-	int buildingeditoroffsetmax;
-	#endif
 	float globalhudscale;
 
 	// Constructor
@@ -1680,6 +1652,7 @@ struct Sglobals
 		 glightmaxsize = 0;
 		 ggodmodestate = 0;
 		 gexportassets = 0;
+		 gdisablefulldecaleffects = 0;
 		 gdisplaywidth = 0;
 		 gdisplaydepth = 0;
 		 gbloodonfloor = 0;
@@ -1892,9 +1865,7 @@ struct Sglobals
 		 silentsoundoffset = 0;
 		 serveripaddress_s = "";
 		 projectfilename_s = "";
-		 #ifdef STORYBOARD
 		 bUseStoryBoardSetup = false;
-		 #endif
 		 prevwaterheight_f = 0.0f;
 		 plroffsetanglez_f = 0.0f;
 		 plroffsetangley_f = 0.0f;
@@ -2230,11 +2201,7 @@ struct Sglobals
 		 mysystem.root_s = "";
 		 physicsdebugdraweroffset = 0;
 		 isGameBeingPlayed = false;
-		 #ifdef WICKEDENGINE
 		 // using new DocWrite system
-		 #else
-		 mysystem.bUsingMySystemFolder = false;
-		 #endif
 	}
 	// End of Constructor
 
@@ -2266,7 +2233,6 @@ struct Stemps
 	int gamememactuallyusedstarttriggercount;
 	std::vector <inventorytype> saveloadgamepositionplayerinventory;
 	std::vector <int> saveloadgamepositionplayerobjective;
-	//int gdynamicterrainshadowcameragenerate;
 	cstr tsteamlostconnectioncustommessage_s;
 	int gdynamicterrainshadowcameratrigger;
 	int tempsteamingameinitialwaitingdelay;
@@ -2277,13 +2243,11 @@ struct Stemps
 	int tempsteamhaveaskedtosubscribeflag;
 	cstr tempMPLobbyNameFromList_s;
 	std::vector <int> mp_playerAttachmentIndex;
-	//int gdynamicterrainshadowcameratimer;
 	float liftshadowstositontopofterrain_f;
 	int tconsolidatelocallightmapobjects;
 	int tmaxcharacterstateengineentities;
 	int tMPshopHasItemChangedFlag;
 	std::vector <cstr> mp_playerAvatarOwners_s;
-	//int machineindependentphysicsupdate;
 	float machineindependentphysicsupdate;
 	int tgenerateterraindirtyregiononly;
 	int tlasttimecheckedforlobbiestimer;
@@ -2303,7 +2267,6 @@ struct Stemps
 	std::vector <int> csi_stoodincoverthrowleftANIM;
 	std::vector <int> interactivesequencemaxhistory;
 	int entityorsegmententrieschanged;
-	//int gdynamicterrainshadowcameraid;
 	int geditorhighlightingtentityobj;
 	int geditorhighlightingtentityID;
 	int scanforentitiescharactersonly;
@@ -2345,7 +2308,6 @@ struct Stemps
 	std::vector <int> characterchoiceentityindex;
 	std::vector <int> csi_crouchreloadrocketANIM;
 	std::vector <int> csi_stoodincoverthrowright;
-	//std::vector <saveloadgamepositionentitytype> saveloadgamepositionentity; //PE: Not used.
 	std::vector <cstr> mp_playerAvatars_s;
 	bool bTriggerAvatarRescanAndLoad;
 	std::vector <bool> mp_playerAvatarLoaded;	
@@ -2399,7 +2361,6 @@ struct Stemps
 	std::vector <int> mp_playerShooting;
 	std::vector <int> mp_playingRagdoll;
 	int characterkitfacialhairmax;
-	//std::vector <cstr> characterSoundStackType_s;
 	int darkaifirerayhitcharacter;
 	cstr goverridefpmdestination_s;
 	int hudlayersimageoffsetindex;
@@ -2412,7 +2373,6 @@ struct Stemps
 	cstr tempMPshopidfile_s;
 	int thideprojectileinhudmodel;
 	int tischaracterholdingweapon;
-	//int tonlyusingcheapestcascade;
 	int tsteamdisplaymessagetimer;
 	int tsteamlastdamageincounter;
 	int tsteamwaitedforlobbytimer;
@@ -2644,7 +2604,6 @@ struct Stemps
 	std::vector <int> csi_stoodmoverunANIM;
 	std::vector <int> csi_stoodmoverunleft;
 	std::vector <int> csi_stoodstraferight;
-	//std::vector <int> debrisshapeindexused;
 	std::vector <int> infinilightshortlist;
 	std::vector <int> statecolmaterialtype;
 	std::vector <int> mp_jetpackOn;
@@ -3060,9 +3019,7 @@ struct Stemps
 	float gridentityposx_f;
 	float gridentityposy_f;
 	float gridentityposz_f;
-	#ifdef WICKEDENGINE
 	uint64_t gridentitywickedlightindex;
-	#endif
 	int gridentityextractedindex;
 	int gridentityhasparent;
 	float fOldGridEntityX;
@@ -4821,7 +4778,7 @@ struct Stemps
 	DWORD bestdif;
 	DWORD bestpos;
 	int bkwidth;
-	cstr brass_s;
+	cstr brass_s = "01234567890123456789012345678901234567890123456789012345678901234567890123456789";
 	int chkfile;
 	cstr chunk_s;
 	cstr decal_s;
@@ -5284,9 +5241,6 @@ struct Stemps
 	std::vector <decaltype> decal;
 	std::vector <int> frags;
 	std::vector <int> mshot;
-	#ifndef WICKEDENGINE
-	std::vector <entityprofiletype> tempe; //PE: Not used in wicked.
-	#endif
 	std::vector< std::vector<int> > wshot;
 	cstr alt_s;
 	float asx_f;
@@ -5830,7 +5784,6 @@ struct Stemps
 	int ccLimbHitOverrideLimb;
 	std::vector <int> entitiesActivatedForLua;
 	int delayOneFrameForActivatedLua;
-#ifdef WICKEDENGINE
 	visualsdatastoragetype visualsStorage;
 	int showeditorelements;
 	int showeditortrees;
@@ -5856,14 +5809,11 @@ struct Stemps
 	std::vector <cStr> inventoryContainers;
 	std::vector <inventoryContainerType> inventoryContainer[MAX_INVENTORY_CONTAINERS];
 	bool bSpawnCalledFromLua;
-#endif
 
 	// Constructor
 	Stemps ( )
 	{
-		#ifdef WICKEDENGINE
 		gridentitywickedlightindex = 0;
-		#endif
 		gridentityextractedindex = 0;
 		ebebankmax = 0;
 		delayOneFrameForActivatedLua = 0;
@@ -8789,7 +8739,6 @@ struct Stemps
 		 scanforentitiescharactersonly = 0;
 		 geditorhighlightingtentityobj = 0;
 		 geditorhighlightingtentityID = 0;
-		 //gdynamicterrainshadowcameraid = 0;
 		 entityorsegmententrieschanged = 0;
 		 tMPshopTheVersionNumber = 0;
 		 tforwardoffsettohideshoulder_f = 0.0f;
@@ -8804,7 +8753,6 @@ struct Stemps
 		 tmaxcharacterstateengineentities = 0;
 		 tconsolidatelocallightmapobjects = 0;
 		 liftshadowstositontopofterrain_f = 0.0f;
-		 //gdynamicterrainshadowcameratimer = 0;
 		 tempMPLobbyNameFromList_s = "";
 		 tempsteamhaveaskedtosubscribeflag = 0;
 		 tsteamiseveryoneloadedandreadytime = 0;
@@ -8813,7 +8761,6 @@ struct Stemps
 		 tempsteamingameinitialwaitingdelay = 0;
 		 gdynamicterrainshadowcameratrigger = 0;
 		 tsteamlostconnectioncustommessage_s = "";
-		 //gdynamicterrainshadowcameragenerate = 0;
 		 gamememactuallyusedstarttriggercount = 0;
 		 tmaskforcamerasnoreflectionlightrayflag = 0;
 		 tconsolidatelocallightmapobjectspolylimit = 0;
@@ -8822,7 +8769,6 @@ struct Stemps
 		 tmphopitemtocheckifchangedandversion_s = "";
 		 tmaskforcamerasnoreflectionlightrayshadowsflag = 0;
 		 strwork = "";
-		 #ifdef WICKEDENGINE
 		 showeditorelements = 1;
 		 showeditortrees = -1;
 		 showeditorveg = -1;
@@ -8831,15 +8777,11 @@ struct Stemps
 		 showtestgameelements = 0;
 		 showtestgame2dbounds = 0;
 		 showtestgame3dbounds = 0;
-		 //showtestgametrees = 1;
-		 //showtestgameveg = 1;
-		 //showtestgamewater = 1;
 		 iPhysicsDebugMaxOffset = 0;
 		 iPhysicsCreatedStaticMesh = 0;
 		 iPhysicsCreatedDynamicMesh = 0;
 		 activerelationobjectid = -1;
 		 bSpawnCalledFromLua = false;
-		 #endif
 	}
 	// End of Constructor
 

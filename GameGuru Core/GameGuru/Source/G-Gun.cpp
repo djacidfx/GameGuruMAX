@@ -1,3 +1,5 @@
+#pragma optimize("", off)
+
 //----------------------------------------------------
 //--- GAMEGURU - G-Gun
 //----------------------------------------------------
@@ -5,9 +7,7 @@
 #include "stdafx.h"
 #include "gameguru.h"
 
-#ifdef WICKEDENGINE
 #include "GGVR.h"
-#endif
 
 #ifdef OPTICK_ENABLE
 #include "optick.h"
@@ -62,11 +62,9 @@ void gun_restart ( void )
 	g.maxslots=10;
 	g.autoswap=1;
 
-	#ifdef WICKEDENGINE
 	// and load the layout
 	extern void gun_gatherslotorder_load ( void );
 	gun_gatherslotorder_load();
-	#endif
 }
 
 void gun_resetactivateguns ( void )
@@ -115,11 +113,7 @@ void gun_activategunsfromentities ( void )
 				if ( t.tgunid>0 ) t.gun[t.tgunid].activeingame = 1;
 
 				// Entity is carrying a gun
-				#ifdef WICKEDENGINE
 				t.tgunid = t.entityelement[t.e].eleprof.hasweapon;
-				#else
-				t.tgunid = t.entityprofile[t.entid].hasweapon;
-				#endif
 				if ( t.tgunid>0 ) 
 				{
 					t.gun[t.tgunid].activeingame=1;
@@ -843,11 +837,9 @@ bool g_bNeedToRestoreLimbsAfterVR = false;
 
 void gun_update_hud ( void )
 {
-	#ifdef WICKEDENGINE
 	// need to know gun object globally to exclude from ray cast detection
 	extern int g_iCurrentGunObj;
 	g_iCurrentGunObj = t.currentgunobj;
-	#endif
 
 	//  HUD marker update
 	if (  ObjectExist(g.hudbankoffset+2) == 1 ) 
@@ -1240,11 +1232,7 @@ void gun_control ( void )
 	if (  t.gunmode == 9998 ) 
 	{
 		ShowObject (  t.currentgunobj );
-		#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-		#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-		#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		gun_SetObjectInterpolation (  t.currentgunobj,100 );
 		gun_PlayObject (  t.currentgunobj,g.custstart,g.custend );
@@ -1252,11 +1240,7 @@ void gun_control ( void )
 	}
 	if (  t.gunmode == 9999 ) 
 	{
-		#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-		#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-		#endif
 		gun_SetObjectSpeed (  t.currentgunobj, t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= g.custend  )  t.gunmode = 5;
 	}
@@ -1425,10 +1409,6 @@ void gun_control ( void )
 		t.sway_f=30.0 ; t.swayn_f=t.sway_f*-1;
 		if (  t.woz_f<t.swayn_f  )  t.woz_f = t.swayn_f;
 		if (  t.woz_f>t.sway_f  )  t.woz_f = t.sway_f;
-		//if (  t.wox_f<t.swayn_f  )  t.wox_f = t.swayn_f;
-		//if (  t.wox_f>t.sway_f  )  t.wox_f = t.sway_f;
-		//if (  t.woy_f<t.swayn_f  )  t.woy_f = t.swayn_f;
-		//if (  t.woy_f>t.sway_f  )  t.woy_f = t.sway_f;
 		float fSwayX = t.gunlagxmax_f;
 		float fSwayXN = -t.gunlagxmax_f;
 		float fSwayY = t.gunlagymax_f;
@@ -1484,11 +1464,7 @@ void gun_control ( void )
 		//  slow right down if jumping
 		if (  t.genericgunanimspeed_f == fGunAnimSpeedFast ) 
 		{
-			#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-			#else
-			t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-			#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		t.genericgunanimspeed_f = fGunAnimSpeedSlow;
@@ -1498,11 +1474,7 @@ void gun_control ( void )
 		//  regular speed for all weapon animations
 		if (  t.genericgunanimspeed_f == fGunAnimSpeedSlow ) 
 		{
-			#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-			#else
-			t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-			#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		t.genericgunanimspeed_f = fGunAnimSpeedFast;
@@ -1545,11 +1517,7 @@ void gun_control ( void )
 	}
 	if (  t.gunmode  >=  2001 && t.gunmode  <=  2010 ) 
 	{
-		#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-		#else
-		t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-		#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 	}
 	if (  t.gunmode  ==  2001 ) 
@@ -1840,11 +1808,21 @@ void gun_control ( void )
 		{
 			if ( gun_getstartandfinish ( false ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1852,6 +1830,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].action.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].action.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].action.start2;
@@ -1891,7 +1870,6 @@ void gun_control ( void )
 	{
 		t.gidle=t.tzoomactionidle;
 		t.gmove=t.tzoomactionmove;
-		//gun_getzoomstartandfinish ( );
 		if ( t.playercontrol.usingrun == -1 ) t.gruntofrom = g.firemodes[t.gunid][g.firemode].action.runfrom;
 		if ( t.playercontrol.usingrun == 1 ) t.gruntofrom = g.firemodes[t.gunid][g.firemode].action.runto;
 		t.gautomatic=g.firemodes[t.gunid][g.firemode].zoomaction.automatic;
@@ -1907,11 +1885,21 @@ void gun_control ( void )
 		{
 			if ( gun_getzoomstartandfinish ( ) == true )
 			{
-				// new true random selection of fire
-				t.tempani = 1 + Rnd(2);
-				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
-				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
-				if ( t.tempani == t.templastani ) 
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
+				// new true random selection of melee
+				if (animchoicemode != 2)
+				{
+					t.tempani = 1 + Rnd(2);
+					if (t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0) t.tempani = 1;
+					if (t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0) t.tempani = 1;
+				}
+				else
+				{
+					t.tempani = t.templastani;
+				}
+				if ( t.tempani == t.templastani && animchoicemode != 1)
 				{
 					t.tempani = t.templastani + 1;
 					if ( t.tempani > 3 ) t.tempani = 1;
@@ -1919,6 +1907,7 @@ void gun_control ( void )
 				if ( t.tempani == 2 && g.firemodes[t.gunid][g.firemode].zoomaction.start2.s == 0 ) t.tempani = 1;
 				if ( t.tempani == 3 && g.firemodes[t.gunid][g.firemode].zoomaction.start3.s == 0 ) t.tempani = 1;
 				t.templastani = t.tempani;
+
 				if ( t.tempani == 2 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].zoomaction.start2;
@@ -1957,11 +1946,21 @@ void gun_control ( void )
 		{
 			if (  t.tmeleeanim == 0 ) 
 			{
+				// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+				int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 				// new true random selection of melee
-				t.tempmeani = 1 + Rnd(2);
-				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
-				if ( t.tempmeani == t.tlastmeleeanim ) 
+				if (animchoicemode != 2)
+				{
+					t.tempmeani = 1 + Rnd(2);
+					if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0) t.tempmeani = 1;
+					if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0) t.tempmeani = 1;
+				}
+				else
+				{
+					t.tempmeani = t.tlastmeleeanim;
+				}
+				if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 				{
 					t.tempmeani = t.tlastmeleeanim + 1;
 					if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -1969,6 +1968,7 @@ void gun_control ( void )
 				if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].meleeaction.start2.s == 0 ) t.tempmeani = 1;
 				if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].meleeaction.start3.s == 0 ) t.tempmeani = 1;
 				t.tlastmeleeanim = t.tempmeani;
+
 				if ( t.tempmeani == 1 )
 				{
 					t.gstart=g.firemodes[t.gunid][g.firemode].meleeaction.start;
@@ -2010,11 +2010,21 @@ void gun_control ( void )
 			{
 				if (  t.tmeleeanim == 0 ) 
 				{
+					// animchoicemode; 0 = default random, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+					int animchoicemode = g.firemodes[t.gunid][g.firemode].settings.animchoicemode;
+
 					// new true random selection of melee
-					t.tempmeani = 1 + Rnd(2);
-					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
-					if ( t.tempmeani == t.tlastmeleeanim ) 
+					if (animchoicemode != 2)
+					{
+						t.tempmeani = 1 + Rnd(2);
+						if (t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0) t.tempmeani = 1;
+						if (t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0) t.tempmeani = 1;
+					}
+					else
+					{
+						t.tempmeani = t.tlastmeleeanim;
+					}
+					if ( t.tempmeani == t.tlastmeleeanim && animchoicemode != 1)
 					{
 						t.tempmeani = t.tlastmeleeanim + 1;
 						if ( t.tempmeani > 3 ) t.tempmeani = 1;
@@ -2022,6 +2032,7 @@ void gun_control ( void )
 					if ( t.tempmeani == 2 && g.firemodes[t.gunid][g.firemode].emptyaction.start2.s == 0 ) t.tempmeani = 1;
 					if ( t.tempmeani == 3 && g.firemodes[t.gunid][g.firemode].emptyaction.start3.s == 0 ) t.tempmeani = 1;
 					t.tlastmeleeanim = t.tempmeani;
+
 					if ( t.tempmeani == 1 )
 					{
 						t.gstart=g.firemodes[t.gunid][g.firemode].emptyaction.start;
@@ -2060,9 +2071,6 @@ void gun_control ( void )
 		}
 		if (  t.tempmeani != 0 ) { t.tmeleeanim = t.tempmeani  ; t.tempmeani = 0; }
 	}
-
-	//block code updated for improved melee
-	//t.gblock = g.firemodes[t.gunid][g.firemode].action.block;
 
 	// Burst control
 	if (  t.gunburst <= 0 ) 
@@ -2132,20 +2140,12 @@ void gun_control ( void )
 	{
 		t.gunmode=8;
 		gun_PlayObject (  t.currentgunobj,t.gidle.s+3.0,t.gidle.e );
-		#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-		#else
-		t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-		#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 	}
 	if (  t.gunmode == 8 ) 
 	{
-		#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-		#else
-		t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-		#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gidle.e  )  t.gunmode = 9;
 	}
@@ -2197,20 +2197,12 @@ void gun_control ( void )
 		gun_PlayObject (  t.currentgunobj,t.gmove.s+3.0,t.gmove.e );
 		if (  g.firemodes[t.gunid][g.firemode].settings.movespeedmod  ==  0 ) 
 		{
-			#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = (t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-			#else
-			t.currentgunanimspeed_f = g.timeelapsed_f*(t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-			#endif		
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		else
 		{
-			#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-			#else
-			t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-			#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 	}
@@ -2218,20 +2210,12 @@ void gun_control ( void )
 	{
 		if (  g.firemodes[t.gunid][g.firemode].settings.movespeedmod  ==  0 ) 
 		{
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = (t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f*(t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		else
 		{
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		if (  GetFrame(t.currentgunobj) >= t.gmove.e  )  t.gunmode = 25;
@@ -2262,11 +2246,7 @@ void gun_control ( void )
 		gun_SetObjectInterpolation (  t.currentgunobj, 100 );
 		gun_SetObjectFrame ( t.currentgunobj, t.gruntofrom.s );
 		gun_PlayObject ( t.currentgunobj, t.gruntofrom.s, t.gruntofrom.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = (t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*(t.playercontrol.basespeed_f*t.genericgunanimspeed_f);
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj, t.currentgunanimspeed_f );
 		t.gunmodewaitforframe = t.gruntofrom.e;
 	}
@@ -2304,11 +2284,7 @@ void gun_control ( void )
 		{
 			gun_SetObjectInterpolation (  t.currentgunobj,100 );
 			gun_SetObjectFrame (  t.currentgunobj,t.ghide.s );
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = (t.genericgunanimspeed_f*2.5);
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f*(t.genericgunanimspeed_f*2.5);
-#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 			t.gunmode=33;
 		}
@@ -2318,30 +2294,18 @@ void gun_control ( void )
 		t.gunmode=34;
 		gun_SetObjectInterpolation (  t.currentgunobj,100 );
 		gun_PlayObject (  t.currentgunobj,t.ghide.s,t.ghide.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = (t.genericgunanimspeed_f*2.5);
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*(t.genericgunanimspeed_f*2.5);
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 	}
 	if (  t.gunmode == 34 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = (t.genericgunanimspeed_f*2.5);
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*(t.genericgunanimspeed_f*2.5);
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.ghide.e  )  t.gunmode = 35;
 	}
 	if (  t.gunmode == 35 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = (t.genericgunanimspeed_f*2.5);
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*(t.genericgunanimspeed_f*2.5);
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		g.autoloadgun=t.gunselectionafterhide;
 		t.gunmode=5;
@@ -2515,8 +2479,6 @@ void gun_control ( void )
 				float fDX = t.entityelement[e].x - CameraPositionX();
 				float fDZ = t.entityelement[e].z - CameraPositionZ();
 				float fDA = atan2deg(fDX, fDZ);
-				//t.playercontrol.cy_f = WrapValue(fDA);
-				//RotateCamera (0, t.playercontrol.cx_f, t.playercontrol.cy_f, t.playercontrol.cz_f);
 
 				// and forces forward as through stepping forward
 				t.playercontrol.pushangle_f = CameraAngleY();// fDA;
@@ -2736,11 +2698,7 @@ void gun_control ( void )
 			gun_SetObjectInterpolation (  t.currentgunobj,100 );
 
 			gun_PlayObject (  t.currentgunobj,t.gstart.s,t.gstart.e );
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		}
 		else
@@ -2805,11 +2763,7 @@ void gun_control ( void )
 	}
 	if ( t.gunmode == 102 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		//PE: Wizard (fire) is waiting here for the animation to change ?
 		//https://github.com/TheGameCreators/GameGuruRepo/issues/672
@@ -2851,7 +2805,8 @@ void gun_control ( void )
 	if (  t.gunmode == 103 ) 
 	{
 		t.gunmode=104;
-		if (  g.firemodes[t.gunid][g.firemode].settings.equipment == 1 ) 
+		bool bAbortRestOfGunModeCode = false;
+		if (  g.firemodes[t.gunid][g.firemode].settings.equipment == 1 )
 		{
 			if (  GetNumberOfFrames(t.currentgunobj) == 0  )  t.tgunactivateequipment = 1;
 		}
@@ -2861,62 +2816,95 @@ void gun_control ( void )
 			{
 				if (  g.firemodes[t.gunid][g.firemode].settings.flaklimb == -1 ) 
 				{
-					t.gunflash=1 ; t.gunshoot=1 ; g.guntimercount=g.firemodes[t.gunid][g.firemode].settings.firerate/2;
-				}
-			}
-		}
-		if ( g.firemodes[t.gunid][g.firemode].settings.doesnotuseammo == 0 )
-		{
-			t.weaponammo[g.weaponammoindex+g.ammooffset]=t.weaponammo[g.weaponammoindex+g.ammooffset]-1; 
-		}
-		--t.gunburst;
-		if ( t.gun[t.gunid].settings.smokelimb != -1 || t.gun[t.gunid].settings.smokelimb==-2 ) {  t.gunsmoke = 1 ; g.gunsmokecount = g.firemodes[t.gunid][g.firemode].settings.firerate/2; }
-		if ( g.firemodes[t.gunid][g.firemode].settings.equipment == 0 )
-		{
-			// trigger sound
-			if ( t.gun[t.gunid].settings.alternate == 0 ) 
-			{
-				t.tgunsoundindex=1  ; gun_picksndvariant ( );
-			}
-			else
-			{
-				t.sndid=t.gunsound[t.gunid][1].altsoundid;
-			}
-			if (  t.sndid>0 ) 
-			{
-				if (  SoundExist(t.sndid) == 1 ) 
-				{
-					if (  t.gautomatic.s>0 && t.gun[t.gunid].settings.alternate == 0 || t.gautomatic.s>0 && t.gun[t.gunid].settings.alternate == 1 && t.gun[t.gunid].settings.alternateisray == 1 ) 
+					// we can delay the shot if flagged
+					bool bDoTheShotNow = true;
+					if (g.firemodes[t.gunid][g.firemode].settings.delayedshot > 0)
 					{
-						gun_LoopObject (  t.currentgunobj,t.gautomatic.s,t.gautomatic.e );
-#ifdef WICKEDENGINE
-						t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-						t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
-						gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
-						if (  t.gunmodeloopsnd>0 ) 
+						bDoTheShotNow = false;
+						bAbortRestOfGunModeCode = true;
+						static int iDelayState = 0;
+						if (iDelayState == 0)
 						{
-							if (  SoundExist(t.gunmodeloopsnd) == 1  )  StopSound (  t.gunmodeloopsnd );
-						}
-						t.fireloopend = g.firemodes[t.gunid][g.firemode].sound.fireloopend;
-						if ( t.fireloopend >= 0 )
-						{
-							// fireloop for automatic weapons
-							PlaySoundOffset ( t.sndid, t.fireloopend  ); 
-							LoopSound ( t.sndid, 0, t.fireloopend );
-							t.gunmodeloopsnd=t.sndid ; t.gunmodeloopstarted=Timer();
+							// start our count
+							iDelayState = Timer();
 						}
 						else
 						{
-							// when fireloop is negative, we use 'single instance' shots
-							// and use negative value as MS time between instance plays
-							PlaySound ( t.sndid );
-							t.gunmodeloopsnd=0; t.gunmodeloopstarted=Timer();
+							if (Timer() > iDelayState + g.firemodes[t.gunid][g.firemode].settings.delayedshot)
+							{
+								// wait until the delay has been made
+								bAbortRestOfGunModeCode = false;
+								bDoTheShotNow = true;
+								iDelayState = 0;
+
+								// as we have interupted the fire anim, ensure we do not restart from the beginning
+								t.gfinish.s = GetFrame(t.currentgunobj);
+							}
 						}
-						t.tvolume_f = 100.0f;// 95.0;
-						t.tvolume_f = t.tvolume_f * t.audioVolume.soundFloat;
-						SetSoundVolume ( t.sndid, t.tvolume_f );
+						if (bDoTheShotNow == false)
+						{
+							// stay here until we get the nod to shoot
+							t.gunmode = 103;
+						}
+					}
+					if (bDoTheShotNow == true )
+					{
+						t.gunflash = 1; t.gunshoot = 1; g.guntimercount = g.firemodes[t.gunid][g.firemode].settings.firerate / 2;
+					}
+				}
+			}
+		}
+		if (bAbortRestOfGunModeCode == false)
+		{
+			if (g.firemodes[t.gunid][g.firemode].settings.doesnotuseammo == 0)
+			{
+				t.weaponammo[g.weaponammoindex + g.ammooffset] = t.weaponammo[g.weaponammoindex + g.ammooffset] - 1;
+			}
+			--t.gunburst;
+			if (t.gun[t.gunid].settings.smokelimb != -1 || t.gun[t.gunid].settings.smokelimb == -2) { t.gunsmoke = 1; g.gunsmokecount = g.firemodes[t.gunid][g.firemode].settings.firerate / 2; }
+			if (g.firemodes[t.gunid][g.firemode].settings.equipment == 0)
+			{
+				// trigger sound
+				if (t.gun[t.gunid].settings.alternate == 0)
+				{
+					t.tgunsoundindex = 1; gun_picksndvariant ();
+				}
+				else
+				{
+					t.sndid = t.gunsound[t.gunid][1].altsoundid;
+				}
+				if (t.sndid > 0)
+				{
+					if (SoundExist(t.sndid) == 1)
+					{
+						if (t.gautomatic.s > 0 && t.gun[t.gunid].settings.alternate == 0 || t.gautomatic.s > 0 && t.gun[t.gunid].settings.alternate == 1 && t.gun[t.gunid].settings.alternateisray == 1)
+						{
+							gun_LoopObject (t.currentgunobj, t.gautomatic.s, t.gautomatic.e);
+							t.currentgunanimspeed_f = t.genericgunanimspeed_f;
+							gun_SetObjectSpeed (t.currentgunobj, t.currentgunanimspeed_f);
+							if (t.gunmodeloopsnd > 0)
+							{
+								if (SoundExist(t.gunmodeloopsnd) == 1)  StopSound (t.gunmodeloopsnd);
+							}
+							t.fireloopend = g.firemodes[t.gunid][g.firemode].sound.fireloopend;
+							if (t.fireloopend >= 0)
+							{
+								// fireloop for automatic weapons
+								PlaySoundOffset (t.sndid, t.fireloopend);
+								LoopSound (t.sndid, 0, t.fireloopend);
+								t.gunmodeloopsnd = t.sndid; t.gunmodeloopstarted = Timer();
+							}
+							else
+							{
+								// when fireloop is negative, we use 'single instance' shots
+								// and use negative value as MS time between instance plays
+								PlaySound (t.sndid);
+								t.gunmodeloopsnd = 0; t.gunmodeloopstarted = Timer();
+							}
+							t.tvolume_f = 100.0f;// 95.0;
+							t.tvolume_f = t.tvolume_f * t.audioVolume.soundFloat;
+							SetSoundVolume (t.sndid, t.tvolume_f);
+						}
 					}
 				}
 			}
@@ -3089,11 +3077,7 @@ void gun_control ( void )
 			t.gunmode=106;
 			t.gunmodewaitforframe=t.gfinish.e;
 			gun_PlayObject (  t.currentgunobj,t.gfinish.s,t.gfinish.e );
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 			gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 			if ( g.firemodes[t.gunid][g.firemode].settings.equipment == 0 ) 
 			{
@@ -3231,22 +3215,14 @@ void gun_control ( void )
 	if (  t.gunmode == 108 ) 
 	{
 		//  continue running animation after a projectile delayed gunshoot
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gfinish.e  )  t.gunmode = 107;
 	}
 	if ( t.gunmode == 109 ) 
 	{
 		// dryfire animation control
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if ( GetFrame(t.currentgunobj) >= t.gdryfire.e ) 
 		{
@@ -3333,14 +3309,11 @@ void gun_control ( void )
 	{
 		// seems the new sync anim system is thwarted by n-core work on the anim system - it seems
 		// fallback is to match animation commands to secondary object :(
-		// StopObject(t.currentgunobj);
-		// SetObjectFrame(t.currentgunobj,100);
 		int iGunSecondaryObj = g.gunbankextraobjoffset + (t.currentgunobj - g.gunbankoffset);
 		if (ObjectExist(iGunSecondaryObj) == 1)
 		{
 			PositionObject(iGunSecondaryObj, ObjectPositionX(t.currentgunobj), ObjectPositionY(t.currentgunobj), ObjectPositionZ(t.currentgunobj));
 			SetObjectToObjectOrientation(iGunSecondaryObj, t.currentgunobj);
-			//SetObjectFrame(iGunSecondaryObj, GetFrame(t.currentgunobj)); // handled inside the glue/unglue command now (but if weap has no anim, this is the fallback)
 			if (GetVisible(t.currentgunobj) == 1)
 				ShowObject(iGunSecondaryObj);
 			else
@@ -3400,21 +3373,13 @@ void gunmode121_cancel ( void )
 	{
 		gun_SetObjectInterpolation (  t.currentgunobj,100 );
 		gun_PlayObject (  t.currentgunobj,t.gstartreload.s,t.gstartreload.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		t.gunmode=701;
 	}
 	if (  t.gunmode == 701 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gstartreload.e ) 
 		{
@@ -3424,21 +3389,13 @@ void gunmode121_cancel ( void )
 	if (  t.gunmode == 703 ) 
 	{
 		gun_PlayObject (  t.currentgunobj,t.greloadloop.s,t.greloadloop.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		t.gunmode=7031;
 	}
 	if (  t.gunmode == 7031 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.greloadloop.e ) 
 		{
@@ -3508,32 +3465,20 @@ void gunmode121_cancel ( void )
 	}
 	if (  t.gunmode == 705 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gcock.e ) { t.gunmode = 5  ; g.plrreloading = 0; }
 	}
 	if (  t.gunmode == 706 ) 
 	{
 		gun_PlayObject (  t.currentgunobj,t.gendreload.s,t.gendreload.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		t.gunmode=707;
 	}
 	if (  t.gunmode == 707 ) 
 	{
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gendreload.e ) { t.gunmode = 5 ; t.gun[t.gunid].settings.ismelee = 0; }
 	}
@@ -3549,11 +3494,7 @@ void gunmode121_cancel ( void )
 			gun_SetObjectInterpolation (  t.currentgunobj,100 );
 
 		gun_PlayObject (  t.currentgunobj,t.gstartreload.s,t.gcock.e );
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  t.gunsound[t.gunid][2].soundid1>0 ) 
 		{
@@ -3566,11 +3507,7 @@ void gunmode121_cancel ( void )
 	if (  t.gunmode == 124 ) 
 	{
 		//  reload anim with possibility of bullet reset
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gun[t.gunid].settings.bulletreset ) 
 		{
@@ -3591,11 +3528,7 @@ void gunmode121_cancel ( void )
 	if (  t.gunmode == 125 ) 
 	{
 		//  reload anim with no possibility of bullet reset
-#ifdef WICKEDENGINE
 		t.currentgunanimspeed_f = g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#else
-		t.currentgunanimspeed_f = g.timeelapsed_f*g.firemodes[t.gunid][g.firemode].settings.reloadspeed*t.genericgunanimspeed_f;
-#endif
 		gun_SetObjectSpeed (  t.currentgunobj,t.currentgunanimspeed_f );
 		if (  GetFrame(t.currentgunobj) >= t.gcock.e  )  t.gunmode = 126;
 	}
@@ -3638,7 +3571,6 @@ void gunmode121_cancel ( void )
 					{
 						PlaySound(t.sndid);
 						posinternal3dsound(t.sndid, CameraPositionX(), CameraPositionY(), CameraPositionZ());
-						//PositionSound(t.sndid, CameraPositionX() / 10.0, CameraPositionY() / 3.0, CameraPositionZ() / 10.0);
 						soundtimer = Timer() + 600;
 						if (pestrcasestr(t.gun[t.gunid].name_s.Get(), "rpg"))
 							soundtimer = Timer() + 1700;
@@ -3664,11 +3596,7 @@ void gunmode121_cancel ( void )
 				gun_SetObjectInterpolation(t.currentgunobj, 100);
 			gun_SetObjectFrame(t.currentgunobj, t.gshow.s);
 			gun_PlayObject(t.currentgunobj, t.gshow.s, t.gshow.e);
-#ifdef WICKEDENGINE
 			t.currentgunanimspeed_f = t.genericgunanimspeed_f;
-#else
-			t.currentgunanimspeed_f = g.timeelapsed_f * t.genericgunanimspeed_f;
-#endif
 			gun_SetObjectSpeed(t.currentgunobj, t.currentgunanimspeed_f);
 			if (t.gunsound[t.gunid][2].soundid1 > 0)
 			{
@@ -3696,7 +3624,6 @@ void gunmode121_cancel ( void )
 							{
 								PlaySound(t.sndid);
 								posinternal3dsound(t.sndid, CameraPositionX(), CameraPositionY(), CameraPositionZ());
-								//PositionSound(t.sndid, CameraPositionX() / 10.0, CameraPositionY() / 3.0, CameraPositionZ() / 10.0);
 							}
 						}
 					}
@@ -4450,7 +4377,6 @@ void gun_shoot_oneray ( void )
 
 	// can intercept calculated ray with real ray from VR controller (if available)
 	bool bNormalOrVRMode = false;
-	#ifdef WICKEDENGINE
 	//if (g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1) bNormalOrVRMode = true;
 	extern int g_iActivelyUsingVRNow;
 	if (g.vrglobals.GGVREnabled > 0 && g_iActivelyUsingVRNow == 1) bNormalOrVRMode = true;
@@ -4471,9 +4397,7 @@ void gun_shoot_oneray ( void )
 			MoveObject(iLaserGuideObj, -1000.0f);
 		}
 	}
-	#endif
 
-	#ifdef WICKEDENGINE
 	// any shot may be heard out there!
 	if (g.firemodes[t.gunid][g.firemode].settings.noscorch == 0)
 	{
@@ -4484,7 +4408,6 @@ void gun_shoot_oneray ( void )
 		t.tradius_f = 1500;
 		darkai_makesound_byplayer ();
 	}
-	#endif
 
 	// reset bullethit vars
 	t.bullethit=0 ; t.bullethitstatic=0;
@@ -4802,9 +4725,7 @@ void gun_create_hud ( void )
 		SetObjectMask(g.hudbankoffset + 3, 1);
 		HideObject (  g.hudbankoffset+3 );
 
-		#ifdef WICKEDENGINE
 		WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_CURSOROBJECT);
-		#endif
 
 		// Muzzle Flash(es)
 		for ( t.t = 0; t.t <= 1; t.t++ )
@@ -4813,29 +4734,21 @@ void gun_create_hud ( void )
 			if (  t.t == 1  )  t.tobj = g.hudbankoffset+32;
 			MakeObjectPlane (t.tobj, 25, 25);
 			SetObjectCollisionOff ( t.tobj );
-			#ifdef WICKEDENGINE
 			// no special Z treatment
 			//DisableObjectZWrite ( t.tobj );
 			SetObjectTransparency ( t.tobj, 6 );
-			#else
-			SetObjectTransparency ( t.tobj,1 );
-			DisableObjectZDepth (t.tobj);
-			DisableObjectZRead (t.tobj);
-			#endif
 			SetObjectAmbient (  t.tobj,0 );
 			SetObjectLight (  t.tobj,0 );
 			SetObjectFOV (  t.tobj,37 );
 			SetObjectMask(t.tobj, 1); //PE: Dont interfere with shadow camera.
 			HideObject (  t.tobj );
 			SetObjectEffect ( t.tobj, g.decaleffectoffset );
-			#ifdef WICKEDENGINE
 			sObject* pObject = GetObjectData(t.tobj);
 			if (pObject) 
 			{
 				WickedCall_SetObjectCastShadows(pObject, false);
 				WickedCall_SetObjectLightToUnlit(pObject, (int)wiScene::MaterialComponent::SHADERTYPE_UNLIT);
 			}
-			#endif
 
 		}
 
@@ -4849,14 +4762,12 @@ void gun_create_hud ( void )
 			SetObjectMask(t.tobj, 1); //PE: Dont interfere with shadow camera.
 			HideObject ( t.obj );
 
-			#ifdef WICKEDENGINE
 			// apply all textures applied to this weapon
 			sObject* pObject = GetObjectData(t.obj);
 			if (pObject) 
 			{
 				WickedCall_SetObjectCastShadows(pObject, false);
 			}
-			#endif
 		}
 
 		// Smoke
@@ -4866,13 +4777,7 @@ void gun_create_hud ( void )
 			MakeObjectPlane (t.obj, 50, 50);
 			SetObjectCollisionOff (  t.obj );
 			SetObjectTransparency ( t.obj, 6 );
-			#ifdef WICKEDENGINE
 			// no special Z treatment
-			#else
-			DisableObjectZDepth ( t.obj );
-			DisableObjectZWrite (  t.obj );
-			DisableObjectZRead (  t.obj );
-			#endif
 			SetObjectAmbient (  t.obj,0 );
 			SetObjectLight (  t.obj,0 );
 			SetObjectFOV (  t.obj,37 );
@@ -4880,19 +4785,15 @@ void gun_create_hud ( void )
 			HideObject (  t.obj );
 			SetObjectEffect(t.obj, g.decaleffectoffset);
 
-			#ifdef WICKEDENGINE
 			sObject* pObject = GetObjectData(t.obj);
 			if (pObject) 
 			{
 				WickedCall_SetObjectCastShadows(pObject, false);
 				WickedCall_SetObjectLightToUnlit(pObject, (int)wiScene::MaterialComponent::SHADERTYPE_UNLIT);
 			}
-			#endif
 		}
 
-		#ifdef WICKEDENGINE
 		WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_NORMAL);
-		#endif
 	}
 }
 
@@ -4988,32 +4889,20 @@ void gun_selectandorload ( void )
 	//  Associate gun with player
 	t.currentgunobj=t.gun[t.gunid].obj;
 
-	#ifdef WICKEDENGINE
 	WickedCall_PresetObjectPutInEmissive(1);
-	#endif
 
 	//  Setup gun with muzzle flash image
 	if (  t.gun[t.gunid].settings.flashlimb != -1 ) 
 	{
 		TextureObject ( g.hudbankoffset+5, 0, g.firemodes[t.gunid][0].settings.flashimg );
-		#ifdef WICKEDENGINE
 		PositionObject(g.hudbankoffset + 5, 0, 0, 0);
-		#else
-		GlueObjectToLimb ( g.hudbankoffset+5, g.hudbankoffset+2, 0 );
-		PositionObject (  g.hudbankoffset+5,g.firemodes[t.gunid][0].settings.muzzlex_f,g.firemodes[t.gunid][0].settings.muzzley_f,g.firemodes[t.gunid][0].settings.muzzlez_f );
-		#endif
 		t.size_f = g.firemodes[t.gunid][0].settings.muzzlesize_f ; if (  t.size_f == 0.0  )  t.size_f = 100.0;
 		ScaleObject (  g.hudbankoffset+5,t.size_f,t.size_f,t.size_f );
 	}
 	if (  t.gun[t.gunid].settings.flashlimb2 != -1 ) 
 	{
 		TextureObject (  g.hudbankoffset+32,0,g.firemodes[t.gunid][0].settings.flashimg );
-		#ifdef WICKEDENGINE
 		PositionObject(g.hudbankoffset + 32, 0, 0, 0);
-		#else
-		GlueObjectToLimb (  g.hudbankoffset+32,g.hudbankoffset+2,0 );
-		PositionObject (  g.hudbankoffset+32,g.firemodes[t.gunid][0].settings.muzzlex_f*-1,g.firemodes[t.gunid][0].settings.muzzley_f,g.firemodes[t.gunid][0].settings.muzzlez_f );
-		#endif
 		t.size_f = g.firemodes[t.gunid][0].settings.muzzlesize_f ; if (  t.size_f == 0.0  )  t.size_f = 100.0;
 		ScaleObject (  g.hudbankoffset+32,t.size_f,t.size_f,t.size_f );
 	}
@@ -5046,25 +4935,19 @@ void gun_selectandorload ( void )
 		}
 	}
 
-	#ifdef WICKEDENGINE
 	WickedCall_PresetObjectPutInEmissive(0);
-	#endif
 
 	// Setup gun with brass models
 	if ( t.gun[t.gunid].settings.brasslimb != -1 ) 
 	{
-		#ifdef WICKEDENGINE
 		extern bool bBlockSceneUpdate;
 		bBlockSceneUpdate = true;
-		#endif
 
 		for ( t.o = 6 ; t.o<=  20; t.o++ )
 		{
 			t.obj=g.hudbankoffset+t.o;
-			#ifdef WICKEDENGINE
 			extern bool bNoHierarchySorting;
 			bNoHierarchySorting = true;
-			#endif
 
 			if ( ObjectExist(t.obj) == 1 )  
 			{
@@ -5078,25 +4961,19 @@ void gun_selectandorload ( void )
 			else
 			{
 				InstanceObject ( t.obj, g.firemodes[t.gunid][g.firemode].settings.brassobjmaster );
-				#ifdef WICKEDENGINE
 				//LB: strangely brass has no textures, needed to call it here
 				sObject* pObject = GetObjectData(t.obj);
 				WickedCall_TextureObject(pObject, NULL);
-				#endif
 			}
-			#ifdef WICKEDENGINE
 			bNoHierarchySorting = false;
-			#endif
 			SetObjectCollisionOff (  t.obj );
 			SetObjectFOV (  t.obj,37 );
 			HideObject (  t.obj );
 		}
 
-		#ifdef WICKEDENGINE
 		bBlockSceneUpdate = false;
 		//PE: When all done, update scene , it takes some time but we dont have to do it 20 times.
 		WickedCall_UpdateSceneForPick();
-		#endif
 
 	}
 }
@@ -5284,34 +5161,6 @@ void gun_load ( void )
 					LoadObject(pTempHUDDBOFile, t.currentgunobj);
 				}
 			}
-			//else
-			//{
-				// if not recreated HUD
-				//if (bUsingLegacyArmReplacementTrick == false)
-				//{
-				//	// and not added animations from legacy replacement trick
-				//	if (ObjectExist(t.currentgunobj) == 1)
-				//	{
-				//		// used to need to append animations to the hand model for this weapon from g_pAnimSlotList (not needed now done in gun_createhud)
-				//		//sObject* pObject = GetObjectData(t.currentgunobj);
-				//		//extern void UpdateObjectWithAnimSlotList (sObject*);
-				//		//UpdateObjectWithAnimSlotList(pObject);
-				//	}
-				//}
-			//}
-			//if (t.currentgunobj != 0 && bForceRefreshWeapon == true)
-			//{
-			//	if (ObjectExist(t.currentgunobj) == 1)
-			//	{
-			//		char pTempHUDDBOFile[MAX_PATH];
-			//		strcpy(pTempHUDDBOFile, t.currentgunfile_s.Get());
-			//		GG_GetRealPath(pTempHUDDBOFile, 1);
-			//		if (FileExist(pTempHUDDBOFile) == 1) DeleteFileA(pTempHUDDBOFile);
-			//		SaveObject (pTempHUDDBOFile, t.currentgunobj);
-			//		DeleteObject(t.currentgunobj);
-			//		LoadObject(pTempHUDDBOFile, t.currentgunobj);
-			//	}
-			//}
 		}
 
 		// record choice
@@ -5486,11 +5335,7 @@ void gun_load ( void )
 			{
 				if ( pMesh->dwTextureCount > 0 )
 				{
-					#ifdef WICKEDENGINE
 					if ( WickedCall_GetMeshMaterialName(pMesh) != NULL )
-					#else
-					if ( pMesh->pTextures[0].iImageID != 0 )
-					#endif
 					{
 						// at least one texture was successfully loaded by the gun model (so prefer them)
 						t.tfoundvalidinternaltexture = 1;
@@ -5633,11 +5478,7 @@ void gun_load ( void )
 	t.gun[t.gunid].texhid=0;
 
 	//  First Textures are PLATES
-	#ifdef WICKEDENGINE
 	if ( 1 ) // always texture weapon 
-	#else
-	if (  t.teffectid>0 ) 
-	#endif
 	{
 		//  if texd$ specified, use that as the single texture to use
 		cstr timgGloss_s = "";
@@ -5741,53 +5582,7 @@ void gun_load ( void )
 		}
 		else
 		{
-			#ifdef WICKEDENGINE
 			// no need to fill in the blanks with Wicked Engine textured meshes
-			#else
-			// only apply cube map to model with pre-existing textures loaded
-			int iPBRCubeImg = t.terrain.imagestartindex+31;
-			TextureObject ( t.currentgunobj, 6, iPBRCubeImg );
-
-			// some legacy weapons have multi-texture diffuse references, but need other textures populating
-			// for new PBR shader
-			if ( pObject )
-			{
-				for ( int iFrameIndex = 0; iFrameIndex < pObject->iFrameCount; iFrameIndex++ )
-				{
-					sFrame* pFrame = pObject->ppFrameList[iFrameIndex];
-					if ( pFrame ) 
-					{
-						sMesh* pMesh = pFrame->pMesh;
-						if ( pMesh )
-						{
-							if ( pMesh->dwTextureCount > 0 )
-							{
-								for ( int tt = pMesh->dwTextureCount-1; tt > 0; tt-- )
-								{
-									if ( pMesh->pTextures[tt].iImageID == 0 )
-									{
-										if ( tt == 8 )
-										{
-											if (g.memskipibr == 0) 
-											{
-												t.entityprofiletexibrid = t.terrain.imagestartindex + 32;
-												TextureLimbStage ( t.currentgunobj, iFrameIndex, 8, t.entityprofiletexibrid );
-											}
-										}
-										if ( tt == 7 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 7, t.imgIid );
-										if ( tt == 5 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 5, imgHeightid );
-										if ( tt == 4 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 4, imgGlossid );
-										if ( tt == 3 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 3, t.imgSid );
-										if ( tt == 2 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 2, t.imgNid );
-										if ( tt == 1 ) TextureLimbStage ( t.currentgunobj, iFrameIndex, 1, imgAOid );
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			#endif
 		}
 
 		//  Apply effect to object (special extra parameter to specify both BONE and NON-BONE effect types)
@@ -5962,6 +5757,8 @@ void gun_load ( void )
 		}
 		else
 		{
+			//PE: Get a heap block suffix corruption here. (Was loadbrass change t.brass_s and corrupt the heap).
+
 			// regular brass
 			if (t.num == 0)  t.num = 1;
 			t.brass_s = "";
@@ -6136,24 +5933,6 @@ void gun_load ( void )
 
 void gun_updategunshaders ( void )
 {
-	#ifdef WICKEDENGINE
-	#else
-	// update all gun shaders
-	for ( t.tgunid = 1 ; t.tgunid<=  g.gunmax; t.tgunid++ )
-	{
-		t.teffectid=t.gun[t.tgunid].effectidused;
-		if (  t.teffectid>0 ) 
-		{
-			if (  GetEffectExist(t.teffectid) == 1 ) 
-			{
-				SetVector4 (  g.weaponvectorindex,t.terrain.sundirectionx_f,t.terrain.sundirectiony_f,t.terrain.sundirectionz_f,0.0 );
-				SetEffectConstantV (  t.teffectid,"LightSource",g.weaponvectorindex );
-				SetVector4 (  g.weaponvectorindex,1,1,1,1.0 );
-				SetEffectConstantV (  t.teffectid,"SurfColor",g.weaponvectorindex );
-			}
-		}
-	}
-	#endif
 }
 
 void gun_freeafterlevel ( void )
@@ -6687,56 +6466,29 @@ int loadbrass ( char* tfile_s )
 		{
 			ttexdiff_s = Left(tfile_s, Len(tfile_s) - 4);
 		}
-		#ifdef WICKEDENGINE
 		// brass only DBO in MAX
 		tdbofile_s = ttexdiff_s + ".dbo";
-		strcpy (tfile_s, tdbofile_s.Get());
+		//PE: tfile_s is a cStr only allocated with the size needed, so adding to it will corrupt the heap.
+		//PE: strcpy (tfile_s, tdbofile_s.Get());
+		char cfile[MAX_PATH];
+		strcpy(cfile, tdbofile_s.Get());
 		tdbofile_s = "";
-		#else
-		// replaced X file load with optional DBO convert/load for HUD.X
-		deleteOutOfDateDBO(tfile_s);
-		if ( cstr(Lower(Right(tfile_s,2))) == ".x"  )  
-		{ 
-			tdbofile_s = Left(tfile_s,Len(tfile_s)-2); tdbofile_s += ".dbo";
-		} 
-		else 
-		{
-			tdbofile_s = "";
-		}
-		#endif
-		if ( FileExist(tfile_s) == 1 || FileExist(tdbofile_s.Get()) == 1 ) 
+		if ( FileExist(cfile) == 1 || FileExist(tdbofile_s.Get()) == 1 )
 		{
 			++g.brassbankmax;
 			index=g.brassbankoffset+g.brassbankmax;
-			t.brassbank_s[g.brassbankmax]=tfile_s;
+			t.brassbank_s[g.brassbankmax]= cfile;
 			if ( FileExist(tdbofile_s.Get()) == 1 ) 
 			{
-				strcpy ( tfile_s, tdbofile_s.Get() );
+				strcpy (cfile, tdbofile_s.Get() );
 				tdbofile_s="";
 			}
 			else
 			{
 				// allowed to save DBO (once only)
 			}
-			LoadObject ( tfile_s, index );
-			#ifdef WICKEDENGINE
+			LoadObject (cfile, index );
 			// no DBO saves in MAX
-			#else
-			if ( Len(tdbofile_s.Get())>1 ) 
-			{
-				if ( FileExist(tdbofile_s.Get()) == 0 ) 
-				{
-					// unnecessary now as LoadObject auto creates DBO file!
-					SaveObject ( tdbofile_s.Get(),index );
-				}
-				if (  FileExist(tdbofile_s.Get()) == 1 ) 
-				{
-					DeleteObject (  index );
-					LoadObject (  tdbofile_s.Get(),index );
-					strcpy ( tfile_s , tdbofile_s.Get() );
-				}
-			}
-			#endif
 
 			// Determine if PBR or non-PBR
 			bool bHavePBRTextures = false;
@@ -6745,46 +6497,10 @@ int loadbrass ( char* tfile_s )
 			if ( g.gpbroverride == 1 && bHavePBRTextures == true )
 			{
 				// PBR texturing
-				#ifdef WICKEDENGINE
 				// Wicked engine does the rest to load other PBR textures from set :)
 				sprintf (t.szwork, "%s_color.png", ttexdiff_s.Get());
 				int tbrassCOLORimg = loadinternalimage(t.szwork);
 				TextureObject (index, 0, tbrassCOLORimg);
-				#else
-				sprintf ( t.szwork , "%s_color.png" , ttexdiff_s.Get() );
-				int tbrassCOLORimg = loadinternalimage(t.szwork);
-				sprintf ( t.szwork , "%s_normal.png" , ttexdiff_s.Get() );
-				int tbrassNORMALimg = loadinternalimage(t.szwork);
-				sprintf ( t.szwork , "%s_metalness.png" , ttexdiff_s.Get() );
-				int tbrassMETALNESSimg = loadinternalimage(t.szwork);
-				if ( tbrassMETALNESSimg == 0 ) tbrassMETALNESSimg = loadinternalimage("effectbank\\reloaded\\media\\white_D.dds");
-				sprintf ( t.szwork , "%s_gloss.png" , ttexdiff_s.Get() );
-				int tbrassGLOSSimg = loadinternalimage(t.szwork);
-				if ( tbrassGLOSSimg == 0 ) tbrassGLOSSimg = loadinternalimage("effectbank\\reloaded\\media\\white_D.dds");
-				sprintf ( t.szwork , "%s_ao.png" , ttexdiff_s.Get() );
-				int tbrassAOimg = loadinternalimage(t.szwork);
-				if ( tbrassAOimg == 0 ) tbrassAOimg = loadinternalimage("effectbank\\reloaded\\media\\white_D.dds");
-				sprintf ( t.szwork , "%s_illumination.png" , ttexdiff_s.Get() );
-				int tbrassILLUMimg = loadinternalimage(t.szwork);
-				if ( tbrassILLUMimg == 0 ) tbrassILLUMimg = loadinternalimage("effectbank\\reloaded\\media\\blank_black.dds");
-				int tbrassHEIGHTimg = loadinternalimage("effectbank\\reloaded\\media\\blank_black.dds");
-				// and texture the object
-				if (g.memskipibr == 0) 
-				{
-					int iPBRIBRImg = t.terrain.imagestartindex + 32;
-					TextureObject(index, 8, iPBRIBRImg);
-				}
-				TextureObject ( index, 7, tbrassILLUMimg );
-				TextureObject ( index, 0, tbrassCOLORimg );
-				TextureObject ( index, 1, tbrassAOimg );
-				TextureObject ( index, 2, tbrassNORMALimg );
-				TextureObject ( index, 3, tbrassMETALNESSimg );
-				TextureObject ( index, 4, tbrassGLOSSimg );
-				TextureObject ( index, 5, tbrassHEIGHTimg );
-				int iPBRCubeImg = t.terrain.imagestartindex+31;
-				TextureObject ( index, 6, iPBRCubeImg );
-				teffectid=loadinternaleffect("effectbank\\reloaded\\apbr_illum.fx");
-				#endif
 			}
 			else
 			{
@@ -6810,7 +6526,6 @@ int loadbrass ( char* tfile_s )
 			SetObjectCollisionOff (  index );
 			SetObjectMask (  index, 1 );
 			HideObject (  index );
-			#ifdef WICKEDENGINE
 			if (ObjectExist(index))
 			{
 				//SetObjectDiffuseEx(index, 0xFFFFFFFF, 0);
@@ -6820,7 +6535,6 @@ int loadbrass ( char* tfile_s )
 					WickedCall_SetObjectCastShadows(pObject, false);
 				}
 			}
-			#endif
 		}
 	}
 	return index;

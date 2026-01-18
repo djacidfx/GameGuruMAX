@@ -8,9 +8,7 @@
 #include "io.h"
 
 // Defines
-#ifdef VRTECH
 #define ENABLEMPAVATAR
-#endif
 
 // External error helper
 extern char g_strErrorClue[512];
@@ -27,153 +25,12 @@ void titles_init ( void )
 	// safe write folder
 	if ( PathExist(g.myownrootdir_s.Get()) == 0 ) file_createmydocsfolder ( );
 
-	#ifdef VRTECH
 	// load backdrop used in titles
 	if ( g.vrqcontrolmode != 0 )
 	{
 		cstr pPath = cstr("languagebank\\")+g.language_s+cstr("\\artwork\\socialvr.png");
 		LoadImage ( pPath.Get(), g.editorimagesoffset+64 );
 	}
-	#endif
-
-	/* redundant now LUA in control of titles system
-	//  determine the resolution we should use
-	t.tclosest=9999999;
-	t.tclosestreswidth=0 ; t.tclosestresheight=0;
-	for ( t.tres = 1 ; t.tres<=  8; t.tres++ )
-	{
-		if (  t.tres == 1 ) { t.treswidth = 1280  ; t.tresheight = 720; }
-		if (  t.tres == 2 ) { t.treswidth = 1280  ; t.tresheight = 800; }
-		if (  t.tres == 3 ) { t.treswidth = 1366  ; t.tresheight = 768; }
-		if (  t.tres == 4 ) { t.treswidth = 1440  ; t.tresheight = 900; }
-		if (  t.tres == 5 ) { t.treswidth = 1600  ; t.tresheight = 900; }
-		if (  t.tres == 6 ) { t.treswidth = 1680  ; t.tresheight = 1050; }
-		if (  t.tres == 7 ) { t.treswidth = 1920  ; t.tresheight = 1080; }
-		if (  t.tres == 8 ) { t.treswidth = 1920  ; t.tresheight = 1200; }
-		t.tdiff=abs(GetDisplayWidth()-t.treswidth)+abs(GetDisplayHeight()-t.tresheight);
-		if (  t.tdiff<t.tclosest ) 
-		{
-			t.tclosest=t.tdiff;
-			t.tclosestreswidth=t.treswidth;
-			t.tclosestresheight=t.tresheight;
-		}
-	}
-	t.resfolder_s = "";t.resfolder_s=t.resfolder_s+Str(t.tclosestreswidth)+"x"+Str(t.tclosestresheight)+"\\";
-
-	//  Separate resolution options for MP backdrop image
-	t.tmpclosest=9999999;
-	t.tmpclosestreswidth=0 ; t.tmpclosestresheight=0;
-	for ( t.tres = 1 ; t.tres<=  13; t.tres++ )
-	{
-		if (  t.tres == 1 ) { t.treswidth = 640  ; t.tresheight = 480; }
-		if (  t.tres == 2 ) { t.treswidth = 1024 ; t.tresheight = 768; }
-		if (  t.tres == 3 ) { t.treswidth = 1152 ; t.tresheight = 864; }
-		if (  t.tres == 4 ) { t.treswidth = 1280 ; t.tresheight = 720; }
-		if (  t.tres == 5 ) { t.treswidth = 1280 ; t.tresheight = 800; }
-		if (  t.tres == 6 ) { t.treswidth = 1280 ; t.tresheight = 960; }
-		if (  t.tres == 7 ) { t.treswidth = 1366 ; t.tresheight = 768; }
-		if (  t.tres == 8 ) { t.treswidth = 1440 ; t.tresheight = 900; }
-		if (  t.tres == 9 ) { t.treswidth = 1600 ; t.tresheight = 900; }
-		if (  t.tres == 10 ) { t.treswidth = 1600 ; t.tresheight = 1200; }
-		if (  t.tres == 11 ) { t.treswidth = 1680 ; t.tresheight = 1050; }
-		if (  t.tres == 12 ) { t.treswidth = 1920 ; t.tresheight = 1080; }
-		if (  t.tres == 13 ) { t.treswidth = 1920 ; t.tresheight = 1200; }
-		t.tdiff=abs(GetDisplayWidth()-t.treswidth)+abs(GetDisplayHeight()-t.tresheight);
-		if (  t.tdiff<t.tmpclosest ) 
-		{
-			t.tmpclosest=t.tdiff;
-			t.tmpclosestreswidth=t.treswidth;
-			t.tmpclosestresheight=t.tresheight;
-		}
-	}
-	t.tmpres_s = "" ;t.tmpres_s=t.tmpres_s + Str(t.tmpclosestreswidth)+"x"+Str(t.tmpclosestresheight);
-
-	//  Load all titles images
-	t.strwork = ""; t.strwork = t.strwork + "titlesbank\\"+t.ttheme_s+"\\"+t.resfolder_s+t.tthemeprefix_s+"title.jpg";
-	LoadImage ( t.strwork.Get(), g.titlesimageoffset+0 );
-	t.tfile_s=""; t.tfile_s=t.tfile_s+"languagebank\\neutral\\artwork\\MPbackground-"+t.tmpres_s+".png";
-	if (  FileExist(t.tfile_s.Get()) == 1  )  LoadImage (  t.tfile_s.Get(),g.titlesimageoffset+10 );
-	LoadImage (  "titlesbank\\default\\start.png",g.titlesimageoffset+1 );
-	LoadImage (  "titlesbank\\default\\start-hover.png",g.titlesimageoffset+2 );
-	LoadImage (  "titlesbank\\default\\quit-game.png",g.titlesimageoffset+3 );
-	LoadImage (  "titlesbank\\default\\quit-game-hover.png",g.titlesimageoffset+4 );
-	LoadImage (  "titlesbank\\default\\visit-website.png",g.titlesimageoffset+6 );
-	LoadImage (  "titlesbank\\default\\visit-website-hover.png",g.titlesimageoffset+7 );
-	LoadImage (  "titlesbank\\default\\about.png",g.titlesimageoffset+8 );
-	LoadImage (  "titlesbank\\default\\about-hover.png",g.titlesimageoffset+9 );
-
-	t.strwork = ""; t.strwork = t.strwork +"titlesbank\\"+t.ttheme_s+"\\"+t.resfolder_s+t.tthemeprefix_s+"loading.jpg";
-	LoadImage (  t.strwork.Get() ,g.titlesimageoffset+14 );
-	LoadImage (  "titlesbank\\default\\loading-text.png",g.titlesimageoffset+15 ) ;
-	LoadImage (  "titlesbank\\default\\loading-bar-empty.png",g.titlesimageoffset+16 );
-	LoadImage (  "titlesbank\\default\\loading-bar-full.png",g.titlesimageoffset+17 );
-	LoadImage (  "titlesbank\\default\\loading-dot.png",g.titlesimageoffset+18 ) ;
-
-	LoadImage (  "titlesbank\\default\\game-paused-title.png",g.titlesimageoffset+21 );
-	LoadImage (  "titlesbank\\default\\resume-game.png",g.titlesimageoffset+23 );
-	LoadImage (  "titlesbank\\default\\resume-game-hover.png",g.titlesimageoffset+24 );
-	LoadImage (  "titlesbank\\default\\graphics-settings.png",g.titlesimageoffset+25 );
-	LoadImage (  "titlesbank\\default\\graphics-settings-hover.png",g.titlesimageoffset+26 );
-	LoadImage (  "titlesbank\\default\\sound-levels.png",g.titlesimageoffset+27 );
-	LoadImage (  "titlesbank\\default\\sound-levels-hover.png",g.titlesimageoffset+28 );
-
-	LoadImage (  "titlesbank\\default\\sound-levels-title.png",g.titlesimageoffset+31 );
-	LoadImage (  "titlesbank\\default\\sound-effects-label.png",g.titlesimageoffset+32 );
-	LoadImage (  "titlesbank\\default\\music-label.png",g.titlesimageoffset+33 );
-	LoadImage (  "titlesbank\\default\\slider-bar-empty.png",g.titlesimageoffset+34 );
-	LoadImage (  "titlesbank\\default\\slider-bar-full.png",g.titlesimageoffset+35 );
-	LoadImage (  "titlesbank\\default\\slider-bar-dot.png",g.titlesimageoffset+36 );
-	LoadImage (  "titlesbank\\default\\main-menu.png",g.titlesimageoffset+37 );
-	LoadImage (  "titlesbank\\default\\main-menu-hover.png",g.titlesimageoffset+38 );
-
-	t.strwork = ""; t.strwork = t.strwork + "titlesbank\\"+t.ttheme_s+"\\"+t.resfolder_s+t.tthemeprefix_s+"lost.jpg";
-	LoadImage (  t.strwork.Get(),g.titlesimageoffset+39 );
-	t.strwork = ""; t.strwork = t.strwork + "titlesbank\\"+t.ttheme_s+"\\"+t.resfolder_s+t.tthemeprefix_s+"end.jpg";
-	LoadImage ( t.strwork.Get() ,g.titlesimageoffset+40 );
-	LoadImage (  "titlesbank\\default\\level-complete-title.png",g.titlesimageoffset+41 );
-	LoadImage (  "titlesbank\\default\\game-won-title.png",g.titlesimageoffset+42 );
-	LoadImage (  "titlesbank\\default\\back.png",g.titlesimageoffset+43 );
-	LoadImage (  "titlesbank\\default\\back-hover.png",g.titlesimageoffset+44 );
-	LoadImage (  "titlesbank\\default\\continue.png",g.titlesimageoffset+45 );
-	LoadImage (  "titlesbank\\default\\continue-hover.png",g.titlesimageoffset+46 );
-	LoadImage (  "titlesbank\\default\\fov.png",g.titlesimageoffset+47 );
-
-	LoadImage (  "titlesbank\\default\\graphics-settings.png",g.titlesimageoffset+51 );
-	LoadImage (  "titlesbank\\default\\graphics-settings-hover.png",g.titlesimageoffset+52 );
-	LoadImage (  "titlesbank\\default\\graphics-settings-title.png",g.titlesimageoffset+53 );
-	LoadImage (  "titlesbank\\default\\lowest.png",g.titlesimageoffset+54 );
-	LoadImage (  "titlesbank\\default\\lowest-hover.png",g.titlesimageoffset+55 );
-	LoadImage (  "titlesbank\\default\\lowest-selected.png",g.titlesimageoffset+56 );
-	LoadImage (  "titlesbank\\default\\medium.png",g.titlesimageoffset+57 );
-	LoadImage (  "titlesbank\\default\\medium-hover.png",g.titlesimageoffset+58 );
-	LoadImage (  "titlesbank\\default\\medium-selected.png",g.titlesimageoffset+59 );
-	LoadImage (  "titlesbank\\default\\highest.png",g.titlesimageoffset+60 );
-	LoadImage (  "titlesbank\\default\\highest-hover.png",g.titlesimageoffset+61 );
-	LoadImage (  "titlesbank\\default\\highest-selected.png",g.titlesimageoffset+62 );
-
-	t.strwork = ""; t.strwork = t.strwork +"titlesbank\\"+t.ttheme_s+"\\"+t.resfolder_s+t.tthemeprefix_s+"about.jpg";
-	LoadImage ( t.strwork.Get() ,g.titlesimageoffset+66 );
-
-	//  Load title audio
-	if (  SoundExist(g.titlessoundoffset+1) == 1  )  DeleteSound (  g.titlessoundoffset+1 );
-	t.strwork = ""; t.strwork = t.strwork + "titlesbank\\"+t.ttheme_s+"\\title.ogg";
-	if (  FileExist( t.strwork.Get() ) == 1 ) 
-	{
-		t.strwork = ""; t.strwork = t.strwork + "titlesbank\\"+t.ttheme_s+"\\title.ogg";
-		LoadSound ( t.strwork.Get() , g.titlessoundoffset+1 );
-	}
-
-	//  Sound Volume defaults
-	t.gamesounds.sounds=100;
-	t.gamesounds.music=100;
-	t.gamesounds.titlemusicvolume = 0;
-
-	//  Load any settings if present
-	titles_load ( );
-
-	//  flags for titles system
-	t.game.quitflag=0;
-	*/
 }
 
 void titles_getstyle ( void )
@@ -191,38 +48,10 @@ void titles_getstyle ( void )
 
 void titles_save ( void )
 {
-	/* 080216 superceded with LUA system now
-	//  save settings from all title menus
-	t.tfile_s=g.myownrootdir_s+"\\"+g.titlessavefile_s;
-	t.ttitleversion=101;
-	if (  FileExist(t.tfile_s.Get()) == 1  )  DeleteAFile (  t.tfile_s.Get() );
-	OpenToWrite (  1,t.tfile_s.Get() );
-	WriteLong (  1,t.ttitleversion );
-	WriteLong (  1,t.gamesounds.sounds );
-	WriteLong (  1,t.gamesounds.music );
-	WriteLong (  1,g.titlesettings.graphicsettingslevel );
-	CloseFile (  1 );
-	*/
 }
 
 void titles_load ( void )
 {
-	/* 080216 superceded with LUA system now
-	//  load settings for all title menus
-	t.tfile_s=g.myownrootdir_s+"\\"+g.titlessavefile_s;
-	if (  FileExist(t.tfile_s.Get()) == 1 ) 
-	{
-		OpenToRead (  1,t.tfile_s.Get() );
-		t.ttitleversion = ReadLong ( 1 );
-		if (  t.ttitleversion == 101 ) 
-		{
-			t.a = ReadLong ( 1 ); t.gamesounds.sounds=t.a;
-			t.a = ReadLong ( 1 ); t.gamesounds.music=t.a;
-			t.a = ReadLong ( 1 ); g.titlesettings.graphicsettingslevel=t.a;
-		}
-		CloseFile (  1 );
-	}
-	*/
 }
 
 void titles_immediateupdatesound ( void )
@@ -485,8 +314,6 @@ void titles_loadingpageinit ( void )
 void titles_loadingpageupdate ( void )
 {
 	// 090216 - replaced with LUA system
-	//t.titlesbar[t.titlespage][g.titlesbarmax].fill=t.game.levelloadprogress;
-	//titles_base ( );
 	if ( t.loadingresource[0] > 0 )
 	{
 		int iSpriteIndex = t.loadingresource[1];
@@ -506,8 +333,6 @@ void titles_loadingpageupdate ( void )
 		}
 	}
 
-#ifdef WICKEDENGINE
-	#ifdef STORYBOARD
 	int FindLuaScreenNode(char *name);
 	void FindLoadingScreen(void);
 	extern char g_Storyboard_Current_Loading_Page[256];
@@ -528,14 +353,9 @@ void titles_loadingpageupdate ( void )
 			screen_editor(-1, true, g_Storyboard_Current_Loading_Page);
 		}
 	}
-	#endif
 	//PE: We need to render everything. This is like the old Sync in Wicked.
 	void StartForceRender(void);
 	StartForceRender();
-#else
-	//  dave added a skip test for syncing to prevent the editor being drawn when switching to mp game start
-	if (  Timer() - t.tskipLevelSync > 200  )  Sync (  );
-#endif
 
 }
 
@@ -652,15 +472,10 @@ void titles_gamelostpage ( void )
 void titles_steampage ( void )
 {
 	// grab avatar info so we only have to do it once
-	#ifdef VRTECH
 	t.tShowAvatarSprite = 0;
 	#ifdef ENABLEMPAVATAR
 	t.tShowAvatarSprite = 1;
 	characterkitplus_loadMyAvatarInfo();
-	#endif
-	#else
-	t.tShowAvatarSprite = 1;
-	characterkit_loadMyAvatarInfo ( );
 	#endif
 
 	InkEx ( 255, 255, 255 );
@@ -680,18 +495,12 @@ void titles_steampage ( void )
 	t.titlesbar[t.titlespage][g.titlesbarmax].y1=0;
 	t.titlesbar[t.titlespage][g.titlesbarmax].y2=GetDisplayHeight();
 
-	#ifdef VRTECH
 	// Add multiplayer title text
 	++g.titlesbarmax;
 	t.titlesbar[t.titlespage][g.titlesbarmax].mode=2;
-	#ifdef PRODUCTV3
-	 strcpy ( t.titlesbar[t.titlespage][g.titlesbarmax].text, "Social VR" );
-	#else
 	 strcpy ( t.titlesbar[t.titlespage][g.titlesbarmax].text, "Multiplayer" );
-	#endif
 	t.titlesbar[t.titlespage][g.titlesbarmax].x1=GetDisplayWidth()/2;
 	t.titlesbar[t.titlespage][g.titlesbarmax].y1=GetDisplayHeight()*0.1f;
-	#endif
 
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
@@ -705,11 +514,7 @@ void titles_steampage ( void )
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].imghigh=0;
-	#ifdef PHOTONMP
 	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="SEARCH FOR GAMES";
-	#else
-	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="SEARCH FOR LOBBIES";
-	#endif
 	t.timgwid=200 ; t.timghig=16;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x1=(GetDisplayWidth()/2)-t.timgwid;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2=(GetDisplayWidth()/2)+t.timgwid;
@@ -727,7 +532,6 @@ void titles_steampage ( void )
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].y1=(GetDisplayHeight()-300.0*t.tva_f)-t.timghig;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].y2=(GetDisplayHeight()-300.0*t.tva_f)+t.timghig;
 
-	#ifdef VRTECH
 	// Add TEACHER CODE button (for extra functionalities; such as viewing ALL games across VRQ server)
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
@@ -738,34 +542,13 @@ void titles_steampage ( void )
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2=(GetDisplayWidth()/2)+t.timgwid;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].y1=(GetDisplayHeight()-200.0*t.tva_f)-t.timghig;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].y2=(GetDisplayHeight()-200.0*t.tva_f)+t.timghig;
-	#endif
-
-	// add another button if the user has character creator entities made
-	#ifdef ENABLEMPAVATAR
-	if (CharacterKitCheckForUserMade() == 1)
-	{
-		++g.titlesbuttonmax;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].img = 0;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].imghigh = 0;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s = "CHOOSE/CHANGE ONLINE AVATAR";
-		t.timgwid = 200; t.timghig = 16;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].x1 = (GetDisplayWidth() / 2) - t.timgwid;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2 = (GetDisplayWidth() / 2) + t.timgwid;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].y1 = (GetDisplayHeight() - 150.0*t.tva_f) - t.timghig;
-		t.titlesbutton[t.titlespage][g.titlesbuttonmax].y2 = (GetDisplayHeight() - 150.0*t.tva_f) + t.timghig;
-	}
-	#endif
 	titles_base ( );
 }
 
 void titles_steamCreateLobby ( void )
 {
 	t.titlespage=8;
-	#ifdef VRTECH
 	t.titlesname_s="";//"My Lobby";
-	#else
-	t.titlesname_s="My Lobby";
-	#endif
 	t.titlesclearmode=1;
 	t.titlesnamey=40;
 	g.titlesbuttonmax=0;
@@ -791,11 +574,7 @@ void titles_steamCreateLobby ( void )
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].imghigh=0;
-	#ifdef PHOTONMP
 	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="LEAVE LEVEL";
-	#else
-	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="LEAVE LOBBY";
-	#endif
 	t.timgwid=200 ; t.timghig=16;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x1=(GetDisplayWidth()/2)-t.timgwid;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2=(GetDisplayWidth()/2)+t.timgwid;
@@ -807,11 +586,7 @@ void titles_steamCreateLobby ( void )
 void titles_steamSearchLobbies ( void )
 {
 	t.titlespage=9;
-	#ifdef VRTECH
 	t.titlesname_s="";//Searching for a lobby to join"; prevent overwriting other title
-	#else
-	t.titlesname_s="Searching for a lobby to join";
-	#endif
 	
 	t.titlesclearmode=1;
 	t.titlesnamey=40;
@@ -829,11 +604,7 @@ void titles_steamSearchLobbies ( void )
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].imghigh=0;
-	#ifdef PHOTONMP
 	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="JOIN LEVEL";
-	#else
-	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="JOIN LOBBY";
-	#endif
 	t.timgwid=200 ; t.timghig=16;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x1=(GetDisplayWidth()/2)-t.timgwid;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2=(GetDisplayWidth()/2)+t.timgwid;
@@ -854,11 +625,7 @@ void titles_steamSearchLobbies ( void )
 void titles_steamInLobbyGuest ( void )
 {
 	t.titlespage=10;
-	#ifdef VRTECH
 	t.titlesname_s="";//In Lobby";
-	#else
-	t.titlesname_s="In Lobby";
-	#endif
 	t.titlesclearmode=1;
 	t.titlesnamey=40;
 	g.titlesbuttonmax=0;
@@ -875,11 +642,7 @@ void titles_steamInLobbyGuest ( void )
 	++g.titlesbuttonmax;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].img=0;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].imghigh=0;
-	#ifdef PHOTONMP
 	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="LEAVE LEVEL";
-	#else
-	 t.titlesbutton[t.titlespage][g.titlesbuttonmax].name_s="LEAVE LOBBY";
-	#endif
 	t.timgwid=200 ; t.timghig=16;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x1=(GetDisplayWidth()/2)-t.timgwid;
 	t.titlesbutton[t.titlespage][g.titlesbuttonmax].x2=(GetDisplayWidth()/2)+t.timgwid;
@@ -1403,31 +1166,20 @@ void titles_base ( void )
 		}
 		else
 		{
-			#ifdef FPSEXCHANGE
 			 OpenFileMap (  1, "FPSEXCHANGE" );
 			 SetEventAndWait (  1 );
 			 t.mx=GetFileMapDWORD( 1, 0 );
 			 t.my=GetFileMapDWORD( 1, 4 );
-			 #ifdef PRODUCTV3
-			 // No expansion needed fo VRQ
-			 #else
 			 //PE: Need to expand mouse xy in classic.
 			 t.mx=((t.mx+0.0)/800.0)*(GetDesktopWidth()+0.0);
 			 t.my=((t.my+0.0)/600.0)*(GetDesktopHeight()+0.0);
-			 #endif
 			 t.mc=GetFileMapDWORD( 1, 20 );
-			#else
-			 t.mx = MouseX();
-			 t.my = MouseY();
-			 t.mc = MouseClick();
-			#endif
 		}
 
 		// Display
 		if ( t.titlesclearmode == 1 )  
 		{
 			CLS ( 0 );
-			#ifdef VRTECH
 			if ( g.vrqcontrolmode != 0 )
 			{
 				if ( ImageExist ( g.editorimagesoffset+64 ) )
@@ -1437,7 +1189,6 @@ void titles_base ( void )
 					PasteSprite ( 123, 0, 0 );
 				}
 			}
-			#endif
 		}
 		pastebitmapfontcenter(t.titlesname_s.Get(),GetDisplayWidth()/2,t.titlesnamey,1,255);
 
@@ -1496,13 +1247,11 @@ void titles_base ( void )
 					BoxEx (  t.titlesbar[t.p][t.b].x1,t.titlesbar[t.p][t.b].y1,t.titlesbar[t.p][t.b].x1+t.ttxx,t.titlesbar[t.p][t.b].y2 );
 				}
 			}
-			#ifdef VRTECH
 			if ( t.titlesbar[t.p][t.b].mode == 2 )
 			{
 				// write text to screen (no image)
 				pastebitmapfontcenter ( t.titlesbar[t.p][t.b].text, t.titlesbar[t.p][t.b].x1, t.titlesbar[t.p][t.b].y1, 5, 255);
 			}
-			#endif
 		}
 
 		//  steam condition
@@ -1705,7 +1454,6 @@ void titles_base ( void )
 				if (  t.ttitlesbuttonhighlight == 1 ) 
 				{
 					// choose type of level
-					#ifdef VRTECH
 					#ifdef ENABLEMPAVATAR
 					characterkitplus_loadMyAvatarInfo();
 					#endif
@@ -1713,10 +1461,6 @@ void titles_base ( void )
 					g.mp.listboxmode = 1;
 					mp_searchForFpms ( );
 					titles_steamchoosefpmtouse();
-					#else
-					characterkit_loadMyAvatarInfo ( );
-					titles_steamchoosetypeoflevel ( );
-					#endif
 					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
 				}
 				if (  t.ttitlesbuttonhighlight == 2 ) 
@@ -1737,7 +1481,6 @@ void titles_base ( void )
 				}
 				if (  t.ttitlesbuttonhighlight == 4 ) 
 				{
-					#ifdef VRTECH
 					// enter Teacher Code
 					bool bCodeValid = false;
 					int iGotCode = 0;
@@ -1823,10 +1566,6 @@ void titles_base ( void )
 						mp_backToStart ( );
 						t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
 					}
-					#else
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-					characterkit_chooseOnlineAvatar ( );
-					#endif
 				}
 				#ifdef ENABLEMPAVATAR
 				if (t.ttitlesbuttonhighlight == 5)
@@ -1853,11 +1592,7 @@ void titles_base ( void )
 				{
 					// exit and drop the lobby
 					mp_leaveALobby ( );
-					#ifdef PHOTONMP
 					 // Photon can have host leave and rejoin, no need to reset everything!
-					#else
-					 mp_resetSteam ( );
-					#endif
 					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
 					titles_steampage ( );
 				}
@@ -1872,11 +1607,7 @@ void titles_base ( void )
 					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
 					if ( g.mp.mode == MP_JOINING_LOBBY ) 
 					{
-						#ifdef PHOTONMP
 						 // not yet, but soon!
-						#else
-						 characterkit_loadMyAvatarInfo ( );
-						#endif
 						titles_steamInLobbyGuest ( );
 					}
 				}
@@ -1888,51 +1619,7 @@ void titles_base ( void )
 				}
 			}
 
-			#ifdef VRTECH
-			/* 160419 - seems redundant, one one choice, so we go direct to it
-			// PLAY ONE OF YOUR LEVELS BUTTON SCREEN
-			if (  t.titlespagetousehere == 14 ) 
-			{
-				if (  t.ttitlesbuttonhighlight == 1 ) 
-				{
-					//  create list
-					g.mp.listboxmode = 1;
-					mp_searchForFpms ( );
-					titles_steamchoosefpmtouse ( );
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-				} 
-				if (  t.ttitlesbuttonhighlight == 2 ) 
-				{
-					mp_backToStart ( );
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-					titles_steampage ( );
-				}
-			}
-			*/
-			#else
-			//  STEAM PAGE Choose type of level (host)
-			if (  t.titlespagetousehere == 14 ) 
-			{
-				if (  t.ttitlesbuttonhighlight == 1 ) 
-				{
-					//  create list
-					g.mp.listboxmode = 1;
-					mp_searchForFpms ( );
-					titles_steamchoosefpmtouse ( );
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-				} 
-				//  TAKE THIS Line (  OUT BELOW WHEN YOU PUT THE CODE ABOVE BACK! )
-				if (  t.ttitlesbuttonhighlight == 2 ) 
-				{
-					mp_backToStart ( );
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-					titles_steampage ( );
-				}
-			}
-			#endif
-
 			// SELECTED OWN LEVEL - CREATE LOBBY/ROOM FOR IT
-			#ifdef VRTECH
 			if ( t.titlespagetousehere == 15 ) 
 			{
 				if ( t.ttitlesbuttonhighlight == 1 ) 
@@ -1942,21 +1629,9 @@ void titles_base ( void )
 					{
 						// picked the level, create lobby
 						mp_selectedALevel ( );
-						#ifdef PHOTONMP
 						 // Photon does not support custom content at this time in this way!
 						 mp_createLobby ( );
 						 titles_steamCreateLobby ( );
-						#else
-						 if ( g.mp.levelContainsCustomContent ==  0 || g.mp.workshopItemChangedFlag  ==  0 ) 
-						 {
-							mp_createLobby ( );
-							titles_steamCreateLobby ( );
-						 }
-						 else
-						 {
-							titles_steamdoyouwanttocreateorupdateaworkshopitem ( );
-						 }
-						#endif
 						t.tescapepress=0;
 					}
 					t.ttitlesbuttonhighlight=0;
@@ -1968,33 +1643,6 @@ void titles_base ( void )
 					titles_steampage ( );
 				}
 			}
-			#else
-			//  STEAM PAGE Choose level from list (host)
-			if (  t.titlespagetousehere == 15 ) 
-			{
-				if (  t.ttitlesbuttonhighlight == 1 ) 
-				{
-					//  picked the level, create lobby
-					mp_selectedALevel ( );
-					if (  g.mp.levelContainsCustomContent  ==  0 || g.mp.workshopItemChangedFlag  ==  0 ) 
-					{
-						mp_createLobby ( );
-						titles_steamCreateLobby ( );
-					}
-					else
-					{
-						titles_steamdoyouwanttocreateorupdateaworkshopitem ( );
-					}
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-				}
-				if (  t.ttitlesbuttonhighlight == 2 ) 
-				{
-					mp_backToStart ( );
-					t.tescapepress=0 ; t.ttitlesbuttonhighlight=0;
-					titles_steampage ( );
-				}
-			}
-			#endif
 
 			// INSIDE SOMEONE ELSES LOBBY/ROOM SCREEN - WAITING FOR HOST TO START GAME
 			if ( t.titlespagetousehere == 16 ) 
@@ -2393,6 +2041,22 @@ void titleslua_main_stage3_inloop(void)
 	char pRealNameOfScreen[256];
 	strcpy(pRealNameOfScreen, g_pTitleCurrentPage);
 
+
+	//PE: Make sure to show everything on first frame.
+	extern int iBlockRenderingForFrames;
+	extern bool g_bNoSwapchainPresent;
+	extern bool bBlockImGuiUntilNewFrame;
+	//PE: Allow bBlockImGuiUntilNewFrame for now so we do not see old screen in first frame. (|| bBlockImGuiUntilNewFrame)
+	if (iBlockRenderingForFrames > 0 || g_bNoSwapchainPresent )
+	{
+		iBlockRenderingForFrames = 0;
+		//bBlockImGuiUntilNewFrame = false;
+	}
+	if (bBlockImGuiUntilNewFrame)
+		g_bNoSwapchainPresent = true;
+	else
+		g_bNoSwapchainPresent = false;
+
 	// Machine independent speed update (makes g_TimeElapsed available)
 	game_timeelapsed();
 
@@ -2401,6 +2065,15 @@ void titleslua_main_stage3_inloop(void)
 
 	//int CustomScreenNode = GetStoryboardCustomScreenNode(g_pTitleCurrentPage);
 	int CustomScreenNode = 0;
+
+	if (strcmp(t.game.pSwitchToPage, "-1") == NULL)
+	{
+		if (strcmp(t.game.pSwitchToLastPage, "-1") != NULL)
+		{
+			strcpy(t.game.pSwitchToPage, t.game.pSwitchToLastPage);
+		}
+	}
+
 	if (strncmp(g_pTitleCurrentPage, ":node:", 6) == NULL)
 	{
 		int realnodeid = atoi(t.game.pSwitchToPage + 6);
@@ -2432,14 +2105,11 @@ void titleslua_main_stage3_inloop(void)
 	}
 
 	// draw all sprites required
-	#ifdef WICKEDENGINE
 	int fhide = g.tabmodehidehuds;
 	if (bForceRender)
 		g.tabmodehidehuds = 1;
-	#endif
 	sliders_draw ( );
 
-#ifdef WICKEDENGINE
 	g.tabmodehidehuds = fhide;
 
 	extern bool bJustRederedScreenEditor;
@@ -2447,18 +2117,12 @@ void titleslua_main_stage3_inloop(void)
 	if (!bJustRederedScreenEditor && g_iInGameMenuState != 1 )
 	{
 		//PE: We need to render everything. This is like the old Sync in Wicked.
-//		void StartForceRender(void);
-//		StartForceRender();
 	}
 	if (bForceRender)
 	{
 		void StartForceRender(void);
 		StartForceRender();
 	}
-#else
-	// update screen
-	Sync();
-#endif
 }
 void titleslua_main_stage4_afterloop(void)
 {
@@ -2469,7 +2133,6 @@ void titleslua_main_stage4_afterloop(void)
 	// wait for mouse click release
 	while ( MouseClick()!=0 ) { Sleep(1); }
 
-	//int CustomScreenNode = GetStoryboardCustomScreenNode(g_pTitleCurrentPage);
 	int CustomScreenNode = 0;
 	if (strncmp(g_pTitleCurrentPage, ":node:", 6) == NULL)
 	{
@@ -2505,10 +2168,8 @@ void titleslua_main_stage4_afterloop(void)
 	}
 
 	// ensure IMGUI does not attempt to render to wicked during resource shifting (between page unload/load)
-	#ifndef PRODUCTCLASSIC
 	extern bool bBlockImGuiUntilNewFrame;
 	bBlockImGuiUntilNewFrame = true;
-	#endif
 }
 void titleslua_main_stage5(void)
 {
@@ -2516,6 +2177,8 @@ void titleslua_main_stage5(void)
 	// need to ensure low FPS warning not triggered by game sync absense
 	t.conkit.cooldown = 100;
 }
+
+extern bool g_Storyboard_Starting_New_Level;
 bool titleslua_main_loopcode(void)
 {
 	if (g_iTitleMainState == 0)
@@ -2559,7 +2222,6 @@ bool titleslua_main_loopcode(void)
 
 void titleslua_blocking_run(void)
 {
-	#ifdef WICKEDENGINE
 	bool bRunLoop = true;
 	MSG msg = { 0 };
 	while (bRunLoop == true)
@@ -2576,10 +2238,7 @@ void titleslua_blocking_run(void)
 			if (titleslua_main_loopcode() == true) bRunLoop = false;
 			bForceRender = false;
 		}
-		//void StartForceRender(void);
-		//StartForceRender();
 	}
-	#endif
 }
 
 void titleslua_main(LPSTR pPageName)

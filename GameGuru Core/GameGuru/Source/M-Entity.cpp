@@ -12,13 +12,9 @@
 #include "optick.h"
 #endif
 
-#ifdef ENABLEIMGUI
 #include "..\Imgui\imgui.h"
 #include "..\Imgui\imgui_impl_win32.h"
 #include "..\Imgui\imgui_gg_dx11.h"
-#endif
-
-//#include "M-CharacterCreatorPlus.h"
 
 #include ".\\..\..\\Guru-WickedMAX\\GPUParticles.h"
 using namespace GPUParticles;
@@ -32,12 +28,10 @@ using namespace wiGraphics;
 using namespace wiScene;
 using namespace wiECS;
 
-#ifdef WICKEDPARTICLESYSTEM
 #define MAXREADYDECALS 5
 #define MAXUNIQUEDECALS 100
 uint32_t ready_decals[MAXUNIQUEDECALS][MAXREADYDECALS] = { 0 };
 uint32_t decal_count[MAXUNIQUEDECALS] = { 0 };
-#endif
 
 // Globals for blacklist string array
 LPSTR* g_pBlackList = NULL;
@@ -54,9 +48,6 @@ int g_iAbortedAsEntityIsGroupCreate = 0;
 cstr g_sTempGroupForThumbnail = "";
 
 float g_fFlattenMargin = 100.0f;
-
-// prototypes
-void LoadFBX ( LPSTR szFilename, int iID );
 
 //. externs
 extern std::vector<int> g_ObjectHighlightList;
@@ -204,12 +195,6 @@ void entity_adduniqueentity ( bool bAllowDuplicates )
 	{
 		t.entdir_s = "";
 	}
-	#ifndef NEWPROJSYSWORKINPROGRESS
-	if (cstr(Lower(Left(t.addentityfile_s.Get(), 12))) == "projectbank\\")
-	{
-		t.entdir_s = "";
-	}
-	#endif
 
 	//  Check if entity already loaded in
 	t.talreadyloaded=0;
@@ -251,30 +236,6 @@ void entity_adduniqueentity ( bool bAllowDuplicates )
 			// and if successfully copied over, copy over all related files
 			bAlsoCopyOverAllRelatedEntityFiles = true;
 		}
-		/*
-		extern StoryboardStruct Storyboard;
-		char pPreferredProjectEntityFolder[MAX_PATH];
-		strcpy(pPreferredProjectEntityFolder, Storyboard.customprojectfolder);
-		strcat(pPreferredProjectEntityFolder, Storyboard.gamename);
-		if (strlen(Storyboard.customprojectfolder) > 0)
-		{
-			char fullRealPath[MAX_PATH];
-			strcpy(fullRealPath, "entitybank\\");
-			strcat(fullRealPath, t.addentityfile_s.Get());
-			GG_GetRealPath(fullRealPath, 0);
-			if (strnicmp (fullRealPath, pPreferredProjectEntityFolder,strlen(pPreferredProjectEntityFolder)) != NULL)
-			{
-				// file not in local project, copy it over
-				strcpy(pPreferredProjectEntityFolder, "entitybank\\");
-				strcat(pPreferredProjectEntityFolder, t.addentityfile_s.Get());
-				GG_GetRealPath(pPreferredProjectEntityFolder, 1);
-				CopyFileA(fullRealPath, pPreferredProjectEntityFolder, TRUE);
-
-				// after entity loaded, copy over all related files
-				bAlsoCopyOverAllRelatedEntityFiles = true;
-			}
-		}
-		*/
 
 		//  Load extra entity
 		t.entid = g.entidmaster;
@@ -327,10 +288,6 @@ void entity_validatearraysize ( void )
 		Dim (  t.entityprofile,g.entidmastermax  );
 		Dim2(  t.entitydecal_s,g.entidmastermax, 100  );
 		Dim2(  t.entitydecal,g.entidmastermax, 100   );
-#ifndef WICKEDENGINE
-		//PE: Not used in wicked. REDUCEMEMUSE
-		Dim2(  t.entityblood,g.entidmastermax, BLOODMAX  );
-#endif
 		g.entitybankmax=g.entidmastermax;
 		Dim (  t.entitybank_s,g.entidmastermax  );
 	}
@@ -562,7 +519,6 @@ void GenerateD3D9ForMesh(sMesh* pMesh, BOOL bNormals, BOOL bTangents, BOOL bBino
 	}
 }
 
-#ifdef WICKEDENGINE
 void CreateVectorListFromCPPAssembly ( LPSTR pCCPAssemblyStringLine, std::vector<std::string> & vecOfStrs )
 {
 	char* pAssemblyString = pCCPAssemblyStringLine;
@@ -639,9 +595,7 @@ void CreateVectorListFromCPPAssembly ( LPSTR pCCPAssemblyStringLine, std::vector
 		}
 	}
 }
-#endif
 
-#ifdef WICKEDENGINE
 bool entity_load_thread_prepare(LPSTR pFpeFile)
 {
 	// preload thread busy, just ignore
@@ -665,12 +619,6 @@ bool entity_load_thread_prepare(LPSTR pFpeFile)
 	{
 		sEntityBank = "";
 	}
-	#ifndef NEWPROJSYSWORKINPROGRESS
-	if (cstr(Lower(Left(sFpeFile.Get(), 12))) == "projectbank\\")
-	{
-		sEntityBank = "";
-	}
-	#endif
 
 	// already have this loaded into the level
 	for (t.t = 1; t.t <= g.entidmaster; t.t++)
@@ -849,7 +797,6 @@ bool entity_load_thread_prepare(LPSTR pFpeFile)
 	// otherwise not preloading today
 	return(false);
 }
-#endif
 
 bool entity_load (bool bCalledFromLibrary)
 {
@@ -1396,21 +1343,17 @@ bool entity_load (bool bCalledFromLibrary)
 				}
 
 				//  main profile object adjustments
-				#ifdef WICKEDENGINE
 				RemoveFixedScale(t.entobj);
-				#endif
 
 				if (t.entityprofile[t.entid].scale != 0)
 				{
 					ScaleObject(t.entobj, t.entityprofile[t.entid].scale, t.entityprofile[t.entid].scale, t.entityprofile[t.entid].scale);
-					#ifdef WICKEDENGINE
 					//PE: Particle scale bug fix.
 					if (t.entityprofile[t.entid].ismarker == 10)
 					{
 						//PE: Particle use fixed scale.
 						SetFixedScale(t.entobj, t.entityprofile[t.entid].scale, t.entityprofile[t.entid].scale, t.entityprofile[t.entid].scale);
 					}
-					#endif
 				}
 
 
@@ -1426,10 +1369,8 @@ bool entity_load (bool bCalledFromLibrary)
 					RotateObject(t.entobj, 0, 180, 0); FixObjectPivot(t.entobj);
 				}
 
-#ifdef WICKEDENGINE
 				//if (!bNewDecal)
 				{
-#endif
 					//  if entity uses a handle, create and attach it now
 					t.entityprofile[t.entid].addhandlelimb = 0;
 					if (Len(t.entityprofile[t.entid].addhandle_s.Get()) > 1)
@@ -1438,20 +1379,15 @@ bool entity_load (bool bCalledFromLibrary)
 						if (FileExist(t.thandlefile_s.Get()) == 1)
 						{
 							if (ObjectExist(g.entityworkobjectoffset) == 1)  DeleteObject(g.entityworkobjectoffset);
-#ifdef WICKEDENGINE
 							WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_CURSOROBJECT);
-#endif
 							MakeObjectPlane(g.entityworkobjectoffset, 25, 25);
-#ifdef WICKEDENGINE
 							WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_NORMAL);
-#endif
 							RotateObject(g.entityworkobjectoffset, 90, 0, 0);
 							ScaleObject(g.entityworkobjectoffset, 50, 50, 50);
 
 							if (GetMeshExist(g.entityworkobjectoffset) == 1)  DeleteMesh(g.entityworkobjectoffset);
 							MakeMeshFromObject(g.entityworkobjectoffset, g.entityworkobjectoffset);
 
-							#ifdef WICKEDENGINE
 							if (bNewDecal)
 							{
 								//PE: OffsetLimb dont work in wicked , so... (bIsDecal)
@@ -1475,14 +1411,11 @@ bool entity_load (bool bCalledFromLibrary)
 
 								UnlockVertexData();
 							}
-							#endif
 
 							PerformCheckListForLimbs(g.entityworkobjectoffset);
-							#ifdef WICKEDENGINE
 							if (bNewDecal)
 								t.entityprofile[t.entid].addhandlelimb = 1;
 							else
-							#endif
 								t.entityprofile[t.entid].addhandlelimb = 1 + ChecklistQuantity();
 
 							AddLimb(t.entobj, t.entityprofile[t.entid].addhandlelimb, g.entityworkobjectoffset);
@@ -1490,10 +1423,8 @@ bool entity_load (bool bCalledFromLibrary)
 							{
 								LinkLimb(t.entobj, 0, t.entityprofile[t.entid].addhandlelimb);
 								t.tyoffset_f = (t.entityprofile[t.entid].defaultheight / ((t.entityprofile[t.entid].scale + 0.0) / 100.0))*-1;
-								#ifdef WICKEDENGINE
 								//PE: Offset already done.
 								if (!bNewDecal)
-								#endif
 									OffsetLimb(t.entobj, t.entityprofile[t.entid].addhandlelimb, 0, 2 + t.tyoffset_f, 0);
 								t.texhandleid = loadinternaltexture(t.thandlefile_s.Get());
 								TextureLimb(t.entobj, t.entityprofile[t.entid].addhandlelimb, t.texhandleid);
@@ -1505,9 +1436,7 @@ bool entity_load (bool bCalledFromLibrary)
 							}
 						}
 					}
-				#ifdef WICKEDENGINE
 				}
-				#endif
 
 				//  Parent LOD is not enabled, we use clone and instance
 				//  settings as we need per-entity element distance control
@@ -1849,41 +1778,12 @@ int constexpr conststrlen( const char* str )
 	if ( strncmp(str, cmpVal, len) != 0 ) matched = false; \
 }
 
-/*
-// max length 32
-#define cmpStrConst( str, cmpVal ) \
-{ \
-	matched = true; \
-	int constexpr len = conststrlen( cmpVal ); \
-	if ( len != matchlen ) matched = false; \
-	else { \
-		alignas(16) constexpr char str2[32] = cmpVal; \
-		if ( _mm_cmpistrc( *(__m128i*)str, *(__m128i*)str2, _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY ) != 0 ) matched = false; \
-		else if ( str[16] != 0 && str2[16] != 0 ) { \
-			if ( _mm_cmpistrc( *(__m128i*)&str[16], *(__m128i*)&str2[16], _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY ) != 0 ) matched = false; \
-		} \
-	} \
-}
-
-// max length 16
-#define cmpNStrConst( str, cmpVal ) \
-{ \
-	matched = true; \
-	int constexpr len = conststrlen( cmpVal ); \
-	alignas(16) constexpr char str2[16] = cmpVal; \
-	if ( _mm_cmpestrc( *(__m128i*)str, len, *(__m128i*)str2, len, _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY ) != 0 ) matched = false; \
-}
-*/
-
 void entity_loaddata ( void )
 {
 	//  Protectf BIN file if no FPE backup (standalone run)
 	t.tprotectBINfile=0;
 	if (t.ent_s.Get()[1] == ':') t.entdir_s = "";
 
-#ifndef NEWPROJSYSWORKINPROGRESS
-	if (strnicmp(t.ent_s.Get(), "projectbank", 11) == NULL) t.entdir_s = "";
-#endif
 
 	t.tFPEName_s=t.entdir_s+t.ent_s;
 	if (  FileExist(t.tFPEName_s.Get()) == 0 ) 
@@ -2024,33 +1924,21 @@ void entity_loaddata ( void )
 		t.entityprofile[t.entid].offy = 0; //PE: Was not reset.
 		t.entityprofile[t.entid].ismarker = 0;  //PE: Was not reset.
 		t.entityprofile[t.entid].ischaracter = 0;
-		#ifdef WICKEDENGINE
 		t.entityprofile[t.entid].bIsDecal = false; //PE: Was not set.
 		t.entityprofile[t.entid].isspinetracker = 1;
-		#else
-		t.entityprofile[t.entid].isspinetracker = 0;
-		#endif
 		t.entityprofile[t.entid].phyweight=100;
 		t.entityprofile[t.entid].phyfriction=100;
 		t.entityprofile[t.entid].phyforcedamage=100;
 		t.entityprofile[t.entid].rotatethrow=1;
 		t.entityprofile[t.entid].explodedamage=100;
 		t.entityprofile[t.entid].forcesimpleobstacle=0;
-		#ifdef VRTECH
 		t.entityprofile[t.entid].forceobstaclepolysize=20.0f;//30.0f; hagia model
 		t.entityprofile[t.entid].forceobstaclesliceheight=20.0f;//14.0f; hagia model
 		t.entityprofile[t.entid].forceobstaclesliceminsize=4.0f;//5.0f; hagia model 
-		#else
-		t.entityprofile[t.entid].forceobstaclepolysize=30.0f;
-		t.entityprofile[t.entid].forceobstaclesliceheight=14.0f; 
-		t.entityprofile[t.entid].forceobstaclesliceminsize=5.0f;
-		#endif
 		t.entityprofile[t.entid].effectprofile=0;
 		t.entityprofile[t.entid].ignorecsirefs=0;
-		#ifdef VRTECH
 		t.entityprofile[t.entid].voiceset_s = ""; // when empty, default to first voice
 		t.entityprofile[t.entid].voicerate = 0;
-		#endif
 		// For MAX, these HANDFIRESPOT values may be purposed if different characters needed a hand adjust to fit weapon standard (not in EA)
 		t.entityprofile[t.entid].handfirespotoffx = 0.0f;
 		t.entityprofile[t.entid].handfirespotoffy = 0.0f;
@@ -2059,10 +1947,8 @@ void entity_loaddata ( void )
 		t.entityprofile[t.entid].handfirespotroty = 0.0f;
 		t.entityprofile[t.entid].handfirespotrotz = 0.0f;
 		t.entityprofile[t.entid].handfirespotsize = 100.0f;
-		#ifdef WICKEDENGINE
 		t.entityprofile[t.entid].coneangle = 100.0f;
 		t.entityprofile[t.entid].conerange = 1000.0f;
-		#endif
 
 		// reset so characters start with NO WEAPON!
 		t.entityprofile[t.entid].isammo = 0;
@@ -2088,7 +1974,6 @@ void entity_loaddata ( void )
 		t.entityappendanim[t.entid][0].startframe = 0;
 
 		// wicked custom materials
-		#ifdef WICKEDENGINE
 		t.entityprofile[t.entid].thumbnailbackdrop = "";
 		t.entityprofile[t.entid].WEMaterial.MaterialActive = false;
 
@@ -2124,7 +2009,6 @@ void entity_loaddata ( void )
 			t.entityprofile[t.entid].WEMaterial.dwBaseColor[i] = -1;
 
 			//PE: Default to black, if old .fpe files do not have it set.
-			//t.entityprofile[t.entid].WEMaterial.dwEmmisiveColor[i] = -1;
 			t.entityprofile[t.entid].WEMaterial.dwEmmisiveColor[i] = 0;
 
 			// per mesh settings and flags
@@ -2158,7 +2042,6 @@ void entity_loaddata ( void )
 		t.entityprofile[t.entid].blendmode = 0;
 
 		t.entityprofile[t.entid].light.fProbeBrightness = 1.0f;
-		#endif
 
 		//  temp variable to hold which physics object we are on from the importer
 		t.tPhysObjCount = 0;
@@ -2230,7 +2113,6 @@ void entity_loaddata ( void )
 					if ( matched )  t.entityprofileheader[t.entid].desc_s = t.value_s;
 					
 					// check if group early, and abort (we use LoadGroup for these type of FPE files)
-					#ifdef WICKEDENGINE
 					cmpStrConst( t_field_s, "isgroupobject" );
 					if (matched && t.value1 == 1)
 					{
@@ -2242,16 +2124,12 @@ void entity_loaddata ( void )
 							g_iAbortedAsEntityIsGroupFileMode = 2;
 						}
 					}
-					#endif
 
 					//  entity AI
-					//cmpStrConst( t_field_s, "aiinit" ); //PE: Not used anymore.
-					//if (  matched  )  t.entityprofile[t.entid].aiinit_s = Lower(t.value_s.Get());
 					cmpStrConst( t_field_s, "aimain" );
 					if (matched)
 					{
 						t.entityprofile[t.entid].aimain_s = Lower(t.value_s.Get());
-						#ifdef WICKEDENGINE
 						if (strnicmp (t.entityprofile[t.entid].aimain_s.Get(), "default.lua", 11) == NULL)
 						{
 							t.entityprofile[t.entid].aimain_s = "no_behavior_selected.lua";
@@ -2269,7 +2147,6 @@ void entity_loaddata ( void )
 							// doing so right now might introduce new issues!
 							t.entityprofile[t.entid].aimain_s = "markers\\ToggleLight.lua";
 						}
-						#endif
 					}
 
 					// determine CCP base type and store
@@ -2297,12 +2174,10 @@ void entity_loaddata ( void )
 						}
 					}
 
-					#ifdef VRTECH
 					cmpStrConst( t_field_s, "voice" );
 					if (  matched  )  t.entityprofile[t.entid].voiceset_s = t.value_s;
 					cmpStrConst( t_field_s, "speakrate" );
 					if (  matched  )  t.entityprofile[t.entid].voicerate = t.value1;
-					#endif
 					cmpStrConst( t_field_s, "soundset" );
 					if (  matched  )  t.entityprofile[t.entid].soundset_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset1" );
@@ -2311,8 +2186,8 @@ void entity_loaddata ( void )
 					if (  matched  )  t.entityprofile[t.entid].soundset2_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset3" );
 					if (  matched  )  t.entityprofile[t.entid].soundset3_s = t.value_s;
-					//cmpStrConst( t_field_s, "soundset4");
-					//if (matched)  t.entityprofile[t.entid].soundset5_s = t.value_s;
+					cmpStrConst( t_field_s, "soundset4");
+					if (  matched  )  t.entityprofile[t.entid].soundset4a_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset5");
 					if (  matched  )  t.entityprofile[t.entid].soundset5_s = t.value_s;
 					cmpStrConst( t_field_s, "soundset6");
@@ -2322,8 +2197,6 @@ void entity_loaddata ( void )
 					if (  matched  )  t.entityprofile[t.entid].usekey_s = t.value_s;
 					cmpStrConst( t_field_s, "ifused" );
 					if (  matched  )  t.entityprofile[t.entid].ifused_s = t.value_s;
-					//cmpStrConst( t_field_s, "ifusednear" );
-					//if (  matched  )  t.entityprofile[t.entid].ifusednear_s = t.value_s;
 
 					//  entity SPAWN
 					cmpStrConst( t_field_s, "spawnmax" );
@@ -2556,7 +2429,6 @@ void entity_loaddata ( void )
 						cmpStrConst( t_field_s, "texturealtd" );
 						if (matched)  t.entityprofile[t.entid].texaltd_s = t.value_s;
 
-						#ifdef WICKEDENGINE
 
 						// store thumbnail backdrop image name
 						cmpStrConst( t_field_s, "thumbnailbackdrop" ); if (matched) { t.entityprofile[t.entid].thumbnailbackdrop = t.value_s; }
@@ -2849,7 +2721,6 @@ void entity_loaddata ( void )
 								t.entityprofile[t.entid].WEMaterial.MaterialActive = true;
 							}
 						}
-						#endif
 					}
 
 					cmpStrConst( t_field_s, "effect" );
@@ -2872,10 +2743,6 @@ void entity_loaddata ( void )
 					// 4 - uses effectbank\\reloaded\\media\\blank_high_S.dds
 					cmpStrConst( t_field_s, "specular" );
 					if (  matched  )  t.entityprofile[t.entid].specular = t.value1;
-					// specularperc:
-					// percentage 0 to 100 to modulate how much global specular gets to individual entity
-					//cmpStrConst( t_field_s, "specularperc" ); not used in MAX
-					//if (  matched  )  t.entityprofile[t.entid].specularperc = t.value1;
 
 					// can scale the uv data inside the shader
 					cmpStrConst( t_field_s, "uvscroll" );
@@ -2915,7 +2782,19 @@ void entity_loaddata ( void )
 					cmpStrConst( t_field_s, "speed" );
 					if (  matched  )  t.entityprofile[t.entid].speed = t.value1;
 					cmpStrConst( t_field_s, "animspeed" );
-					if (  matched  )  t.entityprofile[t.entid].animspeed = t.value1;
+					if (matched)
+					{
+						// LB: recent performance impprovements caused characters to move comically fast
+						// so detect this specific default value and restore to a more reasonable speed
+						// https://github.com/Dark-Basic-Software-Limited/GameGuruRepo/issues/6048
+						if (t.entityprofile[t.entid].ischaracter == 1)
+						{
+							if (t.value1 == 100) t.value1 = 70;
+						}
+
+						// and of course any other value other than 100 will be the actual speed value set
+						t.entityprofile[t.entid].animspeed = t.value1;
+					}
 					cmpStrConst( t_field_s, "hurtfall" );
 					if (  matched  )  t.entityprofile[t.entid].hurtfall = t.value1;
 
@@ -3058,7 +2937,6 @@ void entity_loaddata ( void )
 					if (  matched  )  t.entityprofile[t.entid].light.offsetup = t.value1;
 					cmpStrConst( t_field_s, "lightoffsetz" );
 					if (  matched  )  t.entityprofile[t.entid].light.offsetz = t.value1;
-					#ifdef WICKEDENGINE
 					cmpStrConst( t_field_s, "lightprobescale" );
 					if (matched)
 					{
@@ -3067,7 +2945,6 @@ void entity_loaddata ( void )
 						t.entityprofile[t.entid].light.fLightHasProbeY = t.value1;
 						t.entityprofile[t.entid].light.fLightHasProbeZ = t.value1;
 					}
-					#endif
 
 					// light type flags
 					cmpStrConst( t_field_s, "usespotlighting" );
@@ -3255,11 +3132,6 @@ void entity_loaddata ( void )
 					cmpStrConst( t_field_s, "drawcallscaleadjust" );
 					if (matched)  t.entityprofile[t.entid].drawcallscaleadjust = t.value1;
 
-					#ifdef VRTECH
-					#else
-					cmpStrConst( t_field_s, "startanimingame" );
-					if (matched)  t.entityprofile[t.entid].startanimingame = t.value1;
-					#endif
 
 					//  entity animation sets
 					cmpStrConst( t_field_s, "ignorecsirefs" );
@@ -3347,13 +3219,6 @@ void entity_loaddata ( void )
 						matched = false; // prevent skipping other strings that start with "anim"
 					}
 
-					// 291014 - AI system animation sets (takes field$ and value1/value2)
-					if ( 1 ) // t.entityprofile[t.entid].ignorecsirefs == 0 ) // for now, still need these for THIRD PERSON which uses old CSI system
-					{
-						// 200918 - externalised internal AI system into scripts, but keeping for legacy support
-						darkai_assignanimtofield ( );
-					}
-
 					// get foot fall data (optional)
 					cmpStrConst( t_field_s, "footfallmax" );
 					if (  matched  )  t.entityprofile[t.entid].footfallmax = t.value1;
@@ -3397,33 +3262,6 @@ void entity_loaddata ( void )
 					//  more data
 					cmpStrConst( t_field_s, "quantity" );
 					if (  matched  )  t.entityprofile[t.entid].quantity = t.value1;
-
-					//  character creator
-					#ifdef VRTECH
-					#else
-					cmpStrConst( t_field_s, "charactercreator" );
-					if (  matched ) 
-					{
-						t.entityprofile[t.entid].ischaractercreator=1;
-						t.entityprofile[t.entid].charactercreator_s=t.value_s;
-						t.tstring_s = t.value_s;
-						//  "v"
-						t.tnothing_s = FirstToken(t.tstring_s.Get(),":");
-						//  "version number"
-						t.tnothing_s = NextToken(":");
-						//  body mesh
-						t.tbody_s = NextToken(":");
-
-						//  read in cci
-						t.tcciloadname_s = g.fpscrootdir_s+"\\Files\\characterkit\\bodyandhead\\" + t.tbody_s + ".cci";
-						t.tpath_s = "characterkit\\bodyandhead\\";
-						t.tccquick = 1;
-						characterkit_loadCCI ( );
-						t.entityprofile[t.entid].model_s = t.tccimesh_s;
-						t.entityprofile[t.entid].texpath_s = t.tpath_s;
-						t.entityprofile[t.entid].texd_s = t.tccidiffuse_s;
-					}
-					#endif
 
 					//  physics objects from the importer
 					cmpStrConst( t_field_s, "physicscount" );
@@ -3500,7 +3338,6 @@ void entity_loaddata ( void )
 			}
 		}
 
-		#ifdef WICKEDENGINE
 		if (t.entityprofile[t.entid].ismarker == 2) 
 		{
 			//PE: LMFIX - Light , default to 100.
@@ -3513,115 +3350,6 @@ void entity_loaddata ( void )
 				t.entityprofile[t.entid].light.color = (255 << 24);
 			}
 		}
-		#endif
-
-		#ifdef WICKEDENGINE
-		// new MAX system does not use hard coded or CSI stuff!
-		#else
-		// 200918 - no longer use internal AI system, but keep for legacy compatibility
-		if ( 1 ) //t.entityprofile[t.entid].ignorecsirefs == 0 ) // for now, still need these for THIRD PERSON which uses old CSI system
-		{
-			// if No AI anim sets, fill with hard defaults from official template character
-			if (  t.entityprofile[t.entid].ischaracter == 1 ) 
-			{
-				// 010917 - but only if a character, so as not to force non-anim entities to use entity_anim
-				for ( t.n = 1 ; t.n<=  90; t.n++ )
-				{
-					if (  t.n == 1 ) { t.field_s = "csi_relaxed1"  ; t.value1 = 900 ; t.value2 = 999; }
-					if (  t.n == 2 ) { t.field_s = "csi_relaxed2"  ; t.value1 = 1000 ; t.value2 = 1282; }
-					if (  t.n == 3 ) { t.field_s = "csi_relaxedmovefore"  ; t.value1 = 1290 ; t.value2 = 1419; }
-					if (  t.n == 4 ) { t.field_s = "csi_cautious"  ; t.value1 = 900 ; t.value2 = 999; }
-					if (  t.n == 5 ) { t.field_s = "csi_cautiousmovefore"  ; t.value1 = 1325 ; t.value2 = 1419; }
-					if (  t.n == 6 ) { t.field_s = "csi_unarmed1"  ; t.value1 = 3000 ; t.value2 = 3100; }
-					if (  t.n == 7 ) { t.field_s = "csi_unarmed2"  ; t.value1 = 3430 ; t.value2 = 3697; }
-					if (  t.n == 8 ) { t.field_s = "csi_unarmedconversation"  ; t.value1 = 3110 ; t.value2 = 3420; }
-					if (  t.n == 10 ) { t.field_s = "csi_unarmedexplain"  ; t.value1 = 4260 ; t.value2 = 4464; }
-					if (  t.n == 11 ) { t.field_s = "csi_unarmedpointfore"  ; t.value1 = 4470 ; t.value2 = 4535; }
-					if (  t.n == 12 ) { t.field_s = "csi_unarmedpointback"  ; t.value1 = 4680 ; t.value2 = 4745; }
-					if (  t.n == 13 ) { t.field_s = "csi_unarmedpointleft"  ; t.value1 = 4610 ; t.value2 = 4675; }
-					if (  t.n == 14 ) { t.field_s = "csi_unarmedpointright"  ; t.value1 = 4540 ; t.value2 = 4605; }
-					if (  t.n == 15 ) { t.field_s = "csi_unarmedmovefore"  ; t.value1 = 3870 ; t.value2 = 3900; }
-					if (  t.n == 16 ) { t.field_s = "csi_unarmedmoverun"  ; t.value1 = 3905 ; t.value2 = 3925; }
-					if (  t.n == 17 ) { t.field_s = "csi_unarmedstairascend"  ; t.value1 = 5600 ; t.value2 = 5768; }
-					if (  t.n == 18 ) { t.field_s = "csi_unarmedstairdecend"  ; t.value1 = 5800 ; t.value2 = 5965; }
-					if (  t.n == 19 ) { t.field_s = "csi_unarmedladderascend1"  ; t.value1 = 4148 ; t.value2 = 4110; }
-					if (  t.n == 20 ) { t.field_s = "csi_unarmedladderascend2"  ; t.value1 = 4148 ; t.value2 = 4255; }
-					if (  t.n == 21 ) { t.field_s = "csi_unarmedladderascend3"  ; t.value1 = 4225 ; t.value2 = 4255; }
-					if (  t.n == 22 ) { t.field_s = "csi_unarmedladderdecend1"  ; t.value1 = 4255 ; t.value2 = 4225; }
-					if (  t.n == 23 ) { t.field_s = "csi_unarmedladderdecend2"  ; t.value1 = 4225 ; t.value2 = 4148; }
-					if (  t.n == 24 ) { t.field_s = "csi_unarmeddeath"  ; t.value1 = 4800 ; t.value2 = 4958; }
-					if (  t.n == 25 ) { t.field_s = "csi_unarmedimpactfore"  ; t.value1 = 4971 ; t.value2 = 5021; }
-					if (  t.n == 26 ) { t.field_s = "csi_unarmedimpactback"  ; t.value1 = 5031 ; t.value2 = 5090; }
-					if (  t.n == 27 ) { t.field_s = "csi_unarmedimpactleft"  ; t.value1 = 5171 ; t.value2 = 5229; }
-					if (  t.n == 28 ) { t.field_s = "csi_unarmedimpactright"  ; t.value1 = 5101 ; t.value2 = 5160; }
-					if (  t.n == 29 ) { t.field_s = "csi_inchair"  ; t.value1 = 3744 ; t.value2 = 3828; }
-					if (  t.n == 30 ) { t.field_s = "csi_inchairsit"  ; t.value1 = 3710 ; t.value2 = 3744; }
-					if (  t.n == 31 ) { t.field_s = "csi_inchairgetup"  ; t.value1 = 3828 ; t.value2 = 3862; }
-					if (  t.n == 32 ) { t.field_s = "csi_swim"  ; t.value1 = 3930 ; t.value2 = 4015; }
-					if (  t.n == 33 ) { t.field_s = "csi_swimmovefore"  ; t.value1 = 4030 ; t.value2 = 4072; }
-					if (  t.n == 34 ) { t.field_s = "csi_stoodnormal"  ; t.value1 = 100 ; t.value2 = 205; }
-					if (  t.n == 35 ) { t.field_s = "csi_stoodrocket"  ; t.value1 = 6133 ; t.value2 = 6206; }
-					if (  t.n == 36 ) { t.field_s = "csi_stoodfidget1"  ; t.value1 = 100 ; t.value2 = 205; }
-					if (  t.n == 37 ) { t.field_s = "csi_stoodfidget2"  ; t.value1 = 210 ; t.value2 = 318; }
-					if (  t.n == 38 ) { t.field_s = "csi_stoodfidget3"  ; t.value1 = 325 ; t.value2 = 431; }
-					if (  t.n == 39 ) { t.field_s = "csi_stoodfidget4"  ; t.value1 = 440 ; t.value2 = 511; }
-					if (  t.n == 40 ) { t.field_s = "csi_stoodstartled"  ; t.value1 = 1425 ; t.value2 = 1465; }
-					if (  t.n == 41 ) { t.field_s = "csi_stoodpunch"  ; t.value1 = 0 ; t.value2 = 0; }
-					if (  t.n == 42 ) { t.field_s = "csi_stoodkick"  ; t.value1 = 5511 ; t.value2 = 5553; }
-					if (  t.n == 43 ) { t.field_s = "csi_stoodmovefore"  ; t.value1 = 685 ; t.value2 = 707; }
-					if (  t.n == 44 ) { t.field_s = "csi_stoodmoveback"  ; t.value1 = 710 ; t.value2 = 735; }
-					if (  t.n == 45 ) { t.field_s = "csi_stoodmoveleft"  ; t.value1 = 740 ; t.value2 = 762; }
-					if (  t.n == 46 ) { t.field_s = "csi_stoodmoveright"  ; t.value1 = 765 ; t.value2 = 789; }
-					if (  t.n == 47 ) { t.field_s = "csi_stoodstepleft"  ; t.value1 = 610 ; t.value2 = 640; }
-					if (  t.n == 48 ) { t.field_s = "csi_stoodstepright"  ; t.value1 = 645 ; t.value2 = 676; }
-					if (  t.n == 49 ) { t.field_s = "csi_stoodstrafeleft"  ; t.value1 = 855 ; t.value2 = 871; }
-					if (  t.n == 50 ) { t.field_s = "csi_stoodstraferight"  ; t.value1 = 875 ; t.value2 = 892; }
-					//  51 see below
-					//  reserved 52
-					if (  t.n == 53 ) { t.field_s = "csi_stoodvault"  ; t.value1 = 0 ; t.value2 = 0; } // 220217 - these now need to come from FPE
-					if (  t.n == 54 ) { t.field_s = "csi_stoodmoverun"  ; t.value1 = 795 ; t.value2 = 811; }
-					if (  t.n == 55 ) { t.field_s = "csi_stoodmoverunleft"  ; t.value1 = 815 ; t.value2 = 830; }
-					if (  t.n == 56 ) { t.field_s = "csi_stoodmoverunright"  ; t.value1 = 835 ; t.value2 = 850; }
-					if (  t.n == 57 ) { t.field_s = "csi_stoodreload"  ; t.value1 = 515 ; t.value2 = 605; }
-					if (  t.n == 58 ) { t.field_s = "csi_stoodreloadrocket"  ; t.value1 = 6233 ; t.value2 = 6315; }
-					if (  t.n == 59 ) { t.field_s = "csi_stoodwave"  ; t.value1 = 1470 ; t.value2 = 1520; }
-					if (  t.n == 60 ) { t.field_s = "csi_stoodtoss"  ; t.value1 = 2390 ; t.value2 = 2444; }
-					if (  t.n == 61 ) { t.field_s = "csi_stoodfirerocket"  ; t.value1 = 6207 ; t.value2 = 6232; }
-					if (  t.n == 62 ) { t.field_s = "csi_stoodincoverleft"  ; t.value1 = 1580 ; t.value2 = 1580; }
-					if (  t.n == 63 ) { t.field_s = "csi_stoodincoverpeekleft"  ; t.value1 = 1581 ; t.value2 = 1581; }
-					if (  t.n == 64 ) { t.field_s = "csi_stoodincoverthrowleft"  ; t.value1 = 2680 ; t.value2 = 2680; }
-					if (  t.n == 65 ) { t.field_s = "csi_stoodincoverright"  ; t.value1 = 1525 ; t.value2 = 1525; }
-					if (  t.n == 66 ) { t.field_s = "csi_stoodincoverpeekright"  ; t.value1 = 1526 ; t.value2 = 1526; }
-					if (  t.n == 67 ) { t.field_s = "csi_stoodincoverthrowright"  ; t.value1 = 2570 ; t.value2 = 2570; }
-					if (  t.n == 51 ) { t.field_s = "csi_stoodandturn"  ; t.value1 = 0 ; t.value2 = 0; }
-					if (  t.n == 68 ) { t.field_s = "csi_crouchidlenormal1"  ; t.value1 = 1670 ; t.value2 = 1819; }
-					if (  t.n == 69 ) { t.field_s = "csi_crouchidlenormal2"  ; t.value1 = 1825 ; t.value2 = 1914; }
-					if (  t.n == 70 ) { t.field_s = "csi_crouchidlerocket"  ; t.value1 = 6472 ; t.value2 = 6545; }
-					if (  t.n == 71 ) { t.field_s = "csi_crouchdown"  ; t.value1 = 1630 ; t.value2 = 1646; }
-					if (  t.n == 72 ) { t.field_s = "csi_crouchdownrocket"  ; t.value1 = 6316 ; t.value2 = 6356; }
-					if (  t.n == 73 ) { t.field_s = "csi_crouchrolldown"  ; t.value1 = 2160 ; t.value2 = 2216; }
-					if (  t.n == 74 ) { t.field_s = "csi_crouchrollup"  ; t.value1 = 2225 ; t.value2 = 2281; }
-					if (  t.n == 75 ) { t.field_s = "csi_crouchmovefore"  ; t.value1 = 2075 ; t.value2 = 2102; }
-					if (  t.n == 76 ) { t.field_s = "csi_crouchmoveback"  ; t.value1 = 2102 ; t.value2 = 2131; }
-					if (  t.n == 77 ) { t.field_s = "csi_crouchmoveleft"  ; t.value1 = 2015 ; t.value2 = 2043; }
-					if (  t.n == 78 ) { t.field_s = "csi_crouchmoveright"  ; t.value1 = 2043 ; t.value2 = 2072; }
-					if (  t.n == 79 ) { t.field_s = "csi_crouchmoverun"  ; t.value1 = 2135 ; t.value2 = 2153; }
-					if (  t.n == 80 ) { t.field_s = "csi_crouchreload"  ; t.value1 = 1920 ; t.value2 = 2010; }
-					if (  t.n == 81 ) { t.field_s = "csi_crouchreloadrocket"  ; t.value1 = 6380 ; t.value2 = 6471; }
-					if (  t.n == 82 ) { t.field_s = "csi_crouchwave"  ; t.value1 = 2460 ; t.value2 = 2510; }
-					if (  t.n == 83 ) { t.field_s = "csi_crouchtoss"  ; t.value1 = 2520 ; t.value2 = 2555; }
-					if (  t.n == 84 ) { t.field_s = "csi_crouchfirerocket"  ; t.value1 = 6357 ; t.value2 = 6379; }
-					if (  t.n == 85 ) { t.field_s = "csi_crouchimpactfore"  ; t.value1 = 5240 ; t.value2 = 5277; }
-					if (  t.n == 86 ) { t.field_s = "csi_crouchimpactback"  ; t.value1 = 5290 ; t.value2 = 5339; }
-					if (  t.n == 87 ) { t.field_s = "csi_crouchimpactleft"  ; t.value1 = 5409 ; t.value2 = 5466; }
-					if (  t.n == 88 ) { t.field_s = "csi_crouchimpactright"  ; t.value1 = 5350 ; t.value2 = 5395; }
-					if (  t.n == 89 ) { t.field_s = "csi_crouchgetup"  ; t.value1 = 1646 ; t.value2 = 1663; }
-					if (  t.n == 90 ) { t.field_s = "csi_crouchgetuprocket"  ; t.value1 = 6573 ; t.value2 = 6607; }
-					darkai_assignanimtofield ( );
-				}
-			}
-		}
-		#endif
 
 		//  Finish animation quantities
 		t.entityprofile[t.entid].animmax=t.tnewanimmax;
@@ -3632,19 +3360,7 @@ void entity_loaddata ( void )
 		{
 			if (  cstr(Left(t.entityprofileheader[t.entid].desc_s.Get(),1)) != "%" ) 
 			{
-				#ifdef WICKEDENGINE
 				// no LOC files in wicked for now
-				#else
-				t.tflocalfilename_s=cstr("languagebank\\")+g.language_s+"\\textfiles\\library\\"+t.entdir_s+t.ent_s;
-				t.tflocalfilename_s=cstr(Left(t.tflocalfilename_s.Get(),Len(t.tflocalfilename_s.Get())-4))+cstr(".loc");
-				if (  FileExist(t.tflocalfilename_s.Get()) == 1 ) 
-				{
-					Dim (  t.tflocal_s,1  );
-					LoadArray (  t.tflocalfilename_s.Get() ,t.tflocal_s );
-					t.entityprofileheader[t.entid].desc_s=t.tflocal_s[0];
-					UnDim (  t.tflocal_s );
-				}
-				#endif
 			}
 		}
 
@@ -3722,12 +3438,10 @@ void entity_loaddata ( void )
 		}
 
 		//LB: Additional assumption that objects with no collision should not have physics
-		#ifdef WICKEDENGINE
 		if (t.entityprofile[t.entid].collisionmode >= 11 && t.entityprofile[t.entid].collisionmode <= 12)
 		{
 			t.entityprofile[t.entid].physics = 0;
 		}
-		#endif
 
 		//  LOD System Defaults
 		if ( t.entityprofile[t.entid].lod1distance > 0 && t.entityprofile[t.entid].lod2distance == 0 )
@@ -3788,29 +3502,21 @@ void entity_loaddata ( void )
 			pTryMatch = "effectbank\\reloaded\\entity_anim.fx";
 			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 2;
 			pTryMatch = "effectbank\\reloaded\\character_basic.fx";
-			#ifdef VRTECH
 			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 5;
-			#else
-			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 2;
-			#endif
 			pTryMatch = "effectbank\\reloaded\\character_transparency.fx";
 			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 2;
 			pTryMatch = "effectbank\\reloaded\\tree_basic.fx";
 			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 3;			
 			pTryMatch = "effectbank\\reloaded\\treea_basic.fx";
 			if ( strnicmp ( t.entityprofile[t.entid].effect_s.Get(), pTryMatch, strlen(pTryMatch) ) == NULL ) iReplaceMode = 4;	
-			#ifdef VRTECH
 			if ( strlen ( t.entityprofile[t.entid].effect_s.Get() ) == 0 ) iReplaceMode = 1;
-			#endif
 			if ( iReplaceMode > 0 )
 			{
 				if ( iReplaceMode == 1 ) t.entityprofile[t.entid].effect_s = "effectbank\\reloaded\\apbr_basic.fx";
 				if ( iReplaceMode == 2 ) t.entityprofile[t.entid].effect_s = "effectbank\\reloaded\\apbr_anim.fx";
 				if ( iReplaceMode == 3 ) t.entityprofile[t.entid].effect_s = "effectbank\\reloaded\\apbr_tree.fx";
 				if ( iReplaceMode == 4 ) t.entityprofile[t.entid].effect_s = "effectbank\\reloaded\\apbr_treea.fx";
-				#ifdef VRTECH
 				if ( iReplaceMode == 5 ) t.entityprofile[t.entid].effect_s = "effectbank\\reloaded\\apbr_animwithtran.fx";
-				#endif
 			}
 		}
 		else
@@ -3963,13 +3669,11 @@ void entity_loaddata ( void )
 		t.entityprofile[t.entid].strength=0;
 	}
 
-	#ifdef WICKEDENGINE
 	if (t.entityprofile[t.entid].ischaracter == 0)
 	{
 		// only characters can use isspinetracker mode (now on by default for wicked)
 		t.entityprofile[t.entid].isspinetracker = 0;
 	}
-	#endif
 
 	//  fileexistelse
 	}
@@ -3996,11 +3700,6 @@ void entity_loaddata ( void )
 			// speciried a material index that MAX does not support!
 		}
 	}
-	//if (  t.entityprofile[t.entid].debrisshapeindex>0 ) 
-	//{
-	//	t.di=t.entityprofile[t.entid].debrisshapeindex;
-	//	t.debrisshapeindexused[t.di]=1;
-	//}
 
 	// if flagged as EBE, attempt to load any EBE cube data
 	if ( t.entityprofile[t.entid].isebe != 0 )
@@ -4063,6 +3762,7 @@ void entity_loadactivesoundsandvideo ( void )
 	char pSoundSet1[MAX_PATH];
 	char pSoundSet2[MAX_PATH];
 	char pSoundSet3[MAX_PATH];
+	char pSoundSet4[MAX_PATH];
 	char pSoundSet5[MAX_PATH];
 	char pSoundSet6[MAX_PATH];
 
@@ -4082,6 +3782,7 @@ void entity_loadactivesoundsandvideo ( void )
 				strcpy(pSoundSet1, t.entityelement[t.e].eleprof.soundset1_s.Get());
 				strcpy(pSoundSet2, t.entityelement[t.e].eleprof.soundset2_s.Get());
 				strcpy(pSoundSet3, t.entityelement[t.e].eleprof.soundset3_s.Get());
+				strcpy(pSoundSet4, t.entityelement[t.e].eleprof.soundset4a_s.Get());
 				strcpy(pSoundSet5, t.entityelement[t.e].eleprof.soundset5_s.Get());
 				strcpy(pSoundSet6, t.entityelement[t.e].eleprof.soundset6_s.Get());
 
@@ -4097,6 +3798,7 @@ void entity_loadactivesoundsandvideo ( void )
 						if (allfour == 1) pThisStr = pSoundSet1;
 						if (allfour == 2) pThisStr = pSoundSet2;
 						if (allfour == 3) pThisStr = pSoundSet3;
+						if (allfour == 4) pThisStr = pSoundSet4;
 						if (allfour == 5) pThisStr = pSoundSet5;
 						if (allfour == 6) pThisStr = pSoundSet6;
 						if (bMightHaveVariant == false && pThisStr && strnicmp (pThisStr + strlen(pThisStr) - 5, "1.wav", 5) == NULL) bMightHaveVariant = true;
@@ -4177,6 +3879,11 @@ void entity_loadactivesoundsandvideo ( void )
 				if (t.entityelement[t.e].soundset3 == 0)
 				{
 					t.entityelement[t.e].soundset3 = loadinternalsoundcore(pSoundSet3, 1);
+					if (t.game.runasmultiplayer == 1) mp_refresh ();
+				}
+				if (t.entityelement[t.e].soundset4 == 0)
+				{
+					t.entityelement[t.e].soundset4 = loadinternalsoundcore(pSoundSet4, 1);
 					if (t.game.runasmultiplayer == 1) mp_refresh ();
 				}
 				if (t.entityelement[t.e].soundset5 == 0)
@@ -4275,7 +3982,6 @@ void entity_loadactivesoundsandvideo ( void )
 	}
 }
 
-#ifdef WICKEDENGINE
 void entity_cleargrideleprofrelationshipdata (void)
 {
 	// wipe out relational data when adding new object
@@ -4287,30 +3993,24 @@ void entity_cleargrideleprofrelationshipdata (void)
 		t.grideleprof.iObjectRelationshipsType[i] = 0;
 	}
 }
-#endif
 
 void entity_fillgrideleproffromprofile ( void )
 {
 	// Name
 	t.grideleprof.name_s=t.entityprofileheader[t.entid].desc_s;
 
-	#ifdef WICKEDENGINE
 	t.grideleprof.blendmode = t.entityprofile[t.entid].blendmode;
 
 	t.grideleprof.iFlattenID = -1; // never carries ID of individual elements
 	if (!g_bEnableAutoFlattenSystem) //PE: If disabled always disable autoflatten.
 		t.grideleprof.bAutoFlatten = false;
-	//g_bEnableAutoFlattenSystem
-	#endif
 
-	#ifdef WICKEDENGINE
 	// smart system to auto assign whether character is an ally or enemy
 	t.grideleprof.iCharAlliance = 0;
 	if ( strstr(t.grideleprof.name_s.Lower().Get(), "ally" ) != NULL )
 	{
 		t.grideleprof.iCharAlliance = 1;
 	}
-	#endif
 
 	// Group reference
 	t.grideleprof.groupreference = t.entityprofile[t.entid].groupreference;
@@ -4384,6 +4084,7 @@ void entity_fillgrideleproffromprofile ( void )
 	t.grideleprof.soundset4_s=t.entityprofile[t.entid].soundset4_s;
 	t.grideleprof.soundset5_s=t.entityprofile[t.entid].soundset5_s;
 	t.grideleprof.soundset6_s=t.entityprofile[t.entid].soundset6_s;
+	t.grideleprof.soundset4a_s = t.entityprofile[t.entid].soundset4a_s;
 	t.grideleprof.overrideanimset_s = "";
 
 	//  FPGC - 310710 - decal particle settings
@@ -4430,10 +4131,8 @@ void entity_fillgrideleproffromprofile ( void )
 		}
 	}
 
-	#ifdef WICKEDENGINE
 	// Collision Data Overide
 	t.grideleprof.iOverrideCollisionMode = -1;
-	#endif
 
 	// Physics Data
 	t.grideleprof.physics=t.entityprofile[t.entid].physics;
@@ -4461,7 +4160,6 @@ void entity_fillgrideleproffromprofile ( void )
 		}
 	}
 
-	#ifdef WICKEDENGINE
 	//PE: Make sure when we create we use default variables in eleprof.
 	// Users don't want to have to enable custom materials before editing materials
 	// ...non-custom materials are also causing issues with emissive, so just enable by default
@@ -4471,36 +4169,26 @@ void entity_fillgrideleproffromprofile ( void )
 	// LB: Additional - Preben notes doing the above breaks many things, including FPE material settings, so restore and rethink
 	// PE: Keep it as is , and now use bUseFPESettings to control what will get updated.
 	t.grideleprof.bCustomWickedMaterialActive = true;
-	//if (t.entityprofile[t.entid].WEMaterial.MaterialActive)
-	//	t.grideleprof.bCustomWickedMaterialActive = true;
-	//else
-	//	t.grideleprof.bCustomWickedMaterialActive = false;
 	t.grideleprof.WEMaterial = t.entityprofile[t.entid].WEMaterial;
 
 	//Need default particle setup here. or if will use the last inside "t.grideleprof".
 	t.grideleprof.newparticle.emitterid = -1;
 	t.grideleprof.newparticle.emittername = "particlesbank/default";
-	#endif
 
-	#ifdef WICKEDENGINE
 	// wipe out relational data when adding new object
 	entity_cleargrideleprofrelationshipdata();
-	#endif
 
-	#ifdef WICKEDENGINE
 	// when first load an object, need to populate sound4 so _properties is ALWAYS called!
 	cstr script_name = "scriptbank\\";
 	script_name += t.grideleprof.aimain_s;
 	extern void ParseLuaScript(entityeleproftype *tmpeleprof, char * script);
 	ParseLuaScript(&t.grideleprof, script_name.Get());
-	#endif
 }
 
 void entity_updatetextureandeffectfromeleprof ( void )
 {
 
 	//  Texture and Effect (use entityprofile loader)
-	//t.storeentdefaults as entityprofiletype;
 	t.storeentdefaults=t.entityprofile[t.entid];
 	t.entityprofile[t.entid].texd_s=t.entityelement[t.e].eleprof.texd_s;
 	t.entityprofile[t.entid].texaltd_s=t.entityelement[t.e].eleprof.texaltd_s;
@@ -4625,7 +4313,6 @@ void entity_loadtexturesandeffect ( void )
 		}
 		else
 		{
-			#ifdef WICKEDENGINE
 			// wicked relies on accurate texture path and name entries, and a Classic bug caused an error
 			// when a full texture path was already provided, i.e. gamecore\guns\modern, etc
 			bool bPathInsideFilename = false;
@@ -4645,98 +4332,12 @@ void entity_loadtexturesandeffect ( void )
 				t.texdir_s = t.entdir_s + t.entpath_s + t.tfile_s;
 				t.texaltdir_s = t.entdir_s + t.entpath_s + t.tfilealt_s;
 			}
-			#else
-			t.texdir_s = t.entdir_s + t.entpath_s + t.tfile_s;
-			t.texaltdir_s = t.entdir_s + t.entpath_s + t.tfilealt_s;
-			#endif
 		}
 	}
-	#ifdef WICKEDENGINE
 	// Wicked does not support old method of loading images/effects
-	//t.entityprofile[t.entid].usingeffect=0;
 	t.entityprofile[t.entid].texaltdid=0;
-	#else
-	if ( t.tfile_s != "" ) 
-	{
-		t.tthistexdir_s=t.texdir_s;
-		if (  g.gdividetexturesize == 0  )  t.tthistexdir_s = "effectbank\\reloaded\\media\\white_D.dds";
-		if (  t.entityprofile[t.entid].transparency == 0 ) 
-		{
-			t.texuseid=loadinternaltextureex(t.tthistexdir_s.Get(),1,t.tfullorhalfdivide);
-		}
-		else
-		{
-			t.texuseid=loadinternaltextureex(t.tthistexdir_s.Get(),5,t.tfullorhalfdivide);
-		}
-		if (  t.texuseid == 0 ) 
-		{
-			t.texdir_s=t.entityprofile[t.entid].texd_s;
-			t.texaltdir_s=t.entityprofile[t.entid].texaltd_s;
-			t.texuseid=loadinternaltextureex(t.texdir_s.Get(),1,t.tfullorhalfdivide);
-		}
-		if (  t.texuseid == 0 ) 
-		{
-			//  if still no texture, maybe FPE specifies it WRONG and correct is inside model
-			for ( t.tlimbindex = 0 ; t.tlimbindex<=  999; t.tlimbindex++ )
-			{
-				if (  LimbExist(t.entobj,t.tlimbindex) == 1 ) 
-				{
-					LPSTR sTmp = LimbTextureName(t.entobj, t.tlimbindex);
-					t.tlimbtex_s=t.entdir_s+t.entpath_s+ sTmp;
-					if(sTmp) delete[] sTmp;
-					t.tispresent=FileExist(t.tlimbtex_s.Get());
-					if (  t.tispresent == 1 ) 
-					{
-						break;
-					}
-				}
-			}
-			t.texdir_s=t.tlimbtex_s;
-			t.texaltdir_s=t.entityprofile[t.entid].texaltd_s;
-			t.texuseid=loadinternaltextureex(t.texdir_s.Get(),1,t.tfullorhalfdivide);
-		}
-
-		//  Load ALT texture if available
-		t.texaltdid=loadinternalimagecompressquality(t.texaltdir_s.Get(),1,t.tfullorhalfdivide);
-		t.entityprofile[t.entid].texaltdid=t.texaltdid;
-		bMultiMaterialObject = false;
-	}
-	else
-	{
-		// textured field left blank to indicate multi-material has filled in and loaded texture stages already
-		t.texdir_s="" ; t.texuseid=0;
-		t.texaltdid=0 ; t.entityprofile[t.entid].texaltdid=t.texaltdid;
-		bMultiMaterialObject = true;
-	}
-	
-	// 261117 - intercept and replace any legacy shaders with new PBR ones if game visuals using RealtimePBR (3) mode
-	cstr EffectFile_s = t.entityprofile[t.entid].effect_s;
-	int iEffectProfile = t.entityprofile[t.entid].effectprofile;
-
-	//  Load entity effect
-	t.entityprofile[t.entid].usingeffect=0;
-	if (  t.entityprofile[t.entid].ismarker == 0 ) 
-	{
-		t.tfile_s=EffectFile_s;
-		common_wipeeffectifnotexist ( );
-		if (  t.tfile_s != "" ) 
-		{
-			t.teffectid=loadinternaleffect(t.tfile_s.Get());
-			if (  t.teffectid>0 ) 
-			{
-				t.entityprofile[t.entid].usingeffect=t.teffectid;
-			}
-		}
-	}
-	else
-	{
-		// 110517 - no fixed function any more
-		t.entityprofile[t.entid].usingeffect = g.guishadereffectindex;
-	}
-	#endif
 
 	// Texture and apply effect
-	#ifdef WICKEDENGINE
 	// remove '.dds' from texture filename
 	char pNoExtFilename[1024];
 	strcpy ( pNoExtFilename, t.texdir_s.Get() );
@@ -4813,520 +4414,21 @@ void entity_loadtexturesandeffect ( void )
 			}
 		}
 	}
-	#else
-	if ( t.entobj>0 ) 
-	{
-		// lee - 300518 - added extra code in LoadObject to detect DNS and PBR texture file sets and set the mesh, so 
-		// skip the override code below if the object has a good texture in place
-		//bool bGotAO = false - replaced this with a later scan to add AO only when missing
-		#ifdef VRTECH
-		bool bGotNormal = false, bGotMetalness = false, bGotGloss = false, bGotMask = false, bGotAltAlbedo = false;
-		#else
-		bool bGotNormal = false, bGotMetalness = false, bGotGloss = false;
-		#endif
-		sObject* pObject = GetObjectData ( t.entobj );
-		if ( pObject )
-		{
-			for ( int iMeshIndex = 0; iMeshIndex < pObject->iMeshCount; iMeshIndex++ )
-			{
-				sMesh* pMesh = pObject->ppMeshList[iMeshIndex];
-				if ( pMesh )
-				{
-					for ( int iTextureIndex = 2; iTextureIndex < pMesh->dwTextureCount; iTextureIndex++ )
-					{
-						if ( pMesh->pTextures[iTextureIndex].iImageID > 0 )
-						{
-							#ifdef VRTECH
-							if ( iTextureIndex == 2 ) bGotNormal = true;
-							if ( iTextureIndex == 3 ) bGotMetalness = true;
-							if ( iTextureIndex == 4 ) bGotGloss = true;
-							if ( iTextureIndex == 5 ) bGotMask = true;
-							if ( iTextureIndex == 7 ) bGotAltAlbedo = true;
-							#else
-							//if ( iTextureIndex == 1 ) bGotAO = true;
-							if ( iTextureIndex == 2 ) bGotNormal = true;
-							if ( iTextureIndex == 3 ) bGotMetalness = true;
-							if ( iTextureIndex == 4 ) bGotGloss = true;
-							#endif
-						}
-					}
-				}
-			}
-		}
-
-		// detect if using an effect or not
-		int use_illumination = false;
-		#ifdef WICKEDENGINE
-		// Shaders always provided by Wicked Engine
-		#else
-		if ( t.entityprofile[t.entid].usingeffect == 0 ) 
-		{
-			//  No effect
-			t.entityprofile[t.entid].texdid=t.texuseid;
-			t.entityprofile[t.entid].texnid=0;
-			t.entityprofile[t.entid].texsid=0;
-			TextureObject ( t.entobj, t.texuseid );
-		}
-		else
-		#endif
-		{
-			if ( bMultiMaterialObject == false )
-			{
-				// Strip out _D.dds or COLOR.dds 
-				char pNoExtFilename[1024];
-				strcpy ( pNoExtFilename, t.texdir_s.Get() );
-				pNoExtFilename[strlen(pNoExtFilename)-4] = 0;
-				//PE: Some textures do not have _d,_color,_albedo , so always reset.
-				t.texdirnoext_s = "";
-				if ( strnicmp ( pNoExtFilename+strlen(pNoExtFilename)-2, "_d", 2 ) == NULL )
-				{
-					t.texdirnoext_s=Left(pNoExtFilename,Len(pNoExtFilename)-Len("_d"));
-				}
-				else
-				{
-					if ( strnicmp ( pNoExtFilename+strlen(pNoExtFilename)-6, "_color", 6 ) == NULL )
-						t.texdirnoext_s=Left(pNoExtFilename,Len(pNoExtFilename)-Len("_color"));
-					else
-						if ( strnicmp ( pNoExtFilename+strlen(pNoExtFilename)-7, "_albedo", 7 ) == NULL )
-							t.texdirnoext_s=Left(pNoExtFilename,Len(pNoExtFilename)-Len("_albedo"));
-				}
-
-				//  Assign DIFFUSE
-				t.entityprofile[t.entid].texdid = t.texuseid;
-
-				// Assign NORMAL
-				if ( iEffectProfile == 1 )
-					t.texdirN_s = t.texdirnoext_s+"_normal.dds";
-				else
-					t.texdirN_s = t.texdirnoext_s+"_n.dds";
-				t.texuseid = loadinternaltextureex(t.texdirN_s.Get(),1,t.tfullorhalfdivide);
-				if ( t.texuseid == 0 ) 
-				{
-					if ( iEffectProfile == 1 )
-						t.texdirN_s = t.texdirnoext_s+"_n.dds";
-					else
-						t.texdirN_s = t.texdirnoext_s+"_normal.dds";
-					t.texuseid = loadinternaltextureex(t.texdirN_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 ) 
-					{
-						t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_N.dds",1,t.tfullorhalfdivide);
-					}
-				}
-				t.entityprofile[t.entid].texnid = t.texuseid;
-
-				// Assign SPECULAR (PBR Metalness)
-				if ( t.entityprofile[t.entid].specular == 0 ) 
-				{
-					if ( iEffectProfile == 1 )
-					{
-						t.texdirS_s = t.texdirnoext_s+"_metalness.dds";
-						t.texuseid = loadinternaltextureex(t.texdirS_s.Get(),1,t.tfullorhalfdivide);
-						if ( t.texuseid == 0 ) 
-						{
-							//PE: We dont use _s.dds ?
-							t.texdirS_s = t.texdirnoext_s+"_specular.dds";
-							t.texuseid = loadinternaltextureex(t.texdirS_s.Get(),1,t.tfullorhalfdivide);
-							if ( t.texuseid == 0 ) 
-							{
-								// 261117 - search material for stock metalness
-								char pFullFilename[1024];
-								int iMaterialIndex = t.entityprofile[t.entid].materialindex;
-								sprintf ( pFullFilename, "effectbank\\reloaded\\media\\materials\\%d_Metalness.dds", iMaterialIndex );
-								t.texdirS_s = pFullFilename;
-								t.texuseid = loadinternaltextureex(t.texdirS_s.Get(),1,t.tfullorhalfdivide);
-								if ( t.texuseid == 0 ) 
-								{
-									t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_black.dds",1,t.tfullorhalfdivide);
-								}
-							}
-						}
-					}
-					else
-					{
-						t.texdirS_s = t.texdirnoext_s+"_s.dds";
-						t.texuseid = loadinternaltextureex(t.texdirS_s.Get(),1,t.tfullorhalfdivide);
-					}
-				}
-				else
-				{
-					if (  t.entityprofile[t.entid].specular == 1  )  t.texdirS_s = "effectbank\\reloaded\\media\\blank_none_S.dds";
-					if (  t.entityprofile[t.entid].specular == 2  )  t.texdirS_s = "effectbank\\reloaded\\media\\blank_low_S.dds";
-					if (  t.entityprofile[t.entid].specular == 3  )  t.texdirS_s = "effectbank\\reloaded\\media\\blank_medium_S.dds";
-					if (  t.entityprofile[t.entid].specular == 4  )  t.texdirS_s = "effectbank\\reloaded\\media\\blank_high_S.dds";
-					t.texuseid = loadinternaltextureex(t.texdirS_s.Get(),1,t.tfullorhalfdivide);
-				}
-				t.entityprofile[t.entid].texsid = t.texuseid;
-
-				// Assign ILLUMINATION or CUBE (or real-time 'ENVCUBE for PBR' later)
-				if ( iEffectProfile == 0 )
-				{
-					// non-PBR legacy behaviour
-					t.texdirI_s = t.texdirnoext_s+"_i.dds";
-					t.texuseid = loadinternaltextureex(t.texdirI_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 )
-					{
-						// if no _I file, try to find and load _CUBE file (load mode 2 = cube)
-						t.texdirI_s = t.texdirnoext_s+"_cube.dds";
-						t.texuseid = loadinternaltexturemode(t.texdirI_s.Get(),2);
-						if ( t.texuseid == 0 )
-						{
-							// if no local CUBE, see if the level has generated one (matches sky and terrain)
-							t.texuseid = t.terrain.imagestartindex+31;
-						}
-					}
-					t.entityprofiletexiid = t.texuseid;
-				}
-				else
-				{
-					// PBR behaviour only allow _CUBE to override PBR reflection
-					t.texdirI_s = t.texdirnoext_s+"_cube.dds";
-					t.texuseid = loadinternaltexturemode(t.texdirI_s.Get(),2);
-					if ( t.texuseid == 0 )
-					{
-						// if no local CUBE, see if the level has generated one (matches sky and terrain)
-						t.texuseid = t.terrain.imagestartindex+31;
-					}
-					t.entityprofiletexiid = t.texuseid;
-				}
-				t.entityprofile[t.entid].texiid = t.entityprofiletexiid;
-
-				// Assign AMBIENT OCCLUSION MAP
-				t.texdirO_s = t.texdirnoext_s+"_o.dds";
-				t.texuseid = loadinternaltextureex(t.texdirO_s.Get(),1,t.tfullorhalfdivide);
-				if ( t.texuseid == 0 ) 
-				{
-					t.texdirO_s = t.texdirnoext_s+"_ao.dds";
-					t.texuseid = loadinternaltextureex(t.texdirO_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 ) 
-					{
-						t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_O.dds",1,t.tfullorhalfdivide);
-					}
-					else
-					{
-						// disable override to AO that exists can be used
-						if ( strlen ( t.entityprofile[t.entid].texd_s.Get() ) > 0 )
-						{
-							// but only if texture was specified in FPE, not if we assume model based textures
-							//bGotAO = false; // see replacement solution below
-						}
-					}
-				}
-				t.entityprofiletexoid = t.texuseid;
-
-				//PE: IBR old t7 is now t8 , detail/illum t8 is now t7. Done so we can skip t8, we still need the correct order of textures.
-				//PE: IBR was not large but generate tons of stage changes.
-
-				// Assign textures for PBR
-				if ( iEffectProfile == 1 )
-				{
-					// gloss texture
-					cstr pGlosstex_s = t.texdirnoext_s+"_gloss.dds";
-					t.texuseid = loadinternaltextureex(pGlosstex_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 ) 
-					{
-						// 261117 - search material for stock metalness
-						char pFullFilename[1024];
-						int iMaterialIndex = t.entityprofile[t.entid].materialindex;
-						sprintf ( pFullFilename, "effectbank\\reloaded\\media\\materials\\%d_Gloss.dds", iMaterialIndex );
-						pGlosstex_s = pFullFilename;
-						t.texuseid = loadinternaltextureex(pGlosstex_s.Get(),1,t.tfullorhalfdivide);
-						if ( t.texuseid == 0 ) 
-						{
-							t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\white_D.dds",1,t.tfullorhalfdivide);
-						}
-					}
-					t.entityprofile[t.entid].texgid = t.texuseid;
-
-					// mask or height texture
-					#ifdef VRTECH
-					cstr pHeighttex_s = t.texdirnoext_s+"_mask.dds";
-					t.texuseid = loadinternaltextureex(pHeighttex_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 ) 
-					{
-						pHeighttex_s = t.texdirnoext_s+"_height.dds";
-						t.texuseid = loadinternaltextureex(pHeighttex_s.Get(),1,t.tfullorhalfdivide);
-						if (t.texuseid == 0)
-						{
-							t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_black.dds", 1, t.tfullorhalfdivide);
-						}
-					}
-					t.entityprofile[t.entid].texhid = t.texuseid;
-					#else
-					cstr pHeighttex_s = t.texdirnoext_s+"_height.dds";
-					if( g.skipunusedtextures == 0 ) t.texuseid = loadinternaltextureex(pHeighttex_s.Get(),1,t.tfullorhalfdivide);
-					if ( t.texuseid == 0 || g.skipunusedtextures == 1 )
-					{
-						t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_black.dds",1,t.tfullorhalfdivide);
-					}
-					t.entityprofile[t.entid].texhid = t.texuseid;
-					#endif
-
-					// IBR texture
-					if (g.memskipibr == 0) 
-					{
-						t.entityprofiletexibrid = t.terrain.imagestartindex + 32;
-					}
-
-					//PE: Use illumination instead of detail if found.
-					//PE: Illumination overwrite detail.
-					use_illumination = true;
-					cstr pDetailtex_s = t.texdirnoext_s + "_illumination.dds";
-					t.entityprofile[t.entid].texlid = loadinternaltextureex(pDetailtex_s.Get(), 1, t.tfullorhalfdivide);
-					if (t.entityprofile[t.entid].texlid == 0)
-					{
-						cstr pDetailtex_s = t.texdirnoext_s + "_emissive.dds"; // _emissive
-						t.entityprofile[t.entid].texlid = loadinternaltextureex(pDetailtex_s.Get(), 1, t.tfullorhalfdivide);
-						if (t.entityprofile[t.entid].texlid == 0)
-						{
-							if (g.gpbroverride == 1) 
-							{
-								// PE: Also support _i when using gpbroverride == 1.
-								t.texdirI_s = t.texdirnoext_s + "_i.dds";
-								t.entityprofile[t.entid].texlid = loadinternaltextureex(t.texdirI_s.Get(), 1, t.tfullorhalfdivide);
-							}
-							if (t.entityprofile[t.entid].texlid == 0) 
-							{
-								// Detail texture
-								cstr pDetailtex_s = t.texdirnoext_s + "_detail.dds";
-								#ifdef VRTECH
-								t.entityprofile[t.entid].texlid = loadinternaltextureex(pDetailtex_s.Get(), 1, t.tfullorhalfdivide);
-								if (t.entityprofile[t.entid].texlid == 0)
-								#else
-								if( g.skipunusedtextures == 0 ) t.entityprofile[t.entid].texlid = loadinternaltextureex(pDetailtex_s.Get(), 1, t.tfullorhalfdivide);
-								if (t.entityprofile[t.entid].texlid == 0 || g.skipunusedtextures == 1)
-								#endif
-								{
-									t.entityprofile[t.entid].texlid = loadinternaltextureex("effectbank\\reloaded\\media\\detail_default.dds", 1, t.tfullorhalfdivide);
-								}
-								use_illumination = false;
-							}
-						}
-					}
-				}
-
-				// Apply all textures to NON-MULTIMATERIAL entity parent object (D O N S)
-				if ( t.entityprofile[t.entid].texdid > 0 ) 
-				{
-					// but only if diffuse specified, else use texture already loaded for model
-					TextureObject ( t.entobj, 0, t.entityprofile[t.entid].texdid );
-				}
-				TextureObject ( t.entobj, 2, t.entityprofile[t.entid].texnid );
-				TextureObject ( t.entobj, 3, t.entityprofile[t.entid].texsid );
-
-				// Additional texture assignments required for PBR mode
-				if ( iEffectProfile == 1 )
-				{
-					if (g.memskipibr == 0) TextureObject ( t.entobj, 8, t.entityprofiletexibrid );
-					#ifdef VRTECH
-					if ( bGotAltAlbedo == false ) TextureObject ( t.entobj, 7, t.entityprofile[t.entid].texlid );
-					TextureObject ( t.entobj, 4, t.entityprofile[t.entid].texgid );
-					if ( bGotMask == false ) TextureObject ( t.entobj, 5, t.entityprofile[t.entid].texhid );
-					#else
-					TextureObject ( t.entobj, 7, t.entityprofile[t.entid].texlid );
-					TextureObject ( t.entobj, 4, t.entityprofile[t.entid].texgid );
-					TextureObject ( t.entobj, 5, t.entityprofile[t.entid].texhid );
-					#endif
-				}
-			}
-			else
-			{
-				// object entity uses multi-material (Fuse character)
-				// and already loaded D N and S into 0, 2 and 3
-				t.entityprofile[t.entid].texiid = 0;
-
-				// PE 240118: not always if missing texture= in fpe , normal/spec is not always in the objects texture lists. ( we must have normal maps on all objects ).
-				// Fix: https://github.com/LeeBamberTGC/GameGuruRepo/issues/10
-				// lee - 300518 - added extra code in LoadObject to detect DNS and PBR texture file sets and set the mesh, so 
-				// skip the override code below if the object has a good texture in place
-
-				if (t.entityprofile[t.entid].texnid == 0 && bGotNormal == false )
-				{
-					t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_N.dds", 1, t.tfullorhalfdivide);
-					t.entityprofile[t.entid].texnid = t.texuseid;
-					TextureObject(t.entobj, 2, t.entityprofile[t.entid].texnid);
-				}
-				if (t.entityprofile[t.entid].texsid == 0 && bGotMetalness == false )
-				{
-					t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_black.dds", 1, t.tfullorhalfdivide);
-					t.entityprofile[t.entid].texsid = t.texuseid;
-					TextureObject(t.entobj, 3, t.entityprofile[t.entid].texsid);
-				}
-				// PE: iEffectProfile != 1 for this type of objects at this point in code.
-				if (t.entityprofile[t.entid].texiid == 0)
-				{
-					if (g.gpbroverride == 1) // iEffectProfile == 1
-					{
-						// if no local CUBE, see if the level has generated one (matches sky and terrain)
-						t.entityprofile[t.entid].texiid = t.terrain.imagestartindex + 31;
-					}
-				}
-
-				// Not set anywhere, so just use blank_o.
-				t.texuseid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_O.dds", 1, t.tfullorhalfdivide);
-				t.entityprofiletexoid = t.texuseid; // must always be set.
-
-				// PE: PBR shader support for old media with no texture in fpe.
-				if (g.gpbroverride == 1) 
-				{
-					// None of the below will be in old media , so setup using fallback textures.
-					t.entityprofile[t.entid].texlid = loadinternaltextureex("effectbank\\reloaded\\media\\detail_default.dds", 1, t.tfullorhalfdivide);
-					t.entityprofile[t.entid].texgid = loadinternaltextureex("effectbank\\reloaded\\media\\white_D.dds", 1, t.tfullorhalfdivide);
-					t.entityprofile[t.entid].texhid = loadinternaltextureex("effectbank\\reloaded\\media\\blank_black.dds", 1, t.tfullorhalfdivide);
-					if (g.memskipibr == 0) TextureObject(t.entobj, 8, t.entityprofiletexibrid);
-					#ifdef VRTECH
-					if ( bGotAltAlbedo == false ) TextureObject(t.entobj, 7, t.entityprofile[t.entid].texlid);
-					if ( bGotGloss == false ) TextureObject(t.entobj, 4, t.entityprofile[t.entid].texgid);
-					if ( bGotMask == false ) TextureObject(t.entobj, 5, t.entityprofile[t.entid].texhid);
-					#else
-					TextureObject(t.entobj, 7, t.entityprofile[t.entid].texlid);
-					if ( bGotGloss == false ) TextureObject(t.entobj, 4, t.entityprofile[t.entid].texgid);
-					TextureObject(t.entobj, 5, t.entityprofile[t.entid].texhid);
-					#endif
-				}
-			}
-
-			// 230618 - apply AO texture ONLY when missing
-			// if ( bGotAO == false ) TextureObject ( t.entobj, 1, t.entityprofiletexoid );
-			sObject* pObject = GetObjectData ( t.entobj );
-			if ( pObject )
-			{
-				for ( int iFrameIndex = 0; iFrameIndex < pObject->iFrameCount; iFrameIndex++ )
-				{
-					sFrame* pFrame = pObject->ppFrameList[iFrameIndex];
-					if ( pFrame )
-					{
-						sMesh* pMesh = pFrame->pMesh;
-						if ( pMesh )
-						{
-							for ( int iTextureIndex = 1; iTextureIndex < pMesh->dwTextureCount; iTextureIndex++ )
-							{
-								if ( pMesh->pTextures[iTextureIndex].iImageID == 0 )
-								{
-									if ( iTextureIndex == 1 ) TextureLimbStage ( t.entobj, iFrameIndex, iTextureIndex, t.entityprofiletexoid );
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// Apply all textures to REMAINING entity parent object (V C I)
-			TextureObject ( t.entobj, 6, t.entityprofile[t.entid].texiid );
-
-			// PBR or non-PBR modes
-			LPSTR pEntityBasic = "effectbank\\reloaded\\entity_basic.fx";
-			LPSTR pEntityAnim = "effectbank\\reloaded\\entity_anim.fx";
-			LPSTR pCharacterBasic = "effectbank\\reloaded\\character_basic.fx";
-			LPSTR pEntityBasicIllum = "effectbank\\reloaded\\apbr_illum.fx";
-			LPSTR pCharacterBasicIllum = "effectbank\\reloaded\\apbr_illum_anim.fx";
-
-			if ( g.gpbroverride == 1 )
-			{
-				pEntityBasic = "effectbank\\reloaded\\apbr_basic.fx";
-				pEntityAnim = "effectbank\\reloaded\\apbr_anim.fx";
-				//PE: The other way around :)
-				#ifdef VRTECH
-				pCharacterBasic = "effectbank\\reloaded\\apbr_animwithtran.fx";
-				#else
-				pCharacterBasic = "effectbank\\reloaded\\apbr_anim.fx";
-				#endif
-			}
-			
-			// 100718 - fix issue where old effect (non-illum) is retained for non-bone shader
-			if ( stricmp ( EffectFile_s.Get(), pEntityBasic)==NULL ) 
-			{
-				if ( g.gpbroverride == 1 && use_illumination )
-				{
-					t.entityprofile[t.entid].usingeffect = loadinternaleffect(pEntityBasicIllum);
-				}
-			}
-
-			//PE: Same problem with pEntityAnim if no bones. (large door.dbo)
-			t.teffectid2 = 0;
-			#ifdef VRTECH
-			if (stricmp(EffectFile_s.Get(), pEntityAnim) == NULL)
-			{
-				if (g.gpbroverride == 1 && use_illumination)
-					t.teffectid2 = loadinternaleffect(pEntityBasicIllum);
-				else
-					t.teffectid2 = loadinternaleffect(pEntityBasic);
-			}
-			#endif
-
-			// Special case for character_basic shader, when has meshes with no bones, use entity_basic instead
-			if ( stricmp(EffectFile_s.Get(), pCharacterBasic) == NULL )  
-			{
-				if ( g.gpbroverride == 1 && use_illumination)
-					t.teffectid2 = loadinternaleffect(pEntityBasicIllum);
-				else
-					t.teffectid2 = loadinternaleffect(pEntityBasic);
-			}
-
-			// 010917 - or if using entity_basic shader, and HAS anim meshes with bones, use entity_anim instead
-			if ( stricmp ( EffectFile_s.Get(), pEntityBasic)==NULL ) 
-			{
-				if ( t.entityprofile[t.entid].animmax > 0 )
-				{
-					t.teffectid2 = t.entityprofile[t.entid].usingeffect;
-					if (g.gpbroverride == 1 && use_illumination)
-						t.entityprofile[t.entid].usingeffect = loadinternaleffect(pCharacterBasicIllum);
-					else
-						t.entityprofile[t.entid].usingeffect = loadinternaleffect(pEntityAnim);
-				}
-				else 
-				{
-					// PE: Change basic effect to use illumination
-					if ( g.gpbroverride == 1 && use_illumination )
-						t.entityprofile[t.entid].usingeffect = loadinternaleffect(pEntityBasicIllum);
-				}
-			}
-
-			if (stricmp(EffectFile_s.Get(), pCharacterBasic) == NULL) 
-			{
-				// PE: Change character effect to use illumination
-				if (g.gpbroverride == 1 && use_illumination) 
-				{
-					t.entityprofile[t.entid].usingeffect = loadinternaleffect(pCharacterBasicIllum);
-				}
-			}
-
-			// Apply effect and textures
-			if ( t.lightmapper.onlyloadstaticentitiesduringlightmapper == 0 )
-			{
-				// don't use shader effects when lightmapping
-				SetObjectEffectCore ( t.entobj, t.entityprofile[t.entid].usingeffect, t.teffectid2, t.entityprofile[t.entid].cpuanims );
-			}
-		}
-	}
-	#endif
 
 	// Set any entity transparenct
 	if ( t.entobj>0 ) 
 	{
-		#ifdef VRTECH
 		if (t.entityprofile[t.entid].transparency >= 0)
 		{
-			#ifdef WICKEDENGINE
 			WickedSetEntityId(t.entid);
 			SetObjectTransparency(t.entobj, t.entityprofile[t.entid].transparency);
 			WickedSetEntityId(-1);
-			#else
-			SetObjectTransparency(t.entobj, t.entityprofile[t.entid].transparency);
-			#endif
 		}
-		#else
-		SetObjectTransparency(t.entobj, t.entityprofile[t.entid].transparency);
-		#endif
 	}
 
 	// Set entity culling (added COLLMODE 300114)
-	#ifdef VRTECH
 	if (t.entityprofile[t.entid].cullmode >= 0)
-	#else
-	if(1)
-	#endif
 	{
-		#ifdef WICKEDENGINE
 		// For Wicked, cull mode controlled per-mesh with parent default as normal 
 		
 		//PE: Prefer WEMaterial over old cullmode
@@ -5369,18 +4471,6 @@ void entity_loadtexturesandeffect ( void )
 		{
 			SetObjectCull(t.entobj, 1);
 		}
-		#else
-		// but only if not negative (as negative allows object to retain its own cull values as in CCP characters saved (for hair))
-		if (t.entityprofile[t.entid].cullmode != 0)
-		{
-			// cull mode OFF used for single sided polygon models
-			SetObjectCull(t.entobj, 0);
-		}
-		else
-		{
-			SetObjectCull(t.entobj, 1);
-		}
-		#endif
 	}
 
 	// Set cull mode for limbs (if hair specified)
@@ -5408,26 +4498,11 @@ void entity_loadtexturesandeffect ( void )
 	}
 
 	//PE: Below will enable additive i wicked.
-	#ifndef WICKEDENGINE
-	if ( t.entobj > 0 )
-	{
-		//  If transparent, no need to Z write
-		if (  t.entityprofile[t.entid].transparency>0 ) 
-		{
-			if ( t.entityprofile[t.entid].transparency >= 2 ) 
-			{
-				DisableObjectZWrite ( t.entobj );
-			}
-		}
-	}
-	#endif
 
 }
 
 //PE: Faster loading
-#ifdef WICKEDENGINE
 #define USEFASTLOADING
-#endif
 
 #ifdef USEFASTLOADING
 char * c_data = NULL;
@@ -5761,8 +4836,7 @@ void c_entity_loadelementsdata ( void )
 
 	// load entity element list
 	t.failedtoload=0;
-	//t.versionnumbersupported = 338;
-	t.versionnumbersupported = 341;
+	t.versionnumbersupported = 342;
 
 	if ( FileExist(t.elementsfilename_s.Get()) == 1 ) 
 	{
@@ -5873,9 +4947,7 @@ void c_entity_loadelementsdata ( void )
 						if(g_iAddEntityElementsMode == 1)
 							t.entityelement[t.e].specialentityloadflag = 123;
 					}
-					#ifdef VRTECH
 					if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
-					#endif
 					//  actual file data
 					if (  t.versionnumberload >= 101 ) 
 					{
@@ -5891,7 +4963,6 @@ void c_entity_loadelementsdata ( void )
 						t.a_f = c_ReadFloat ( 1 ); t.entityelement[t.e].rz=t.a_f;
 						t.a_s = c_ReadString ( 1 ); t.entityelement[t.e].eleprof.name_s=t.a_s;
 						t.a_s = c_ReadString ( 1 ); // t.entityelement[t.e].eleprof.aiinit_s=t.a_s; //PE: Not used anymore.
-						#ifdef WICKEDENGINE
 						t.a_s = c_ReadString (1);
 						if (strnicmp (t.a_s.Get(), "default.lua", 11) == NULL)
 						{
@@ -5908,9 +4979,6 @@ void c_entity_loadelementsdata ( void )
 								t.entityelement[t.e].eleprof.aimain_s = t.a_s;
 							}
 						}
-						#else
-						t.a_s = c_ReadString (1); t.entityelement[t.e].eleprof.aimain_s = t.a_s;
-						#endif
 						t.a_s = c_ReadString ( 1 ); // t.entityelement[t.e].eleprof.aidestroy_s=t.a_s;  //PE: Not used anymore.
 						t.a = c_ReadLong ( 1 ); t.entityelement[t.e].eleprof.isobjective=t.a;
 						t.a_s = c_ReadString ( 1 ); t.entityelement[t.e].eleprof.usekey_s=t.a_s;
@@ -6150,15 +5218,12 @@ void c_entity_loadelementsdata ( void )
 						//  GameGuru 1.14 EBE
 						t.a = c_ReadLong ( 1 ); t.entityelement[t.e].iHasParentIndex = t.a;
 					}
-					#ifdef VRTECH
 					if (  t.versionnumberload >= 313 ) 
 					{
 						// VRQ V3
 						t.a_s = c_ReadString ( 1 ); t.entityelement[t.e].eleprof.voiceset_s=t.a_s;
 						t.a = c_ReadLong ( 1 ); t.entityelement[t.e].eleprof.voicerate = t.a;
 					}
-					#endif
-					#ifdef WICKEDENGINE
 					if (t.versionnumberload >= 314)
 					{
 						//PE: we need to copy t.entityprofile[t.ttentid].WEMaterial before customizing.
@@ -6321,9 +5386,6 @@ void c_entity_loadelementsdata ( void )
 									for (int i = 0; i < MAXGROUPSLISTS; i++)
 									{
 										bool bAlreadyUsed = false;
-										//#define BACKBUFFERIMAGE (g.perentitypromptimageoffset+9000) // duplicated in GridEdit.cpp
-										//int iNewImageID = BACKBUFFERIMAGE + i;
-										//g.perentitypromptimageoffset = 110000; // allow 10,000 slots (found in Common.cpp)
 										int iNewImageID = (110000 + 9000) + i;// (g.perentitypromptimageoffset + 9000) + i;
 										for (int l = MAXGROUPSLISTS; l > 0; l--)
 										{
@@ -6482,7 +5544,8 @@ void c_entity_loadelementsdata ( void )
 						
 						t.a = t.a_f = c_ReadFloat(1); t.entityelement[t.e].eleprof.light.fProbeBrightness = t.a_f;
 
-						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
+						t.a = c_ReadLong(1); t.entityelement[t.e].iAllowBuletHole = t.a;
+
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
@@ -6500,11 +5563,13 @@ void c_entity_loadelementsdata ( void )
 					{
 						t.a = c_ReadLong(1); t.entityelement[t.e].eleprof.bUseFPESettings = t.a;
 					}
-					#endif
+					if (t.versionnumberload >= 342)
+					{
+						t.a_s = c_ReadString(1); t.entityelement[t.e].eleprof.soundset4a_s = t.a_s;
+					}
 
 					// get the index of the entity profile
 					t.ttentid=t.entityelement[t.e].bankindex;
-					#ifdef VRTECH
 					if (t.ttentid >= t.entityprofile.size())
 					{
 						// somehow, the entity profile bank index was corrupted
@@ -6512,7 +5577,6 @@ void c_entity_loadelementsdata ( void )
 						t.entityelement[t.e].bankindex = 0;
 						continue;
 					}
-					#endif
 
 					// if added element already exists with same parent in list, we do not need to add it
 					if (g_iAddEntityElementsMode == 1 && t.entityelement[t.e].bankindex > 0 )
@@ -6627,14 +5691,12 @@ void c_entity_loadelementsdata ( void )
 						//  GameGuru 1.14 EBE
 						t.entityelement[t.e].iHasParentIndex = 0;
 					}
-					#ifdef VRTECH
 					if (  t.versionnumberload < 313 ) 
 					{
 						// VRQ V3
 						t.entityelement[t.e].eleprof.voiceset_s=t.entityprofile[t.ttentid].voiceset_s;
 						t.entityelement[t.e].eleprof.voicerate=t.entityprofile[t.ttentid].voicerate;
 					}
-					#endif
 					if (t.versionnumberload < 330)
 					{
 						t.entityelement[t.e].eleprof.bAutoFlatten = false;
@@ -6697,7 +5759,7 @@ void c_entity_loadelementsdata ( void )
 				// now go through ELEPROF enrties to update any SCRIPTBANK references and SOUNDSET references
 				for (t.e = 1; t.e <= g.entityelementlist; t.e++)
 				{
-					for (t.tcheck = 1; t.tcheck <= 8; t.tcheck++)
+					for (t.tcheck = 1; t.tcheck <= 9; t.tcheck++)
 					{
 						if (t.tcheck == 1)  t.tcheck_s = t.entityelement[t.e].eleprof.aimain_s;
 						if (t.tcheck == 2)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset_s;
@@ -6707,6 +5769,7 @@ void c_entity_loadelementsdata ( void )
 						if (t.tcheck == 6)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset4_s;
 						if (t.tcheck == 7)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset5_s;
 						if (t.tcheck == 8)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset6_s;
+						if (t.tcheck == 9)  t.tcheck_s = t.entityelement[t.e].eleprof.soundset4a_s;
 						t.ttry_s = "";
 						for (t.nn = 1; t.nn <= Len(t.tcheck_s.Get()); t.nn++)
 						{
@@ -6730,6 +5793,7 @@ void c_entity_loadelementsdata ( void )
 								if (t.tcheck == 6) { t.entityelement[t.e].eleprof.soundset4_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 								if (t.tcheck == 7) { t.entityelement[t.e].eleprof.soundset5_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 								if (t.tcheck == 8) { t.entityelement[t.e].eleprof.soundset6_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
+								if (t.tcheck == 9) { t.entityelement[t.e].eleprof.soundset4a_s = t.replacements_s[t.tt][1]; t.tt = t.treplacementmax + 1; }
 							}
 						}
 					}
@@ -6831,32 +5895,6 @@ void c_entity_loadelementsdata ( void )
 				}
 			}
 		}
-
-		//PE: Users are relying on this feature so they can, set a polygon collision object to have "behaviour".
-		//PE: Used by many where polygon is needed with a "behaviour" , platforms ... explodeable ... isimmobile == 1 ... Is Collectable ...
-		//PE: https://github.com/TheGameCreators/GameGuruMAX/commit/a1929f0a832db7b799d53a01955837b15a8d2d5c
-		/*
-		// clean up for entityelement for impossible mode combinations!
-		if (g_iAddEntityElementsMode == 0)
-		{
-			for (t.e = 1; t.e <= g.entityelementlist; t.e++)
-			{
-				t.entid = t.entityelement[t.e].bankindex;
-				if (t.entid > 0)
-				{
-					// [A] Impossible to have a COLLISION MESH (collisionmode=8) and be DYNAMIC
-					if (t.entityelement[t.e].staticflag == 0)
-					{
-						if (t.entityprofile[t.entid].collisionmode == 8 || t.entityelement[t.e].eleprof.iOverrideCollisionMode == 8)
-						{
-							// so correct and set to STATIC
-							t.entityelement[t.e].staticflag = 1;
-						}
-					}
-				}
-			}
-		}
-		*/
 	}
 }
 #endif
@@ -6916,10 +5954,6 @@ void entity_loadelementsdata(void)
 						extern int g_iAddEntitiesModeFrom;
 						g_iAddEntitiesModeFrom = g.entidmaster + 1;
 						cstr entProfileToAdd_s = "_markers\\BehaviorHidden.fpe";
-
-						//PE: For now all systemwide_lua need to be hidden
-						//if (t.entityelement[i].y >= -9999) //PE: Hidden default = -999999
-						//	entProfileToAdd_s = "_markers\\Behavior.fpe";
 
 						int iFoundMatchEntID = 0;
 						for (int entid = 1; entid <= g.entidmaster; entid++)
@@ -7569,8 +6603,7 @@ void entity_saveelementsdata (bool bForCollectionELE)
 	g.entityelementlist = temp;
 
 	//  Save entity element list
-	//t.versionnumbersave = 338;
-	t.versionnumbersave = 341;
+	t.versionnumbersave = 342;
 
 	EntityWriter writer;
 
@@ -7596,15 +6629,12 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					writer.WriteFloat( t.entityelement[ent].ry );
 					writer.WriteFloat( t.entityelement[ent].rz );
 					writer.WriteString( t.entityelement[ent].eleprof.name_s.Get() );
-					//t.a_s=t.entityelement[ent].eleprof.aiinit_s ; //PE: Not used anymore.
 					writer.WriteString ( "" );
 					writer.WriteString( t.entityelement[ent].eleprof.aimain_s.Get() );
-					// t.a_s=t.entityelement[ent].eleprof.aidestroy_s ; //PE: Not used anymore.
 					writer.WriteString ( "" );
 					writer.WriteLong( t.entityelement[ent].eleprof.isobjective );
 					writer.WriteString( t.entityelement[ent].eleprof.usekey_s.Get() );
 					writer.WriteString( t.entityelement[ent].eleprof.ifused_s.Get() );
-					//t.a_s=t.entityelement[ent].eleprof.ifusednear_s ;
 					writer.WriteString ( "" );
 					writer.WriteLong( t.entityelement[ent].eleprof.uniqueelement );
 					writer.WriteString( t.entityelement[ent].eleprof.texd_s.Get() );
@@ -7621,7 +6651,6 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					writer.WriteLong( t.entityelement[ent].eleprof.castshadow );
 					writer.WriteLong( t.entityelement[ent].eleprof.reducetexture );
 					writer.WriteLong( t.entityelement[ent].eleprof.speed );
-					// t.a_s=t.entityelement[ent].eleprof.aishoot_s ; //  //PE: Not used anymore.
 					writer.WriteString ( "" );
 					writer.WriteString( t.entityelement[ent].eleprof.hasweapon_s.Get() );
 					writer.WriteLong( t.entityelement[ent].eleprof.lives );
@@ -7640,7 +6669,6 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					writer.WriteLong( t.entityelement[ent].eleprof.light.range );
 					writer.WriteLong( t.entityelement[ent].eleprof.trigger.stylecolor );
 					writer.WriteLong( t.entityelement[ent].eleprof.trigger.waypointzoneindex );
-					//t.a_s=t.entityelement[ent].eleprof.basedecal_s ;  //PE: Not used anymore.
 					writer.WriteString ( "" );
 				}
 				if ( t.versionnumbersave >= 102 ) 
@@ -7676,9 +6704,7 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					writer.WriteLong( t.entityelement[ent].eleprof.rotatethrow );
 					writer.WriteLong( t.entityelement[ent].eleprof.explodable );
 					writer.WriteLong( t.entityelement[ent].eleprof.explodedamage );
-					//t.a=t.entityelement[ent].eleprof.phydw4 ;
 					writer.WriteLong( 0 );
-					//t.a=t.entityelement[ent].eleprof.phydw5 ;
 					writer.WriteLong( 0 );
 				}
 				if ( t.versionnumbersave >= 104 ) 
@@ -7767,12 +6793,9 @@ void entity_saveelementsdata (bool bForCollectionELE)
 				if ( t.versionnumbersave >= 301 ) 
 				{
 					//  Reloaded ALPHA 1.0045
-					//t.a_s=t.entityelement[ent].eleprof.aiinitname_s ; //PE: Not used anymore.
 					writer.WriteString ( "" );
 					writer.WriteString( t.entityelement[ent].eleprof.aimainname_s.Get() );
-					//t.a_s=t.entityelement[ent].eleprof.aidestroyname_s ;
 					writer.WriteString ( "" );
-					//t.a_s=t.entityelement[ent].eleprof.aishootname_s ;
 					writer.WriteString ( "" );
 				}
 				if ( t.versionnumbersave >= 302 ) 
@@ -7840,15 +6863,12 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					//  Guru 1.14 EBE
 					writer.WriteLong( t.entityelement[ent].iHasParentIndex );
 				}			
-				#ifdef VRTECH
 				if ( t.versionnumbersave >= 313 )
 				{
 					// VRQ V3
 					writer.WriteString( t.entityelement[ent].eleprof.voiceset_s.Get() );
 					writer.WriteLong( t.entityelement[ent].eleprof.voicerate );
 				}
-				#endif
-				#ifdef WICKEDENGINE
 				if (t.versionnumbersave >= 314)
 				{
 					//PE: We must save custom "Materials" here.
@@ -8138,7 +7158,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 					//PE: Fillers.
 
 					writer.WriteFloat(t.entityelement[ent].eleprof.light.fProbeBrightness);
-					writer.WriteFloat(0.0f);
+
+					//writer.WriteFloat(0.0f);
+					writer.WriteLong(t.entityelement[ent].iAllowBuletHole);
+
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
@@ -8153,7 +7176,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 				{
 					writer.WriteLong(t.entityelement[ent].eleprof.bUseFPESettings);
 				}
-				#endif
+				if (t.versionnumbersave >= 342)
+				{
+					writer.WriteString(t.entityelement[ent].eleprof.soundset4a_s.Get());
+				}
 			}
 		} 
 		if ( pass == 0 ) writer.AllocateDataForWrite();
@@ -8462,7 +7488,6 @@ void entity_savebank_ebe ( void )
 			if ( t.entityprofile[t.tttentid].ebe.dwRLESize > 0 )
 			{
 				// Save EBE to represent this creation in the level
-				//cStr tSaveFile = cstr("levelbank\\testmap\\ebe") + cstr(t.tttentid) + cstr(".ebe");
 				cStr tSaveFile = g.mysystem.levelBankTestMap_s + cstr("ebe") + cstr(t.tttentid) + cstr(".ebe");
 				
 				ebe_save_ebefile ( tSaveFile, t.tttentid );
@@ -8474,62 +7499,7 @@ void entity_savebank_ebe ( void )
 void entity_loadbank ( void )
 {
 	// 050416 - build a black list for parental control (used below)
-	#ifdef VRTECH
 	 // No blacklist as all content is pre-vetted and clean
-	#else
-	 if ( g_pBlackList == NULL && g.quickparentalcontrolmode == 2 )
-	 {
-		// first pass count, second one writes into array
-		for ( int iPass = 0; iPass < 2; iPass++ )
-		{
-			// reset count
-			g_iBlackListMax = 0;
-
-			// open blacklist file and go through all contents
-			FILE* fp = GG_fopen ( ".\\..\\parentalcontrolblacklist.ini", "rt" );
-			if ( fp )
-			{
-				char c;
-				fread ( &c, sizeof ( char ), 1, fp );
-				while ( !feof ( fp ) )
-				{
-					// get string from file
-					char szEntNameFromFile [ MAX_PATH ] = "";
-					int iOffset = 0;
-					while ( !feof ( fp ) && c!=13 && c!=10 )
-					{
-						szEntNameFromFile [ iOffset++ ] = c;
-						fread ( &c, sizeof ( char ), 1, fp );
-					}
-					szEntNameFromFile [ iOffset ] = 0;
-
-					// skip beyond CR
-					while ( !feof ( fp ) && (c==13 || c==10) )
-						fread ( &c, sizeof ( char ), 1, fp );
-
-					// count or write
-					if ( iPass==0 )
-					{
-						// count
-						g_iBlackListMax++;
-					}
-					else
-					{
-						// write into array
-						g_pBlackList[g_iBlackListMax] = new char[512];
-						strlwr ( szEntNameFromFile );
-						strcpy ( g_pBlackList[g_iBlackListMax], szEntNameFromFile );
-						g_iBlackListMax++;
-					}
-				}
-				fclose ( fp );
-			}
-			
-			// at end, create dynamic string array
-			if ( iPass==0 ) g_pBlackList = new LPSTR[g_iBlackListMax];
-		}
-	 }
-	#endif
 
 	 extern bool bKeepWindowsResponding;
 	 void EmptyMessages(void);
@@ -8730,10 +7700,7 @@ void entity_loadentitiesnow ( void )
 			t.entdir_s = "entitybank\\";
 			t.ent_s = t.entitybank_s[t.entid];
 			t.entpath_s = getpath(t.ent_s.Get());
-			if (  t.lightmapper.onlyloadstaticentitiesduringlightmapper == 1 ) 
-			{
-				t.tonscreenprompt_s=cstr("Load ")+Str(t.entid)+" : "+Right(t.ent_s.Get(),Len(t.ent_s.Get())-1)  ; lm_flashprompt ( );
-			}
+			t.tonscreenprompt_s = "";
 			// if not an FPE, load FPE from EBE source
 			if ( strcmp ( Lower(Right(t.ent_s.Get(),4)), ".fpe" ) != NULL )
 			{
@@ -8772,10 +7739,8 @@ void entity_loadentitiesnow ( void )
 				t.entitybank_s[t.entid]="";
 			}
 
-			#ifdef VRTECH
 			// keep multiplayer alive
 			if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
-			#endif
 		}
 		timestampactivity(0, "End Loading master objects!");
 	}
@@ -8797,11 +7762,6 @@ void entity_deletebank ( void )
 			void WickedCall_FreeImage_By_MasterID(uint32_t masterid);
 			WickedCall_FreeImage_By_MasterID(t.entobj);
 
-			#ifdef VRTECH
-			#else
-			characterkit_deleteBankObject ( );
-			#endif
-
 			// free RLE data in profile
 			ebe_freecubedata ( t.entid );
 
@@ -8813,9 +7773,6 @@ void entity_deletebank ( void )
 	//  reset character creator bankoffset
 	t.characterkitcontrol.bankOffset = 0;
 	t.characterkitcontrol.count = 0; // 150216 - Dave needs to learn how to clean up after himself!
-
-	//C++ISSUE ADDED THIS IN - but commented it out, left it here tho
-	//deleteallinternalimages();
 
 	//  Destroy profile data
 	UnDim (  t.entityprofile );
@@ -8848,7 +7805,6 @@ void entity_deleteelements ( void )
 	}
 	if ( g.entityattachmentindex > 0 ) 
 	{
-		//DeleteObjects (g.entityattachmentsoffset + 1, g.entityattachmentsoffset + g.entityattachmentindex);
 		DeleteObjects (g.entityattachmentsoffset, g.entityattachmentsoffset + g.entityattachmentindex);
 		DeleteObjects (g.entityattachments2offset, g.entityattachments2offset + g.entityattachmentindex);
 	}
@@ -8885,13 +7841,20 @@ void entity_addentitytomap_core ( void )
 		}
 
 		// Create new or use free entity element
-		if ( t.tokay == 0 && g.entityelementlist > 0 ) 
+		if (t.tokay == 0 && g.entityelementlist > 0)
 		{
-			for ( t.e = 1 ; t.e<=  g.entityelementlist; t.e++ )
+			for (t.e = 1; t.e <= g.entityelementlist; t.e++)
 			{
-				if ( t.entityelement[t.e].maintype == 0 ) { t.tokay = t.e; break; }
+				if (t.entityelement[t.e].maintype == 0)
+				{
+					t.tokay = t.e;
+					//PE: If old object was part of group remove it, or if will get deleted on next load.
+					t.entityelement[t.e].creationOfGroupID = -1;
+					break;
+				}
 			}
 		}
+
 		if ( t.tokay == 0 ) 
 		{
 			++g.entityelementlist;
@@ -8904,14 +7867,10 @@ void entity_addentitytomap_core ( void )
 					t.storeentityelement[t.e]=t.entityelement[t.e];
 				}
 				UnDim (  t.entityelement );
-				#ifdef VRTECH
 				UnDim (  t.entityshadervar );
-				#endif
 				g.entityelementmax +=10;
 				Dim (  t.entityelement,g.entityelementmax );
-				#ifdef VRTECH
 				Dim2(  t.entityshadervar,g.entityelementmax, g.globalselectedshadermax  );
-				#endif
 				for ( t.e = 1 ; t.e<=  g.entityelementmax-10; t.e++ )
 				{
 					t.entityelement[t.e]=t.storeentityelement[t.e];
@@ -8929,8 +7888,36 @@ void entity_addentitytomap_core ( void )
 		t.e = t.gridentityoverwritemode;
 	}
 
+	//PE: Any newly added object should be unlocked.
+	if (t.gridentityoverwritemode == 0)
+	{
+		extern std::vector<sRubberBandType> vEntityLockedList;
+		t.entityelement[t.e].editorlock = 0;
+		for (int i = 0; i < vEntityLockedList.size(); i++)
+		{
+			if (vEntityLockedList[i].e == t.e)
+			{
+				vEntityLockedList.erase(vEntityLockedList.begin() + i);
+				sObject* pObject;
+				if (t.entityelement[t.e].obj > 0)
+				{
+					if (t.entityelement[t.e].obj < g_iObjectListCount)
+					{
+						pObject = g_ObjectList[t.entityelement[t.e].obj];
+						if (pObject)
+						{
+							WickedCall_SetObjectRenderLayer(pObject, GGRENDERLAYERS_NORMAL);
+							WickedCall_SetObjectHighlightRed(pObject, false);
+						}
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
 	// noticed newly created can have old garbage in them, clear to be safe
-	//memset(&t.entityelement[t.e], 0, sizeof(t.entityelement[t.e])); too destructuve to init values
 	t.entityelement[t.e].collected = 0;
 
 	//  Fill entity element details
@@ -8964,9 +7951,6 @@ void entity_addentitytomap_core ( void )
 	t.entityelement[t.e].soundset6 = 0;
 	t.entityelement[t.e].underground=0;
 	t.entityelement[t.e].beenmoved=1;
-	#ifdef WICKEDENGINE
-	t.entityelement[t.e].soundset5 = 0;
-	t.entityelement[t.e].soundset6 = 0;
 
 	//PE: Always false by default.
 	t.entityelement[t.e].eleprof.systemwide_lua = false;
@@ -8982,7 +7966,6 @@ void entity_addentitytomap_core ( void )
 	}
 
 	t.entityelement[t.e].lua.outofrangefreeze = 0;
-	#endif
 }
 
 void entity_addentitytomap ( void )
@@ -9028,10 +8011,6 @@ void entity_addentitytomap ( void )
 		g.firemodes[t.tgunid][firemode].settings.weaponpropres1 = t.grideleprof.weaponpropres1;
 		g.firemodes[t.tgunid][firemode].settings.weaponpropres2 = t.grideleprof.weaponpropres2;
 
-		if (  t.tflakid>0 ) 
-		{
-			// flak to follow
-		}
 		//  which must also populate ALL other entities of same weapon
 		t.tgunidchanged=t.tgunid;
 		for ( t.te = 1 ; t.te<=  g.entityelementlist; t.te++ )
@@ -9078,6 +8057,7 @@ void entity_addentitytomap ( void )
 					t.entityelement[t.te].eleprof.soundset4_s = t.entityelement[t.e].eleprof.soundset4_s;
 					t.entityelement[t.te].eleprof.soundset5_s = t.entityelement[t.e].eleprof.soundset5_s;
 					t.entityelement[t.te].eleprof.soundset6_s = t.entityelement[t.e].eleprof.soundset6_s;
+					t.entityelement[t.te].eleprof.soundset4a_s = t.entityelement[t.e].eleprof.soundset4a_s;
 					t.entityelement[t.te].eleprof.overrideanimset_s = t.entityelement[t.e].eleprof.overrideanimset_s;
 					t.entityelement[t.te].eleprof.strength=t.entityelement[t.e].eleprof.strength;
 					t.entityelement[t.te].eleprof.speed=t.entityelement[t.e].eleprof.speed;
@@ -9168,13 +8148,6 @@ void entity_deleteentityfrommap ( void )
 	// remember entity bank index for later light refresh
 	int iWasEntID = t.entityelement[t.tupdatee].bankindex;
 
-	//  cleanup character creator
-	#ifdef VRTECH
-	#else
-	t.ccobjToDelete = t.tupdatee;
-	characterkit_deleteEntity ( );
-	#endif
-
 	// mark as static if it was
 	if ( t.entityelement[t.tupdatee].staticflag == 1 ) g.projectmodifiedstatic = 1;
 
@@ -9185,7 +8158,8 @@ void entity_deleteentityfrommap ( void )
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset) ; t.entityelement[t.tupdatee].soundset = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset1) ; t.entityelement[t.tupdatee].soundset1 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset2) ; t.entityelement[t.tupdatee].soundset2 = 0;
-	deleteinternalsound(t.entityelement[t.tupdatee].soundset3) ; t.entityelement[t.tupdatee].soundset3 = 0;
+	deleteinternalsound(t.entityelement[t.tupdatee].soundset3); t.entityelement[t.tupdatee].soundset3 = 0;
+	deleteinternalsound(t.entityelement[t.tupdatee].soundset4); t.entityelement[t.tupdatee].soundset4 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset5); t.entityelement[t.tupdatee].soundset5 = 0;
 	deleteinternalsound(t.entityelement[t.tupdatee].soundset6); t.entityelement[t.tupdatee].soundset6 = 0;
 
@@ -9208,7 +8182,6 @@ void entity_deleteentityfrommap ( void )
 		//  refresh existing lights
 		lighting_refresh ( );
 	}
-	#ifdef WICKEDENGINE
 	//Delete any particle effects.
 	if (g_UndoSysObjectIsBeingMoved != true)
 	{
@@ -9219,9 +8192,7 @@ void entity_deleteentityfrommap ( void )
 			t.entityelement[t.tupdatee].eleprof.newparticle.emitterid = -1;
 		}
 	}
-	#endif
 
-	#ifdef WICKEDENGINE
 
 	t.entityelement[t.tupdatee].eleprof.blendmode = 0;
 
@@ -9231,9 +8202,7 @@ void entity_deleteentityfrommap ( void )
 		GGTerrain_RemoveFlatArea(t.entityelement[t.tupdatee].eleprof.iFlattenID);
 		t.entityelement[t.tupdatee].eleprof.iFlattenID = -1;
 	}
-	#endif
 
- 	#ifdef WICKEDENGINE
 	// If the object is actually being deleted (and not added to cursor) then we need to remove any references to this object from OTHER object visual logic connections
 	if (g_UndoSysObjectIsBeingMoved != true)
 	{
@@ -9271,13 +8240,11 @@ void entity_deleteentityfrommap ( void )
 		t.entityelement[t.tupdatee].eleprof.iObjectRelationshipsData[i] = 0;
 		t.entityelement[t.tupdatee].eleprof.iObjectRelationshipsType[i] = 0;
 	}
-	#endif
 
 	// update real ent obj (.obj=0 inside)
 	entity_updateentityobj ( );
 }
 
-#ifdef WICKEDENGINE
 // new improved system using master and event stacks
 void entity_performtheundoaction (eUndoEventType eventtype, void* pEventData)
 {
@@ -9370,8 +8337,6 @@ void entity_performtheundoaction (eUndoEventType eventtype, void* pEventData)
 
 			extern void UnGroupUndoSys(int index);
 			UnGroupUndoSys(pEvent->groupindex);
-			/*extern void GroupUndoSys(int index, std::vector<sRubberBandType> groupData);
-			//GroupUndoSys(pEvent->groupindex, pEvent->groupData);*/
 
 			break;
 		}
@@ -9537,240 +8502,10 @@ void entity_redo (void)
 	// undo system to control redo stack
 	undosys_redoevent();
 }
-#else
-void entity_recordbuffer_add ( void )
-{
-	t.terrainundo.bufferfilled=0;
-	t.entityundo.action=1;
-	t.entityundo.undoperformed=0;
-	t.entityundo.entityindex=t.e;
-	t.entityundo.bankindex=t.entityelement[t.e].bankindex;
-}
 
-void entity_recordbuffer_delete ( void )
-{
-	t.terrainundo.bufferfilled=0;
-	t.entityundo.action=2;
-	t.entityundo.undoperformed=0;
-	t.entityundo.entityindex=t.tentitytoselect;
-	t.entityundo.bankindex=t.entityelement[t.tentitytoselect].bankindex;
-}
-
-void entity_recordbuffer_move ( void )
-{
-	t.terrainundo.bufferfilled=0;
-	t.entityundo.action=3;
-	t.entityundo.undoperformed=0;
-	t.entityundo.entityindex=t.tentitytoselect;
-	t.entityundo.posbkup=t.entityundo.pos;
-	t.entityundo.pos.staticflag=t.entityelement[t.tentitytoselect].staticflag;
-	t.entityundo.pos.x=t.entityelement[t.tentitytoselect].x;
-	t.entityundo.pos.y=t.entityelement[t.tentitytoselect].y;
-	t.entityundo.pos.z=t.entityelement[t.tentitytoselect].z;
-	t.entityundo.pos.rx=t.entityelement[t.tentitytoselect].rx;
-	t.entityundo.pos.ry=t.entityelement[t.tentitytoselect].ry;
-	t.entityundo.pos.rz=t.entityelement[t.tentitytoselect].rz;
-	t.entityundo.pos.scalex=t.entityelement[t.tentitytoselect].scalex;
-	t.entityundo.pos.scaley=t.entityelement[t.tentitytoselect].scaley;
-	t.entityundo.pos.scalez=t.entityelement[t.tentitytoselect].scalez;
-}
-
-void entity_undo ( void )
-{
-	t.tactioninput=t.entityundo.action;
-	if (  t.tactioninput == 1 ) 
-	{
-		//  undo addition DELETE IT
-		t.tentitytoselect=t.entityundo.entityindex;
-		entity_deleteentityfrommap ( );
-		t.entityundo.action=2;
-	}
-	if (  t.tactioninput == 2 ) 
-	{
-		//  undo deletion ADD IT BACK
-		if ( t.entityundo.entityindex == -123 )
-		{
-			// undo delete of rubberbandlist
-			for ( int i = 0; i < (int)g.entityrubberbandlistundo.size(); i++ )
-			{
-				t.e = g.entityrubberbandlistundo[i].entityindex;
-				t.entid = g.entityrubberbandlistundo[i].bankindex;
-				t.entitybankindex=t.entid;
-				t.gridentityeditorfixed=t.entityelement[t.e].editorfixed;
-				t.entitymaintype=t.entityelement[t.e].maintype;
-				t.gridentitystaticmode=t.entityelement[t.e].staticflag;
-				t.gridentityhasparent=t.entityelement[t.e].iHasParentIndex;
-				t.gridentityposx_f=t.entityelement[t.e].x;
-				t.gridentityposz_f=t.entityelement[t.e].z;
-				t.gridentityposy_f=t.entityelement[t.e].y;
-				t.gridentityrotatex_f=t.entityelement[t.e].rx;
-				t.gridentityrotatey_f=t.entityelement[t.e].ry;
-				t.gridentityrotatez_f=t.entityelement[t.e].rz;
-				t.gridentityscalex_f=t.entityelement[t.e].scalex+100;
-				t.gridentityscaley_f=t.entityelement[t.e].scaley+100;
-				t.gridentityscalez_f=t.entityelement[t.e].scalez+100;
-				t.grideleprof=t.entityelement[t.e].eleprof;
-				t.gridentity=t.entid;
-				t.gridentityoverwritemode=t.e;
-				entity_addentitytomap ( );
-				t.gridentityoverwritemode=0;
-			}
-			g.entityrubberbandlistundo.clear();
-			t.gridentity=0;
-			t.entityundo.action=0;
-		}
-		else
-		{
-			// undo delete of single entity
-			t.e=t.entityundo.entityindex;
-			t.entid=t.entityundo.bankindex;
-			t.entitybankindex=t.entid;
-			t.gridentityeditorfixed=t.entityelement[t.e].editorfixed;
-			t.entitymaintype=t.entityelement[t.e].maintype;
-			t.gridentitystaticmode=t.entityelement[t.e].staticflag;
-			t.gridentityhasparent=t.entityelement[t.e].iHasParentIndex;
-			t.gridentityposx_f=t.entityelement[t.e].x;
-			t.gridentityposz_f=t.entityelement[t.e].z;
-			t.gridentityposy_f=t.entityelement[t.e].y;
-			t.gridentityrotatex_f=t.entityelement[t.e].rx;
-			t.gridentityrotatey_f=t.entityelement[t.e].ry;
-			t.gridentityrotatez_f=t.entityelement[t.e].rz;
-			t.gridentityscalex_f=t.entityelement[t.e].scalex+100;
-			t.gridentityscaley_f=t.entityelement[t.e].scaley+100;
-			t.gridentityscalez_f=t.entityelement[t.e].scalez+100;
-			t.grideleprof=t.entityelement[t.e].eleprof;
-			t.gridentity=t.entid;
-			entity_addentitytomap ( );
-			t.gridentity=0;
-			t.entityundo.action=1;
-		}
-	}
-
-	//  These cano update existing entity
-	t.tupdatentpos=0;
-	if (  t.tactioninput == 3 ) 
-	{
-		//  undo MOVE and restore previous position
-		if ( t.entityundo.entityindex == -123 )
-		{
-			// undo move of rubberbandlist
-			for ( int i = 0; i < (int)g.entityrubberbandlistundo.size(); i++ )
-			{
-				t.e = g.entityrubberbandlistundo[i].entityindex;
-				//t.entityundo.posbkup.staticflag=t.entityelement[t.e].staticflag; // no REDO for rubber band undo!
-				//t.entityundo.posbkup.x=t.entityelement[t.e].x;
-				//t.entityundo.posbkup.y=t.entityelement[t.e].y;
-				//t.entityundo.posbkup.z=t.entityelement[t.e].z;
-				//t.entityundo.posbkup.rx=t.entityelement[t.e].rx;
-				//t.entityundo.posbkup.ry=t.entityelement[t.e].ry;
-				//t.entityundo.posbkup.rz=t.entityelement[t.e].rz;
-				//t.entityundo.posbkup.scalex=t.entityelement[t.e].scalex;
-				//t.entityundo.posbkup.scaley=t.entityelement[t.e].scaley;
-				//t.entityundo.posbkup.scalez=t.entityelement[t.e].scalez;
-				t.entityelement[t.e].staticflag=g.entityrubberbandlistundo[i].pos.staticflag;
-				t.entityelement[t.e].x=g.entityrubberbandlistundo[i].pos.x;
-				t.entityelement[t.e].y=g.entityrubberbandlistundo[i].pos.y;
-				t.entityelement[t.e].z=g.entityrubberbandlistundo[i].pos.z;
-				t.entityelement[t.e].rx=g.entityrubberbandlistundo[i].pos.rx;
-				t.entityelement[t.e].ry=g.entityrubberbandlistundo[i].pos.ry;
-				t.entityelement[t.e].rz=g.entityrubberbandlistundo[i].pos.rz;
-				t.entityelement[t.e].scalex=g.entityrubberbandlistundo[i].pos.scalex;
-				t.entityelement[t.e].scaley=g.entityrubberbandlistundo[i].pos.scaley;
-				t.entityelement[t.e].scalez=g.entityrubberbandlistundo[i].pos.scalez;
-			}
-			t.entityundo.action=0;
-		}
-		else
-		{
-			// single entity position undo
-			t.e=t.entityundo.entityindex;
-			t.entityundo.posbkup.staticflag=t.entityelement[t.e].staticflag;
-			t.entityundo.posbkup.x=t.entityelement[t.e].x;
-			t.entityundo.posbkup.y=t.entityelement[t.e].y;
-			t.entityundo.posbkup.z=t.entityelement[t.e].z;
-			t.entityundo.posbkup.rx=t.entityelement[t.e].rx;
-			t.entityundo.posbkup.ry=t.entityelement[t.e].ry;
-			t.entityundo.posbkup.rz=t.entityelement[t.e].rz;
-			t.entityundo.posbkup.scalex=t.entityelement[t.e].scalex;
-			t.entityundo.posbkup.scaley=t.entityelement[t.e].scaley;
-			t.entityundo.posbkup.scalez=t.entityelement[t.e].scalez;
-			t.entityelement[t.e].staticflag=t.entityundo.pos.staticflag;
-			t.entityelement[t.e].x=t.entityundo.pos.x;
-			t.entityelement[t.e].y=t.entityundo.pos.y;
-			t.entityelement[t.e].z=t.entityundo.pos.z;
-			t.entityelement[t.e].rx=t.entityundo.pos.rx;
-			t.entityelement[t.e].ry=t.entityundo.pos.ry;
-			t.entityelement[t.e].rz=t.entityundo.pos.rz;
-			t.entityelement[t.e].scalex=t.entityundo.pos.scalex;
-			t.entityelement[t.e].scaley=t.entityundo.pos.scaley;
-			t.entityelement[t.e].scalez=t.entityundo.pos.scalez;
-			t.entityundo.action=4;
-		}
-		t.tupdatentpos=1;
-	}
-
-	if (  t.tactioninput == 4 ) 
-	{
-		//  restore previous POS from BKUP
-		t.e=t.entityundo.entityindex;
-		t.entityelement[t.e].staticflag=t.entityundo.posbkup.staticflag;
-		t.entityelement[t.e].x=t.entityundo.posbkup.x;
-		t.entityelement[t.e].y=t.entityundo.posbkup.y;
-		t.entityelement[t.e].z=t.entityundo.posbkup.z;
-		t.entityelement[t.e].rx=t.entityundo.posbkup.rx;
-		t.entityelement[t.e].ry=t.entityundo.posbkup.ry;
-		t.entityelement[t.e].rz=t.entityundo.posbkup.rz;
-		t.entityelement[t.e].scalex=t.entityundo.posbkup.scalex;
-		t.entityelement[t.e].scaley=t.entityundo.posbkup.scaley;
-		t.entityelement[t.e].scalez=t.entityundo.posbkup.scalez;
-		t.entityundo.action=3;
-		t.tupdatentpos=1;
-	}
-
-	// update single entity or list
-	if ( t.tupdatentpos == 1 ) 
-	{
-		if ( g.entityrubberbandlistundo.size() > 0 )
-		{
-			bool bUpdateLights = false;
-			for ( int i = 0; i < (int)g.entityrubberbandlistundo.size(); i++ )
-			{
-				t.e = g.entityrubberbandlistundo[i].entityindex;
-				t.tentid = t.entityelement[t.e].bankindex;
-				if ( t.entityprofile[t.tentid].ismarker == 2 || t.entityprofile[t.tentid].ismarker == 5 ) bUpdateLights = true;
-				t.tte = t.e; 
-				t.tobj = t.entityelement[t.e].obj;
-				t.tentid = t.entityelement[t.e].bankindex;
-				entity_positionandscale ( );
-			}
-			if ( bUpdateLights==true )
-				lighting_refresh ( );
-		}
-		else
-		{
-			t.tentid=t.entityelement[t.e].bankindex;
-			if (  t.entityprofile[t.tentid].ismarker == 2 || t.entityprofile[t.tentid].ismarker == 5 ) 
-			{
-				lighting_refresh ( );
-			}
-			t.tte=t.e ; t.tobj=t.entityelement[t.e].obj ; t.tentid=t.entityelement[t.e].bankindex;
-			entity_positionandscale ( );
-		}
-	}
-
-}
-
-void entity_redo ( void )
-{
-	entity_undo ( );
-}
-#endif
-
-//#pragma optimize("", off)
 std::vector<int> delete_decal_particles;
 void delete_notused_decal_particles( void )
 {
-#ifdef WICKEDPARTICLESYSTEM
 	//PE: Cleanup all decals.
 	for (int a = 0; a < MAXUNIQUEDECALS; a++)
 	{
@@ -9807,7 +8542,6 @@ void delete_notused_decal_particles( void )
 			}
 		}
 	}
-#endif
 	for (int i = 0; i < delete_decal_particles.size(); i++)
 	{
 		gpup_deleteEffect(delete_decal_particles[i]);
@@ -9816,7 +8550,6 @@ void delete_notused_decal_particles( void )
 	delete_decal_particles.clear();
 }
 
-#ifdef WICKEDPARTICLESYSTEM
 uint32_t WickedCall_LoadWiSceneDirect(Scene& scene2, char* filename, bool attached, char* changename, char* changenameto);
 bool preload_wicked_particle_effect(newparticletype* pParticle, int decal_id)
 {
@@ -9957,7 +8690,6 @@ bool preload_wicked_particle_effect(newparticletype* pParticle, int decal_id)
 	}
 	return true;
 }
-#endif
 
 void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScale, float fX, float fY, float fZ, float fRX, float fRY, float fRZ, GGMATRIX* pmatBaseRotation,bool bAutoDelete,int decal_id)
 {
@@ -9976,7 +8708,6 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 	int iParticleEmitter = pParticle->emitterid;
 	if (iParticleEmitter == -1)
 	{
-#ifdef WICKEDPARTICLESYSTEM
 		if (pParticle->bWPE)
 		{
 			int MaxCachedDecals = MAXREADYDECALS;
@@ -10045,7 +8776,6 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 			}
 		}
 		else
-#endif
 		if (bShowThisParticle == true)
 		{
 			iParticleEmitter = gpup_loadEffect(pParticle->emittername.Get(), 0, 0, 0, 1.0);
@@ -10058,7 +8788,6 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 	}
 	if (iParticleEmitter != -1)
 	{
-#ifdef WICKEDPARTICLESYSTEM
 		if (pParticle->bWPE)
 		{
 			Scene& scene = wiScene::GetScene();
@@ -10082,7 +8811,6 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 			}
 		}
 		else
-#endif
 		{
 			// set emitter position, rotation and scale
 			gpup_setGlobalPosition(iParticleEmitter, fX, fY, fZ);
@@ -10444,7 +9172,6 @@ bool ObjectIsEntity(void* pTestObject)
 	return false;
 }
 
-#ifdef WICKEDENGINE
 //These functions need a pMesh overwrite. so we later can save into map data, for per object material changes.
 //pMesh overwrite will not work ,so everything is now moved to t.entityelement[ele_id].eleprof.bCustomWickedMaterialActive
 
@@ -11083,18 +9810,6 @@ void Wicked_Highlight_LockedList(void)
 					}
 				}
 			}
-			if (!bDisplayRed)
-			{
-				//PE: Removed highlight of locked objects.
-				////And add hovered object.
-				//extern sObject* g_hovered_pobject;
-				////g_hovered_pobject
-				//sObject* pObject = GetObjectData(t.entityelement[e].obj);
-				//if (pObject == g_hovered_pobject)
-				//{
-				//	bDisplayRed = true;
-				//}
-			}
 				
 			if(bDisplayRed)
 			{
@@ -11255,7 +9970,6 @@ void Wicked_Hide_Lower_Lod_Meshes(int obj)
 			else
 			{
 				// base (highest) LOD does not need the lod0 or _lod postfix
-				//if ((stricmp(pRightFive, "lod_0") == 0 || stricmp(pRightFive, "_lod0") == 0)) bestlod = 0;
 				bestlod = 0;
 			}
 		}
@@ -11293,7 +10007,6 @@ void Wicked_Hide_Lower_Lod_Meshes(int obj)
 	}
 }
 
-#endif
 
 int GetLodLevels(int obj)
 {
@@ -11373,63 +10086,6 @@ extern std::vector<PublishedFileId_t> g_workshopTrustedItems;
 bool workshop_verifyandorreplacescript(int e, int entid)
 {
 	return false;
-	/* no longer support duplicate scripts in core and workshop, was confusing in the end!
-	#ifndef OPTICK_ENABLE
-	bool bReplacedScript = false;
-	char pScriptFile[MAX_PATH];
-	strcpy(pScriptFile, "scriptbank\\");
-	if (entid > 0)
-		strcat(pScriptFile, t.entityprofile[entid].aimain_s.Get());
-	else
-		strcat(pScriptFile, t.entityelement[e].eleprof.aimain_s.Get());
-	GG_GetRealPath(pScriptFile, false);
-	if (FileExist(pScriptFile) == 0)
-	{
-		// was missing script a core file
-		if (strnicmp(pScriptFile, g.fpscrootdir_s.Get(), strlen(g.fpscrootdir_s.Get())) == NULL)
-		{
-			// can only do verify replace if Steam Client active and have the list to hand
-			if (g_workshopItemsList.size() == 0)
-			{
-				// No Steam Client - warn user the object they dropped in has an outdated script
-				extern bool bTriggerMessage;
-				extern int iTriggerMessageDelay;
-				extern char cTriggerMessage[MAX_PATH];
-				strcpy(cTriggerMessage, "The behaviour for this object is out of date, you need to log into Steam Client to obtain the latest version.");
-				iTriggerMessageDelay = 10;
-				bTriggerMessage = true;
-			}
-			else
-			{
-				// yes, now check for tristed replacement
-				cstr trustedReplacement_s = "";
-				if (entid > 0)
-					trustedReplacement_s = workshop_findtrustedreplacement(t.entityprofile[entid].aimain_s.Get());
-				else
-					trustedReplacement_s = workshop_findtrustedreplacement(t.entityelement[e].eleprof.aimain_s.Get());
-				if (trustedReplacement_s.Len() > 0)
-				{
-					strcpy(pScriptFile, "scriptbank\\");
-					strcat(pScriptFile, trustedReplacement_s.Get());
-					GG_GetRealPath(pScriptFile, false);
-					if (FileExist(pScriptFile) == 1)
-					{
-						if (entid > 0)
-							t.entityprofile[entid].aimain_s = trustedReplacement_s;
-						else
-							t.entityelement[e].eleprof.aimain_s = trustedReplacement_s;
-
-						bReplacedScript = true;
-					}
-				}
-			}
-		}
-	}
-	return bReplacedScript;
-	#else
-	return false;
-	#endif
-	*/
 }
 #else
 bool workshop_verifyandorreplacescript(int e, int entid)

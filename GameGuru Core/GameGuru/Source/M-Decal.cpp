@@ -40,9 +40,7 @@ void decal_hide ( void )
 }
 void decal_init ( void )
 {
-	#ifdef WICKEDENGINE
 	WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_CURSOROBJECT);
-	#endif
 
 	//  Load in all decal
 	decal_scaninallref ( );
@@ -61,11 +59,9 @@ void decal_init ( void )
 		SetObjectLight (  t.tobj,0 );
 		SetObjectCull (  t.tobj,0 );
 		HideObject (  t.tobj );
-		#ifdef WICKEDENGINE
 		sObject* pObject = GetObjectData(t.tobj);
 		WickedCall_SetObjectCastShadows(pObject, false);
 		WickedCall_SetObjectLightToUnlit(pObject, (int)wiScene::MaterialComponent::SHADERTYPE_UNLIT);
-		#endif
 	}
 
 	//  ensure fixed decals available
@@ -80,9 +76,7 @@ void decal_init ( void )
 	t.decalglobal.bloodsplatid=0;
 	t.decalglobal.newexplosion=0;
 	int numdecals = 9;
-	#ifdef WICKEDPARTICLESYSTEM
 	numdecals = 10;
-	#endif
 	for ( t.tdscan = 1 ; t.tdscan<= numdecals; t.tdscan++ )
 	{
 		if (  t.tdscan == 1  )  t.decal_s = "splash_ripple";
@@ -95,9 +89,7 @@ void decal_init ( void )
 		if (  t.tdscan == 8  )  t.decal_s = "impact";
 		#ifdef DETECTANDUSENEWPARTICLEDECALS
 		 if (  t.tdscan == 9  ) t.decal_s = "blood";
-		#ifdef WICKEDPARTICLESYSTEM
 		 if (  t.tdscan == 10 ) t.decal_s = "explosion";
-		#endif
 		#else
 		 if (  t.tdscan == 9  )  t.decal_s = "bloodsplat";
 		#endif
@@ -117,9 +109,7 @@ void decal_init ( void )
 		}
 	}
 
-	#ifdef WICKEDENGINE
 	WickedCall_PresetObjectRenderLayer(GGRENDERLAYERS_NORMAL);
-	#endif
 }
 
 void decal_loaddata ( void )
@@ -228,7 +218,6 @@ void decal_load(void)
 	t.strwork = ""; t.strwork = t.strwork + "gamecore\\decals\\" + t.decal_s + "\\decal.dds";
 	loaddecal(t.strwork.Get(), t.decalid);
 
-	#ifdef WICKEDPARTICLESYSTEM
 	t.decal[t.decalid].newparticle.bWPE = false;
 	t.strwork = ""; t.strwork = t.strwork + "gamecore\\decals\\" + t.decal_s + "\\wpe.pe";
 	t.decal[t.decalid].newparticle.emitterid = -1;
@@ -256,7 +245,7 @@ void decal_load(void)
 	{
 		// this load creates a large delay each time test game is used, so allow user to skip this new effect for quicker testing
 		extern bool g_bTemporarilyDisableFullDecalEffectLoading;
-		if ( g_bTemporarilyDisableFullDecalEffectLoading == false )
+		if ( g_bTemporarilyDisableFullDecalEffectLoading == false && g.gdisablefulldecaleffects == 0 )
 		{
 			t.decal[t.decalid].newparticle.iParticle_Floor_Active = 1;
 			t.decal[t.decalid].newparticle.bParticle_Show_At_Start = false;
@@ -275,16 +264,12 @@ void decal_load(void)
 		}
 	}
 	if (!t.decal[t.decalid].newparticle.bWPE)
-	#endif
 	{
 		// Detect and load any new particle associated with this decal
 		#ifdef DETECTANDUSENEWPARTICLEDECALS
 		t.strwork = ""; t.strwork = t.strwork + "gamecore\\decals\\" + t.decal_s + "\\newparticle";
 		t.decal[t.decalid].newparticle.emitterid = -1;
 		t.decal[t.decalid].newparticle.emittername = t.strwork.Get();
-		#ifndef WICKEDPARTICLESYSTEM
-		char pAbsPathToParticle[MAX_PATH];
-		#endif
 		strcpy(pAbsPathToParticle, t.decal[t.decalid].newparticle.emittername.Get());
 		strcat(pAbsPathToParticle, ".arx");
 		GG_GetRealPath(pAbsPathToParticle, 0);
@@ -484,9 +469,7 @@ void decal_getparticlefile ( void )
 	}
 }
 
-#ifdef WICKEDENGINE
 int g_iBlendMode = BLENDMODE_ALPHA;
-#endif
 void decalelement_create ( void )
 {
 #ifdef OPTICK_ENABLE
@@ -524,13 +507,11 @@ void decalelement_create ( void )
 	}
 	if ( t.d < g.decalelementmax ) 
 	{
-#ifdef WICKEDPARTICLESYSTEM
 		bool bReuse = false;
 		if (t.decalelement[t.d].decalid == t.decalid && t.decalelement[t.d].newparticle.emitterid > 0)
 		{
 			bReuse = true;
 		}
-#endif
 		// activate new decal element
 		t.currentdecald=t.d;
 		t.decalelement[t.d].decalid=t.decalid;
@@ -544,7 +525,6 @@ void decalelement_create ( void )
 		t.decalelement[t.d].originator=t.originatore;
 		t.decalelement[t.d].originatorobj=t.originatorobj;
 
-		#ifdef WICKEDPARTICLESYSTEM
 		if (t.decal[t.decalid].newparticle.bWPE)
 		{
 			// new particle - uses new particle system
@@ -559,20 +539,16 @@ void decalelement_create ( void )
 			t.decalelement[t.d].newparticle.emitterid = iEmitterID;
 
 			// orientation support for some new partidle effects
-			//if (t.decalelement[t.d].orient == 0)
-			{
-				// always face camera using Y angle only
-				t.decalelement[t.d].newparticle.bParticle_LocalRot_Used = true;
-				float fCorrectAngleForParticlesToSpray = GGToDegree(atan2(t.tdxx, t.tdzz)); // angle from camera to point we hit
-				fCorrectAngleForParticlesToSpray += 90; // but rotate 90 degrees as FOUNTAIN_DIRECTION pours out to the RIGHT, so need to pour at us (-Z)
-				t.decalelement[t.d].newparticle.bParticle_LocalRot_Y = fCorrectAngleForParticlesToSpray;
-			}
+			// always face camera using Y angle only
+			t.decalelement[t.d].newparticle.bParticle_LocalRot_Used = true;
+			float fCorrectAngleForParticlesToSpray = GGToDegree(atan2(t.tdxx, t.tdzz)); // angle from camera to point we hit
+			fCorrectAngleForParticlesToSpray += 90; // but rotate 90 degrees as FOUNTAIN_DIRECTION pours out to the RIGHT, so need to pour at us (-Z)
+			t.decalelement[t.d].newparticle.bParticle_LocalRot_Y = fCorrectAngleForParticlesToSpray;
 
 			// no object required
 			t.tobj = 0;
 		}
 		else
-		#endif
 		// legacy decal or new particle
 		if (t.decal[t.decalid].newparticle.emitterid != -1)
 		{
@@ -585,14 +561,11 @@ void decalelement_create ( void )
 			t.decalelement[t.d].newparticle.emitterid = -2;
 
 			// orientation support for some new partidle effects
-			//if (t.decalelement[t.d].orient == 0)
-			{
-				// always face camera using Y angle only
-				t.decalelement[t.d].newparticle.bParticle_LocalRot_Used = true;
-				float fCorrectAngleForParticlesToSpray = GGToDegree(atan2(t.tdxx, t.tdzz)); // angle from camera to point we hit
-				fCorrectAngleForParticlesToSpray += 90; // but rotate 90 degrees as FOUNTAIN_DIRECTION pours out to the RIGHT, so need to pour at us (-Z)
-				t.decalelement[t.d].newparticle.bParticle_LocalRot_Y = fCorrectAngleForParticlesToSpray;
-			}
+			// always face camera using Y angle only
+			t.decalelement[t.d].newparticle.bParticle_LocalRot_Used = true;
+			float fCorrectAngleForParticlesToSpray = GGToDegree(atan2(t.tdxx, t.tdzz)); // angle from camera to point we hit
+			fCorrectAngleForParticlesToSpray += 90; // but rotate 90 degrees as FOUNTAIN_DIRECTION pours out to the RIGHT, so need to pour at us (-Z)
+			t.decalelement[t.d].newparticle.bParticle_LocalRot_Y = fCorrectAngleForParticlesToSpray;
 
 			// no object required
 			t.tobj = 0;
@@ -866,7 +839,6 @@ void decalelement_control ( void )
 				GGMatrixRotationY(&pmatBaseRotation, GGToRadian(fRY));
 				newparticle_updateparticleemitter(&t.decalelement[t.f].newparticle, fScale, fX, fY, fZ, fRX, fRY, fRZ, NULL, true, decalid);
 
-#ifdef WICKEDPARTICLESYSTEM
 				if (t.decal[decalid].newparticle.bWPE)
 				{
 					t.decalelement[t.f].framedelay = t.decalelement[t.f].framedelay + (t.decaltimeelapsed_f);
@@ -879,7 +851,6 @@ void decalelement_control ( void )
 					}
 				}
 				if (!t.decal[decalid].newparticle.bWPE)
-#endif
 				{
 					// detect when burst finished so can set active back to zero and remove emitter
 					t.decalelement[t.f].framedelay = t.decalelement[t.f].framedelay + (t.decaltimeelapsed_f * 2 * t.decal[t.decalid].playspeed_f);
@@ -960,15 +931,7 @@ void decalelement_control ( void )
 							PointObject (t.tobj, t.tcamerapositionx_f, t.tcamerapositiony_f, t.tcamerapositionz_f);
 							XRotateObject (t.tobj, 0); ZRotateObject (t.tobj, 0);
 						}
-						//LB: this caused cull mode to be set, but never unset when decal reused! Missing decals bug - phew!
-						//if (  t.decalelement[t.f].orient == 2 ) 
-						//{
-						//SetObjectCull (  t.tobj,1 );
-						//}
-						//else
-						{
-							SetObjectCull (t.tobj, 0);
-						}
+						SetObjectCull (t.tobj, 0);
 						if (t.decalelement[t.f].orient == 3 || t.decalelement[t.f].orient == 11 || t.decalelement[t.f].orient == 12)
 						{
 							PointObject (t.tobj, t.tcamerapositionx_f, t.tcamerapositiony_f, t.tcamerapositionz_f);
@@ -1058,11 +1021,7 @@ void decalelement_control ( void )
 							//  decal based particle can mirror the image
 							t.tx_f = (t.tx * t.qx_f) + t.qx_f;
 					}
-#ifdef WICKEDENGINE
 						SetObjectUVManually (t.tobj, t.tframe, t.decal[t.decalid].across, t.decal[t.decalid].down);
-#else
-						ScaleObjectTexture (t.tobj, t.tx_f, t.ty_f);
-#endif
 				}
 			}
 				//  detonate trigger
@@ -1266,13 +1225,11 @@ void decal_triggerwatersplash ( void )
 	t.originatore=-1;
 	t.decalforward=0;
 	t.decalscalemodx=(40+Rnd(20))*t.tInScale_f ; t.decalscalemody=(40+Rnd(20))*t.tInScale_f;
-#ifdef WICKEDPARTICLESYSTEM
 	if (t.decal[t.decalglobal.splashdecallargeid].newparticle.bWPE)
 	{
 		t.decalid = t.decalglobal.splashdecallargeid; t.decalorient = 0; decalelement_create();
 	}
 	else
-#endif
 	{
 		t.decalid = t.decalglobal.splashdecalrippleid; t.decalorient = 2; decalelement_create();
 		if (Rnd(1) == 0)

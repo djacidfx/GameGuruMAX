@@ -1958,7 +1958,19 @@ DARKSDK_DLL bool ConstructObject ( sObject** ppObject, LPSTR* ppBlock )
 
 	ReadString ( pMagicString, ppBlock );
 
-	if ( _stricmp ( pMagicString, "MAGICDBO" )==NULL )
+	bool bValid = false;
+	
+	if (_stricmp(pMagicString, "MAGICDBO") == NULL)
+		bValid = true;
+
+	bool CanIUse_E_();
+	if (!bValid && CanIUse_E_())
+	{
+		if (_stricmp(pMagicString, "PAGICDBO") == NULL)
+			bValid = true;
+	}
+
+	if (bValid)
 	{
 		// version information
 		DWORD dwVersion=0;

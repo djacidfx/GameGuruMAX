@@ -7,18 +7,11 @@
 #include "preprocessor-flags.h"
 #include "preprocessor-moreflags.h"
 
-#ifdef WICKEDENGINE
 	#define TABENTITYNAME "Level Objects##LeftPanel"
 	#define TABEDITORNAME "3D Level Editor##GGRenderarget"
 	//PE: Set the smallest font size to use, this was normally 0.8.
 	#define SMALLFONTSIZE 0.9
 	#define SMALLESTFONTSIZE 0.9
-#else
-	#define TABENTITYNAME "Entities##LeftPanel"
-	#define TABEDITORNAME "Editor##GGRenderarget"
-	#define SMALLFONTSIZE 0.8
-	#define SMALLESTFONTSIZE 0.7
-#endif
 
 //We need to do a reset layout when a new window is added to a new version , so increase this if this is the case.
 #define V3VERSION 62
@@ -155,6 +148,7 @@ IMGUI_IMPL_API bool     ImGui_ImplDX11_CreateDeviceObjects();
 
 #define TOOL_GAME_SETTINGS UIV3IMAGES+90
 
+#define TOOL_GOEXIT UIV3IMAGES+91
 //#define TOOL_RPG UIV3IMAGES+90
 //#define TOOL_PUZZLE UIV3IMAGES+91
 #define TOOL_LOGIC UIV3IMAGES+92
@@ -478,12 +472,10 @@ namespace ImGui {
 		const ImVec4& drawCol_normal = ImColor(220, 220, 220, 220),
 		const ImVec4& drawCol_hover = ImColor(255, 255, 255, 255),
 		const ImVec4& drawCol_Down = ImColor(180, 180, 160, 255), int frame_padding = -1, int atlasindex = 0, int atlasrows = 0, int atlascolumns = 0, bool nowhite = false, bool gratiant = false, bool center_image = false, bool noalpha = false, bool useownid = false, bool boost25 = false);
-#ifdef WICKEDENGINE
 	bool ImgBtnWicked(void* pMaterial, const ImVec2& btn_size = ImVec2(0, 0), const ImVec4& bg_col = ImColor(255, 255, 255, 0),
 		const ImVec4& drawCol_normal = ImColor(220, 220, 220, 220),
 		const ImVec4& drawCol_hover = ImColor(255, 255, 255, 255),
 		const ImVec4& drawCol_Down = ImColor(180, 180, 160, 255), int frame_padding = -1, int atlasindex = 0, int atlasrows = 0, int atlascolumns = 0, bool nowhite = false, bool gratiant = false, bool center_image = false, bool noalpha = false, bool useownid = false);
-#endif
 	bool ImgBtnBack(int iImageID, const ImVec2& btn_size = ImVec2(0, 0), const ImVec4& bg_col = ImColor(255, 255, 255, 0),
 		const ImVec4& drawCol_normal = ImColor(220, 220, 220, 220),
 		const ImVec4& drawCol_hover = ImColor(255, 255, 255, 255),
@@ -534,12 +526,8 @@ namespace ImGui {
 struct preferences {
 	char szCheckFile[15] = "GAMEGURU-PREFS";
 	int launched = 0;
-	#ifdef WICKEDENGINE
 	int current_style = 0;
 	// int iImporterDome; //@Zak this will ruin all old saved setttings as it load directly to the structure, always add to the bottom of list.
-	#else
-	int current_style = 3; //Default to light style
-	#endif
 	ImVec2 vStartResolution = { 1280,800 };
 	char last_open_files[10][260] = { "\0","\0","\0","\0","\0","\0","\0","\0","\0","\0" };
 	int save_layout = true;
@@ -694,7 +682,6 @@ void myStyleBlue(ImGuiStyle* dst);
 void ChangeGGFont(const char *cpcustomfont, int iIDEFontSize);
 bool NoCaseLess(const std::string &a, const std::string &b);
 void GetMainEntityList(char* folder_s, char* rel_s, void *pFolder ,char* folder_name_start="", bool bForceToTop=false, int foldertype = 0);
-#ifdef WICKEDENGINE
 bool saveVectorFileContent(std::string fileName, std::vector<std::string> & vecOfStrs);
 bool getVectorFileContent(std::string fileName, std::vector<std::string> & vecOfStrs,bool bAllowEmpty = false);
 void RemoveStrStrFromVectorFile(char *str, std::vector<std::string> & vecOfStrs,bool bIgnoreSpaces = false);
@@ -702,7 +689,6 @@ std::string GetLineFromVectorFile(char *str, std::vector<std::string> & vecOfStr
 std::string GetLineParameterFromVectorFile(char *str, std::vector<std::string> & vecOfStrs, bool bIgnoreSpaces);
 void fpe_thread_start(void);
 bool fpe_thread_in_progress(void);
-#endif
 
 int cstring_cmp_folder(const void *a, const void *b);
 void RefreshEntityFolder(char* folder_s, void* pFolder);
@@ -727,7 +713,6 @@ enum eKeyboardShortcutType
 };
 void UniversalKeyboardShortcut(eKeyboardShortcutType KST);
 
-#ifdef STORYBOARD
 #define STORYBOARD_MAXOUTPUTS 30
 #define STORYBOARD_MAXWIDGETS 100
 //PE: 150 = stack overflow.
@@ -738,6 +723,7 @@ void UniversalKeyboardShortcut(eKeyboardShortcutType KST);
 #define NODE_WIDTH_PADDING -15.0
 #define NODE_HEIGHT_PADDING 23.0
 
+#define EMULATERESOLUTION
 
 
 void storyboard_menubar(float area_width, float node_width, float node_height);
@@ -915,9 +901,12 @@ struct StoryboardNodesStruct
 	int widgets_available = ALLOW_TEXT | ALLOW_IMAGE | ALLOW_VIDEO;
 	int toggleKey = 0;
 	int showAtStart = 0;
-	int iFiller20[15];
+	int loop_music = 0;
+	int iFiller20[14];
 	float fFiller20[20];
-	int iFillerMaxOutputs20[20][STORYBOARD_MAXOUTPUTS];
+
+	int universal_resolution[STORYBOARD_MAXOUTPUTS];
+	int iFillerMaxOutputs20[19][STORYBOARD_MAXOUTPUTS];
 	char FillerCharMaxOutput20[20][STORYBOARD_MAXOUTPUTS][256];
 };
 
@@ -1020,9 +1009,11 @@ struct StoryboardNodesStruct202
 	int widgets_available = ALLOW_TEXT | ALLOW_IMAGE | ALLOW_VIDEO;
 	int toggleKey = 0;
 	int showAtStart = 0;
-	int iFiller20[15];
+	int loop_music = 0;
+	int iFiller20[14];
 	float fFiller20[20];
-	int iFillerMaxOutputs20[20][STORYBOARD_MAXOUTPUTS202];
+	int universal_resolution[STORYBOARD_MAXOUTPUTS202];
+	int iFillerMaxOutputs20[19][STORYBOARD_MAXOUTPUTS202];
 	char FillerCharMaxOutput20[20][STORYBOARD_MAXOUTPUTS202][256];
 };
 
@@ -1065,13 +1056,10 @@ struct SmallStoryboardStruct
 	StoryboardNodesStruct Nodes[SMALL_STORYBOARD_MAXNODES];
 };
 
-#endif
 
-#ifdef WICKEDENGINE
 struct SliderData
 {
 	float fDefaultMaxValue; // fDefaultMaxValue is only used to speed up the search time for certain sliders.
 	float fHighestMaxValue;
 	char cID[256];
 };
-#endif

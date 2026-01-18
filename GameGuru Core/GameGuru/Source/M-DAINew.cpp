@@ -5,7 +5,6 @@
 #include "stdafx.h"
 #include "gameguru.h"
 
-//#include "M-CharacterCreatorPlus.h"
 #include "GGRecastDetour.h"
 extern GGRecastDetour g_RecastDetour;
 
@@ -425,21 +424,6 @@ void darkai_calcplrvisible (charanimstatetype &cas)
 				if (tttokay == 1)
 				{
 					// actually move ray BACK a little in case enemy right up against something!
-
-					//PE: Below not used anymore. when not moving anyway.
-					//tttdx_f = tbrayx2_f - tbrayx1_f;
-					//float tttdy_f = tbrayy2_f - tbrayy1_f;
-					//tttdz_f = tbrayz2_f - tbrayz1_f;
-					//tttdd_f = Sqrt(abs(tttdx_f*tttdx_f) + abs(tttdy_f*tttdy_f) + abs(tttdz_f*tttdz_f));
-					//tttdx_f = tttdx_f / tttdd_f;
-					//tttdy_f = tttdy_f / tttdd_f;
-					//tttdz_f = tttdz_f / tttdd_f;
-
-					//then again no, start further forward to miss character body as vweap filter no longer works as we needed to glue the weapon
-					//LB: do not move start position, it can GO THROUGH WALLS!
-					//tbrayx1_f = tbrayx1_f + (tttdx_f*40.0);
-					//tbrayy1_f = tbrayy1_f + (tttdy_f*40.0);
-					//tbrayz1_f = tbrayz1_f + (tttdz_f*40.0);
 					int ttintersectvalue = IntersectAllEx(g.entityviewstartobj, g.entityviewendobj, tbrayx1_f, tbrayy1_f, tbrayz1_f, tbrayx2_f, tbrayy2_f, tbrayz2_f, cas.obj, 0, cas.e, 500, 1, false);
 					if (ttintersectvalue != 0)
 					{
@@ -534,7 +518,6 @@ void darkai_mouthandheadtracking (void)
 			t.charanimstate.ccpo.speak.fNeedToBlink += 0.01f;
 	}
 
-	#ifdef WICKEDENGINE
 	// Neck(head) tracking is smoother as called all the time now
 	float fLookAtX = 0;
 	float fLookAtY = 0;
@@ -579,9 +562,6 @@ void darkai_mouthandheadtracking (void)
 		float fRightSideLimit = fNeckLimit * 1.3f;
 		if (fDiffA < fLeftSideLimit) fDiffA = fLeftSideLimit;
 		if (fDiffA > fRightSideLimit) fDiffA = fRightSideLimit;
-		// old way - not perfectly aligned with neck of character creator body rig
-		//if (fDiffA < -fNeckLimit) fDiffA = -fNeckLimit;
-		//if (fDiffA > fNeckLimit) fDiffA = fNeckLimit;
 	}
 	float fRightAndLeft = fDiffA + t.charanimstate.neckRightAndLeftOffset;
 
@@ -612,7 +592,6 @@ void darkai_mouthandheadtracking (void)
 	fDiffY -= t.charanimstate.neckUpAndDown;
 	t.charanimstate.neckRightAndLeft += fDiffX * fSmoothSpeed;
 	t.charanimstate.neckUpAndDown += fDiffY * fSmoothSpeed;
-	#endif
 
 	// clever system to reset pose to use a specific frame, and then allow regular animation to transform on top of it
 	if (t.charanimstate.ccpo.settings.iNeckBone > 0)
@@ -808,7 +787,6 @@ bool AdjustPositionSoNoOverlap (int iEntityIndex, float* pX, float* pZ, float fO
 						*pZ = fOutsideZ;
 
 						// before use this new position, ensure it does not leave the navmesh
-						//if (1) // do not need this now - we can go anywhere - g_RecastDetour.isWithinNavMesh (*pX, t.entityelement[iEntityIndex].y, *pZ) == true) // arg - not quite, this can push entities THROUGH WALLS!!!
 						float vecNearestPt[3];
 						bool bMustBeOverPoly = true;
 						if (g_RecastDetour.isWithinNavMeshEx (*pX, t.entityelement[iEntityIndex].y, *pZ, (float*)&vecNearestPt, bMustBeOverPoly) == true) // new XYZ only valid inside nav mesh!
@@ -905,8 +883,6 @@ void darkai_handlegotomove(void)
 						{
 							// ensure to massive backward movement delta when animation Bip01 pos resets
 							// just as we deducted the length of anim time, deduct the full anim time offset (so matching the displacement)
-							//fShiftSinceLastAnimX = 0.0f;
-							//fShiftSinceLastAnimZ = 0.0f;
 							// still not perfect as I think there is time displacement between multithread anim and core thread movemement!
 							GGVECTOR3 vecFirstBip01PosOffsetFrame;
 							GetPositionFromAnimFrameLimb(&vecFirstBip01PosOffsetFrame, pFrame->pAnimRef, pObject->fAnimLoopStart);
@@ -1533,39 +1509,12 @@ void darkai_loop (void)
 				// only use reverse polarity if animationspeed is NOT negative
 				if (GetSpeed(t.charanimstate.obj) < 0) fPolarity = -1; else fPolarity = 1;
 			}
-			#ifdef WICKEDENGINE
 			t.tfinalspeed_f = t.entityelement[t.charanimstate.e].speedmodulator_f * t.charanimstate.animationspeed_f * fPolarity * 2.5f;
-			#else
-			t.tfinalspeed_f = t.entityelement[t.charanimstate.e].speedmodulator_f * t.charanimstate.animationspeed_f * fPolarity * 2.5f * g.timeelapsed_f;
-			#endif
 			SetObjectSpeed (t.charanimstate.obj, t.tfinalspeed_f);
 		}
 
 		// smoothing animations for this character
 		char_loop();
-
-		#ifndef WICKEDENGINE
-		// Handle character removal
-		if (t.entityelement[t.charanimstate.e].health <= 0 && t.charanimstate.timetofadeout > 0)
-		{
-			if (Timer() > t.charanimstate.timetofadeout)
-			{
-				t.txDist_f = ObjectPositionX(t.charanimstate.obj) - CameraPositionX(0);
-				t.tzDist_f = ObjectPositionZ(t.charanimstate.obj) - CameraPositionZ(0);
-				if (t.txDist_f * t.txDist_f + t.tzDist_f * t.tzDist_f > 500000)
-				{
-					if (GetInScreen(t.charanimstate.obj) == 0)
-					{
-						// disable ability to remove character from system if ALWAYS ACTIVE has been set (allows characters to respawn)
-						if (t.entityelement[t.charanimstate.e].eleprof.phyalways == 0)
-						{
-							//darkai_character_remove ();
-						}
-					}
-				}
-			}
-		}
-		#endif
 
 		//  Store any changes
 		t.charanimstates[g.charanimindex] = t.charanimstate;
@@ -1620,10 +1569,8 @@ void darkai_setupcharacter (void)
 	t.charanimstates[g.charanimindex].requiremovementnow = 0;
 	t.charanimstates[g.charanimindex].movespeed_f = 1.0f;
 	t.charanimstates[g.charanimindex].turnspeed_f = 10.0f;
-	#ifdef WICKEDENGINE
 	t.charanimstates[g.charanimindex].movespeed_f = (float)t.entityelement[t.charanimstates[g.charanimindex].e].eleprof.iMoveSpeed / 100.0f;
 	t.charanimstates[g.charanimindex].turnspeed_f = (float)t.entityelement[t.charanimstates[g.charanimindex].e].eleprof.iTurnSpeed / 100.0f;
-	#endif
 
 	// setup head and spine tracker details	
 	t.charanimstates[g.charanimindex].neckRightAndLeftLimit = t.entityprofile[t.ttentid].headspinetracker.headhlimit;
@@ -1872,16 +1819,6 @@ void darkai_killai (void)
 {
 	if (t.charanimstates[t.tcharanimindex].aiobjectexists == 1)
 	{
-		// not supporting this method in MAX - stay in the main script!!
-		// Attempt to call the _exit function for the characters script
-		//if (t.entityelement[t.charanimstates[t.tcharanimindex].e].eleprof.aimain == 1)
-		//{
-		//	t.strwork = Lower(t.entityelement[t.charanimstates[t.tcharanimindex].e].eleprof.aimainname_s.Get());
-		//	t.strwork += "_exit";
-		//	LuaSetFunction (t.strwork.Get(), 1, 0);
-		//	LuaPushInt (t.charanimstates[t.tcharanimindex].e); LuaCallSilent ();
-		//}
-
 		// free this AI from the game loop
 		t.charanimstates[t.tcharanimindex].aiobjectexists = 0;
 		if (t.entityelement[t.charanimstates[t.tcharanimindex].e].usingphysicsnow != 0)
@@ -1926,7 +1863,6 @@ void darkai_killai (void)
 			StopSound (t.ttsnd);
 		}
 	}
-	#ifdef WICKEDENGINE
 	// additionally any sounds triggered by this entity
 	int e = t.charanimstates[t.tcharanimindex].e;
 	for (int s = 0; s <= 6; s++)
@@ -1935,7 +1871,7 @@ void darkai_killai (void)
 		if (s == 0) ttsnd = t.entityelement[e].soundset;
 		if (s == 1) ttsnd = t.entityelement[e].soundset2;
 		if (s == 2) ttsnd = t.entityelement[e].soundset3;
-		//if (s == 3) ttsnd = t.entityelement[e].soundset5;
+		if (s == 3) ttsnd = t.entityelement[e].soundset4;
 		if (s == 4) ttsnd = t.entityelement[e].soundset5;
 		if (s == 5) ttsnd = t.entityelement[e].soundset6;
 		if (ttsnd > 0)
@@ -1953,7 +1889,6 @@ void darkai_killai (void)
 			}
 		}
 	}
-	#endif
 
 }
 
@@ -2021,11 +1956,7 @@ void smoothanimtriggerrev (int obj, float st, float fn, int speedoftransition, i
 	if (t.smoothanim[obj].st != st)
 	{
 		StopObject (obj);
-		#ifdef WICKEDENGINE
 		SetObjectInterpolation (obj, speedoftransition);
-		#else
-		SetObjectInterpolation (obj, 100.0 / speedoftransition);
-		#endif
 		if (rev == 1)
 		{
 			SetObjectFrame (obj, fn);
@@ -2039,15 +1970,10 @@ void smoothanimtriggerrev (int obj, float st, float fn, int speedoftransition, i
 		t.smoothanim[obj].rev = rev;
 		t.smoothanim[obj].playflag = playflag;
 		t.smoothanim[obj].playstarted = 0;
-		#ifdef WICKEDENGINE
 		// transitions handled differently with MAX, we control a lerp factor that handles transitions
 		// nicely within the Wicked animation system
 		t.smoothanim[obj].transition = 1;
-		#else
-		t.smoothanim[obj].transition = speedoftransition;
-		#endif
 
-		#ifdef WICKEDENGINE
 		// affect starting frame if specified
 		float fThisAnimLength = fn - st;
 		t.smoothanim[obj].startat = 0;
@@ -2057,7 +1983,6 @@ void smoothanimtriggerrev (int obj, float st, float fn, int speedoftransition, i
 			fStartFrame += (fThisAnimLength / 100.0f)*fStartFromPercentage;
 			t.smoothanim[obj].startat = fStartFrame;
 		}
-		#endif
 	}
 }
 
@@ -2073,12 +1998,8 @@ void smoothanimupdate (int obj)
 		t.smoothanim[obj].transition = t.smoothanim[obj].transition - 1;
 		if (t.smoothanim[obj].transition == 0)
 		{
-			#ifdef WICKEDENGINE
 			// for MAX we operate a smooth transition system
 			SetObjectInterpolation (obj, 1.0);
-			#else
-			SetObjectInterpolation (obj, 100.0);
-			#endif
 			if (t.smoothanim[obj].playflag == 1)
 			{
 				if (t.smoothanim[obj].playstarted == 0)
@@ -2088,10 +2009,8 @@ void smoothanimupdate (int obj)
 					{
 						if (t.smoothanim[obj].startat > 0)
 						{
-							#ifdef WICKEDENGINE
 							sObject* pObject = GetObjectData(obj);
 							WickedCall_SetObjectFrameEx(pObject, t.smoothanim[obj].startat);
-							#endif
 							t.smoothanim[obj].startat = 0;
 						}
 						SetObjectSpeed (obj, abs(GetSpeed(obj)));
@@ -2109,10 +2028,8 @@ void smoothanimupdate (int obj)
 				LoopObject ( obj, t.smoothanim[obj].st, t.smoothanim[obj].fn);
 				if (t.smoothanim[obj].startat > 0)
 				{
-					#ifdef WICKEDENGINE
 					sObject* pObject = GetObjectData(obj);
 					WickedCall_SetObjectFrameEx(pObject, t.smoothanim[obj].startat);
-					#endif
 					t.smoothanim[obj].startat = 0;
 				}
 				if (t.smoothanim[obj].rev == 0)
@@ -2254,7 +2171,6 @@ void darkai_shoottarget (int targete)
 								}
 							}
 
-							#ifdef WICKEDENGINE
 							t.charanimstate.firesoundindex = t.ttsnd; t.tt = 3;
 							t.tfireloopend = g.firemodes[t.tgunid][0].sound.fireloopend;
 							t.charanimstate.firesoundstarted = Timer();
@@ -2278,21 +2194,6 @@ void darkai_shoottarget (int targete)
 									t.charanimstate.firesoundexpiry = Timer() + 5000;
 								}
 							}
-							#else
-							t.charanimstate.firesoundindex = t.ttsnd; t.tt = 3;
-							t.tfireloopend = g.firemodes[t.tgunid][0].sound.fireloopend;
-							t.charanimstate.firesoundstarted = Timer();
-							if (t.tfireloopend > 0)
-							{
-								// sound loops (need to cap it off)
-								t.charanimstate.firesoundexpiry = Timer() + 200 + Rnd(200);
-							}
-							else
-							{
-								// can let sound fade out slowly naturally
-								t.charanimstate.firesoundexpiry = Timer() + 5000;
-							}
-							#endif
 						}
 					}
 				}
@@ -2352,13 +2253,6 @@ void darkai_shooteffect (void)
 		{
 			if (t.tattachmentobjfirespotlimb == -1)
 			{
-				//t.tattachmentobjfirespotlimb = 0;
-				//t.tx_f = t.entityelement[t.te].fFirespotOffsetX;
-				//t.ty_f = t.entityelement[t.te].fFirespotOffsetY;
-				//t.tz_f = t.entityelement[t.te].fFirespotOffsetZ;
-				// must adjust offset to angle of weaponm (throw the flame forward)
-				//t.tx_f = -NewXValue(0, t.entityelement[t.te].ry, t.tx_f) * 2;
-				//t.tz_f = -NewZValue(0, t.entityelement[t.te].ry, t.tz_f) * 2;
 				int tentityattachmentindex = t.tattachedobj - g.entityattachmentsoffset;
 				int iDebugFirespotObj = g.entityattachments2offset + tentityattachmentindex;
 				if (ObjectExist(iDebugFirespotObj) == 1)
@@ -2406,22 +2300,14 @@ void darkai_shooteffect (void)
 		t.decalscalemodx = 0; t.decalorient = 11;
 		t.originatore = -1;
 		t.originatorobj = t.tattachedobj;
-		#ifdef WICKEDENGINE
 		// if gunspec does not specify decal forward, apply some so we can see the muzzle flash for characters!
 		t.decalforward = g.firemodes[t.tgunid][0].settings.decalforward;
 		if (t.decalforward == 0) t.decalforward = 100.0f;
 		t.decalforward = t.decalforward * 2.0f;
-		#else
-		t.decalforward = g.firemodes[t.tgunid][0].settings.decalforward;
-		#endif
 		if (g.firemodes[t.tgunid][0].action.automatic.s > 0)
 		{
 			// special instruction for decal to loop X times
-			#ifdef WICKEDENGINE
 			t.decalburstloop = 0;
-			#else
-			t.decalburstloop = 4;
-			#endif // WICKEDENGINE
 		}
 		else
 		{
@@ -2432,7 +2318,6 @@ void darkai_shooteffect (void)
 	}
 
 	// emit sound
-	#ifdef WICKEDENGINE
 	// a better system is to create the event between shooter and target, bringing alert position closer to combat
 	t.tsx_f = t.entityelement[t.te].x;
 	t.tsy_f = t.entityelement[t.te].y;
@@ -2449,23 +2334,13 @@ void darkai_shooteffect (void)
 	t.tsz_f += fDZ;
 	t.tradius_f = fDIst;
 	if (t.tradius_f < 500) t.tradius_f = 500;
-	#else
-	t.tsx_f = t.entityelement[t.te].x;
-	t.tsy_f = t.entityelement[t.te].y;
-	t.tsz_f = t.entityelement[t.te].z;
-	t.tradius_f = 200;
-	#endif
 	darkai_makesound ();
 	t.ttsnd = t.charanimstate.firesoundindex;
 	if (t.ttsnd > 0)
 	{
 		if (SoundExist(t.ttsnd) == 1)
 		{
-			#ifdef WICKEDENGINE
 			t.tfireloopend = 0;
-			#else
-			t.tfireloopend = g.firemodes[t.tgunid][0].sound.fireloopend;
-			#endif // WICKEDENGINE
 
 			if (t.tfireloopend > 0)
 			{
@@ -2648,7 +2523,6 @@ void darkai_shooteffect (void)
 						XMVECTOR start = XMLoadFloat3(&tracer_from);
 						XMVECTOR end = XMLoadFloat3(&tracer_hit);
 						XMVECTOR dir = XMVectorSubtract(end, start);
-						//float length = XMVectorGetX(XMVector3Length(dir)); //Hit weapon ? *0.97;
 						dir = XMVector3Normalize(dir);
 						XMStoreFloat3(&tracer_hit, end + (dir * t.gun[t.tgunid].settings.tracer_maxlength));
 					}
@@ -2864,107 +2738,4 @@ void darkai_managesound (void)
 			i = -1;
 		}
 	}
-}
-
-// empty functions not used
-
-void darkai_preparedata ( void )
-{
-}
-
-void darkai_completeobstacles ( void )
-{
-}
-
-void darkai_invalidateobstacles ( void )
-{
-}
-
-void darkai_saveobstacles ( void )
-{
-}
-
-void darkai_loadobstacles ( void )
-{
-}
-
-int darkai_finddoorcontainer ( int iObj )
-{
-	return 0;
-}
-
-void darkai_adddoor ( void )
-{
-}
-
-void darkai_removedoor ( void )
-{
-}
-
-void darkai_obstacles_terrain ( void )
-{
-}
-
-void darkai_obstacles_terrain_refresh ( void )
-{
-}
-
-void darkai_destroy_all_characterdata ( void )
-{
-}
-
-void darkai_release_characters ( void )
-{
-}
-
-void darkai_setup_tree ( void )
-{
-}
-
-void darkai_setup_entity ( void )
-{
-}
-
-void darkai_addobstoallneededcontainers ( int iType, int iObj, int iFullHeight, float fMinHeight, float fSliceHeight, float fSliceMinSize )
-{
-}
-
-void darkai_staggerAIprocessing ( void )
-{
-}
-
-void darkai_staywithzone ( int iAIObj, float fLastX, float fLastZ, float* pX, float* pZ )
-{
-}
-
-void darkai_updatedebugobjects (void)
-{
-}
-
-void darkai_character_remove_charpart ( void )
-{
-}
-
-void darkai_character_remove ( void )
-{
-}
-
-void darkai_character_loop ( void )
-{
-}
-
-void darkai_character_freezeall ( void )
-{
-}
-
-void darkai_assignanimtofield ( void )
-{
-}
-
-void char_createseqdata ( void )
-{
-}
-
-void char_getcharseqcsifromplaycsi ( void )
-{
 }

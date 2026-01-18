@@ -1,6 +1,7 @@
 //
 // Wicked Calls - place Wicked commands here so can compile (cannot call from old graphics engine modules, conflicts with its own data types)
 //
+// 
 // Includes
 #include "stdafx.h"
 #include "wickedcalls.h"
@@ -51,6 +52,9 @@ using namespace wiGraphics;
 using namespace wiScene;
 using namespace wiECS;
 
+// Helps with CRASH LOG collection
+thread_local char g_CrashContext[1024];
+
 // Object loading structure
 struct WickedLoaderState
 {
@@ -70,6 +74,7 @@ bool g_bWickedCreateOnlyWhenUsed = false;
 bool g_bWickedIgnoreTextureInfo = false;
 bool g_bWickedUseImagePtrInsteadOfTexFile = false;
 bool g_bDisplayWarnings = true;
+bool g_bDisplayObjectAndLimbWarnings = true;
 int g_iWickedPutInEmissiveMode = 0;
 XMFLOAT4 g_lastMousePos = { 0,0,0,0 };
 uint64_t g_hovered_entity = 0;
@@ -397,13 +402,6 @@ std::shared_ptr<wiResource> WickedCall_LoadImage(std::string pFilenameToLoadIN, 
 		bool bDecrypted = false;
 		char VirtualFilename[_MAX_PATH];
 		strcpy(VirtualFilename, pFilenameToLoad.c_str());
-		//if (strstr(VirtualFilename, "gamecore\\bulletholes") != NULL
-		//|| strstr(VirtualFilename, "gamecore\\decals") != NULL)
-		//{
-		//	// ignore some folders that are not encrypted
-		//}
-		//else
-		//{
 		extern bool CheckForWorkshopFile(LPSTR);
 		if(t.importer.importerActive == 0) //PE: Need the real texture name in importer not prefer dds (fbx can include a .png but is a dds).
 			bCalledFromWickedLoadImage = true;
@@ -418,11 +416,9 @@ std::shared_ptr<wiResource> WickedCall_LoadImage(std::string pFilenameToLoadIN, 
 		bCalledFromWickedLoadImage = false;
 		g_pGlob->Decrypt(VirtualFilename);
 		bDecrypted = true;
-		//}
 
 		//PE: We are calling this very often trying to locate textures, no need to bother wicked if not exists.
 		bool bFileExists = false;
-		//HANDLE hfile = GG_CreateFile(pFilenameToLoad.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		HANDLE hfile = GG_CreateFile(VirtualFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hfile != INVALID_HANDLE_VALUE)
 		{
@@ -437,15 +433,9 @@ std::shared_ptr<wiResource> WickedCall_LoadImage(std::string pFilenameToLoadIN, 
 			int startmem = SMEMAvailable(1);
 
 			// handle encrypted image files when loading
-			//image = wiResourceManager::Load(pFilenameToLoad);
 			std::vector<uint8_t> data;
 			if (wiHelper::FileRead(VirtualFilename, data))
 			{
-				//PE: Now controlled in setup.ini so always (1 << 2)
-				//setup.ini:
-				//ConvertToDDS = 1
-				//ConvertToDDSMaxsize = 2048
-
 				uint32_t flag = 1 << 2; //IMPORT_CONVERT_TO_DDS
 				image = wiResourceManager::Load(pFilenameToLoad, flag, data.data(), data.size());
 				data.clear();
@@ -511,7 +501,6 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 		return;
 
 	// setup vars
-	//auto& node = state.gltfModel.nodes[nodeIndex];
 	Scene& scene = *state.scene;
 	Entity entity = INVALID_ENTITY;
 
@@ -548,7 +537,7 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 		// leelee, find out why I cannot set this after object added to scene!
 		if ( g_iWickedLayerMaskOptionalLimb == -1 || (g_iWickedLayerMaskOptionalLimb == pFrame->iID ) )
 			layer.layerMask = g_iWickedLayerMaskPreference;
-
+		
 		// create mesh
 		wiECS::Entity meshEntity;
 		//PE: InstanceObject
@@ -778,31 +767,6 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 			if(mesh.indices.size() < 16)
 				bCanUseBVH = false;
 
-
-			/*
-			extern int g_iWickedEntityId; // = -1;
-			extern int g_iWickedElementId; // = 0;
-			if (g_iWickedEntityId > 0)
-			{
-				if (t.entityprofile[g_iWickedEntityId].ischaracter == 1)
-				{
-					//PE: Locate heads.
-					if (pDBOMesh && pDBOMesh->pFrameAttachedTo && pDBOMesh->pFrameAttachedTo->szName)
-					{
-						if (pestrcasestr(pDBOMesh->pFrameAttachedTo->szName, "head"))
-						{
-							//PE: Make sure we are ccp.
-							if (pestrcasestr(pDBOMesh->pFrameAttachedTo->szName, "adult_") || pestrcasestr(pDBOMesh->pFrameAttachedTo->szName, "zombie_"))
-							{
-								//PE: This takes head and headgear, that are kind of round so we can use BVH.
-								bCanUseBVH = false;
-							}
-						}
-					}
-				}
-			}
-			*/
-
 			//PE: Instanced object use master mesh so also need 50000
 			if (MAX_SUBAABB > 0 && bCanUseBVH && iCurrentObjectID > 50000 && iCurrentObjectID < 90000) //70000
 			{
@@ -831,11 +795,6 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 
 						subset.subAABB_index_offset[i] = currentOffset;
 						subset.subAABB_index_count[i] = currentTriangleCount * 3;
-
-						//if (subset.subAABB_index_offset[i] + subset.subAABB_index_count[i] > mesh.indices.size())
-						//{
-						//	printf("tmp");
-						//}
 
 						if (subset.subAABB_index_count[i] > 0)
 						{
@@ -886,10 +845,6 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 					}
 				}
 			}
-
-			//PE: Test Tessellation
-			//mesh.tessellationFactor = 50.0; //PE: Many objects dont work with this and deform, disable for now
-			
 
 			// LB: ensure culling mode is set for mesh
 			if (pDBOMesh->bCull == false)
@@ -949,36 +904,18 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 				// ensure animated mesh frame cannot interfere with transform of armature
 				// The object component will use an identity transform but will be parented to the armature
 				// so possible animating entity becomes child of armature
-				if (1)
-				{
-					// LB: this was the original, and together with restoring the entity to parent attachment, fixes geometry corruptions!
-					//PE: Test now always do no sorting, should speed up everything :)
-					//PE: Still need sorting for gun to appear , even with DisableObjectZDepth ? need more testing before disable sorting for everything.
-					//if(bNoHierarchySorting)
-					//	scene.Component_Attach(mesh.armatureID, entity, true);
-					//else
-					//  scene.Component_Attach_Sort(mesh.armatureID, entity, true);
-					//LB: Had to restore older system to correct disappearing weapons, switchs and many animating objects
-					scene.Component_Attach(mesh.armatureID, entity, true);
-				}
-				if (0)
-				{
-					// LB: this one from Paul solves the ground mesh on the "linhi_character_preview.zip" model, but corrupts the geometry of DBO/CC characters
-					//scene.Component_Attach(entity, mesh.armatureID, true);
-					///if (root != INVALID_ENTITY) scene.Component_Attach(mesh.armatureID, root, true);
-				}
+				// LB: this was the original, and together with restoring the entity to parent attachment, fixes geometry corruptions!
+				//PE: Test now always do no sorting, should speed up everything :)
+				//PE: Still need sorting for gun to appear , even with DisableObjectZDepth ? need more testing before disable sorting for everything.
+				//if(bNoHierarchySorting)
+				//	scene.Component_Attach(mesh.armatureID, entity, true);
+				//else
+				//  scene.Component_Attach_Sort(mesh.armatureID, entity, true);
+				//LB: Had to restore older system to correct disappearing weapons, switchs and many animating objects
+				scene.Component_Attach(mesh.armatureID, entity, true);
 
 				// for frames with a mesh, ignore the matOriginal transform (see above for mesh transform)
 				bUseFrameMatrix = false;
-			}
-			else
-			{
-				if (0)
-				{
-					// LB: this needed to be removed for original system to work (and solve corrupt geometry issue)
-					// attach entity to its parent
-					///if (parent != INVALID_ENTITY) scene.Component_Attach(entity, parent, true);
-				}
 			}
 
 			// now create the internals for this mesh
@@ -995,13 +932,6 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 			scene.transforms.Create(entity);
 			scene.names.Create(entity) = pFrame->szName;
 			pFrame->wickedobjindex = entity;
-		}
-
-		// attach entity to its parent
-		if (0)
-		{
-			// LB: this needed to be removed for original system to work (and solve corrupt geometry issue)
-			///if (parent != INVALID_ENTITY) scene.Component_Attach(entity, parent, true);
 		}
 	}
 
@@ -1037,11 +967,8 @@ void WickedCall_LoadNode(sFrame* pFrame, Entity parent, Entity root, WickedLoade
 	transform.UpdateTransform();
 	
 	// attach entity to its parent
-	if (1)
-	{
-		// LB: this needed to be added to restore original system so DBO/CC characters are not geometry corrupted
-		if (parent != INVALID_ENTITY) scene.Component_Attach(entity, parent, true);
-	}
+	// LB: this needed to be added to restore original system so DBO/CC characters are not geometry corrupted
+	if (parent != INVALID_ENTITY) scene.Component_Attach(entity, parent, true);
 
 	// recurse through all frames
 	if (pFrame->pChild) WickedCall_LoadNode(pFrame->pChild, entity, root, state);
@@ -1063,7 +990,6 @@ void WickedCall_RefreshObjectAnimations(sObject* pObject, void* pstateptr)
 	{
 		// go through [first] animation set[s]
 		sAnimationSet* pAnimSet = pObject->pAnimationSet;
-		//while (pAnimSet != NULL) // LB: only use first animset core zero :) See Lee!
 		{
 			// clear any old wicked animation components (in case of a refresh)
 			if (pAnimSet->wickedanimentityindex > 0)
@@ -1166,23 +1092,6 @@ void WickedCall_RefreshObjectAnimations(sObject* pObject, void* pstateptr)
 			sAnimation* pAnim = pAnimSet->pAnimation;
 			while (pAnim != NULL)
 			{
-				//PE: TODO - To support more culled animation put objectindex into animationcomponent.channels, if object found.
-				/*
-				if (animationcomponent.objectIndex == 0)
-				{
-					//PE: Try to find bone mesh.
-					sFrame* pFrame = pAnim->pFrame;
-					if (pFrame)
-					{
-						uint64_t objindex = pFrame->wickedobjindex;
-						ObjectComponent* object = wiScene::GetScene().objects.GetComponent(objindex);
-						if (object)
-						{
-							animationcomponent.objectIndex = objindex;
-						}
-					}
-				}
-				*/
 				//PE: Wicked - Support Matrix animations. convert to pPositionKeys,pRotateKeys,pScaleKeys
 				if (pAnim->dwNumMatrixKeys > 0) //&& pAnim->dwNumPositionKeys == 0 && pAnim->dwNumRotateKeys == 0 && pAnim->dwNumScaleKeys == 0)
 				{
@@ -1402,9 +1311,6 @@ void WickedCall_RefreshObjectAnimations(sObject* pObject, void* pstateptr)
 				// next animation
 				pAnim = pAnim->pNext;
 			}
-
-			// next animation set - wicked uses first animset to store all animations for object
-			//pAnimSet = pAnimSet->pNext;
 		}
 	}
 }
@@ -1440,7 +1346,6 @@ void WickedCall_AddObject ( sObject* pObject )
 
 	// for structures, allow to pass if object has at least one mesh with geometry in it
 	bool bhasGeometry = false;
-	//for (int m = 0; m < pObject->iMeshCount; m++) if (pObject->ppMeshList[m]->dwIndexCount > 0) bhasGeometry = true; // need to support meshes with NO indices (32-bit large poly models)
 	for (int m = 0; m < pObject->iMeshCount; m++) if (pObject->ppMeshList[m]->dwVertexCount > 0) bhasGeometry = true;
 	if (bhasGeometry == false) return;
 
@@ -1633,7 +1538,6 @@ void WickedCall_AddObject ( sObject* pObject )
 	pATransform->SetDirty(true);
 
 	// set a transform for the object
-	//wiScene::TransformComponent* pRootTransform = scene.transforms.GetComponent(rootEntity);
 	wiScene::TransformComponent* pRootTransform = pScene->transforms.GetComponent(rootEntity);
 	pRootTransform->Translate(XMFLOAT3(0, 0, 0));
 	pRootTransform->UpdateTransform();
@@ -1649,7 +1553,6 @@ void WickedCall_SetObjectSpeed(sObject* pObject, float fSpeed)
 	if ( pObject->pAnimationSet )
 	{
 		sAnimationSet* pAnimSet = pObject->pAnimationSet;
-		//while ( pAnimSet != NULL ) - wicked uses first animset to store all animations for object
 		{
 			Entity animentity = pAnimSet->wickedanimentityindex;
 			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
@@ -1658,7 +1561,6 @@ void WickedCall_SetObjectSpeed(sObject* pObject, float fSpeed)
 				// not all animation entries have data (FBX imports can have empty animation sets!)
 				animationcomponent->SetSpeed(fSpeed*50); //PE: (ORG:50) Need to adjust this to fit old speed.
 			}
-			//pAnimSet = pAnimSet->pNext;
 		}
 	}
 }
@@ -1674,7 +1576,6 @@ void WickedCall_CheckAnimationDone(sObject* pObject)
 	{
 		float fEndFrame = -1;
 		sAnimationSet* pAnimSet = pObject->pAnimationSet;
-		//while (pAnimSet != NULL) - wicked uses first animset to store all animations for object
 		{
 			Entity animentity = pAnimSet->wickedanimentityindex;
 			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
@@ -1703,7 +1604,6 @@ void WickedCall_CheckAnimationDone(sObject* pObject)
 					}
 				}
 			}
-			//pAnimSet = pAnimSet->pNext;
 		}
 	}
 }
@@ -1746,7 +1646,6 @@ void WickedCall_PlayObject(sObject* pObject, float fStart, float fEnd, bool bLoo
 		sAnimationSet* pAnimSet = pObject->pAnimationSet;
 		if (!pAnimSet)
 			return;
-		//while ( pAnimSet != NULL )
 		{
 			Entity animentity = pAnimSet->wickedanimentityindex;
 			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
@@ -1765,7 +1664,6 @@ void WickedCall_PlayObject(sObject* pObject, float fStart, float fEnd, bool bLoo
 				animationcomponent->SetLooped(bLooped);
 				animationcomponent->Play();
 			}
-			//pAnimSet = pAnimSet->pNext;
 		}
 	}
 }
@@ -1820,7 +1718,6 @@ void WickedCall_SetObjectFrame(sObject* pObject, float fFrame)
 	if ( pObject->pAnimationSet )
 	{
 		sAnimationSet* pAnimSet = pObject->pAnimationSet;
-		//while ( pAnimSet != NULL ) - wicked uses first animset to store all animations for object
 		{
 			Entity animentity = pAnimSet->wickedanimentityindex;
 			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
@@ -1831,7 +1728,6 @@ void WickedCall_SetObjectFrame(sObject* pObject, float fFrame)
 				animationcomponent->timer = fFrame;
 				animationcomponent->SetUpdateOnce();
 			}
-			//pAnimSet = pAnimSet->pNext;
 		}
 	}
 }
@@ -1853,7 +1749,6 @@ void WickedCall_SetObjectFrameEx(sObject* pObject, float fFrame)
 		}
 	}
 }
-
 
 float WickedCall_GetObjectFrame(sObject* pObject)
 {
@@ -1904,6 +1799,24 @@ float WickedCall_GetObjectRealFrame(sObject* pObject)
 	return fFrame;
 }
 
+bool WickedCall_GetObjectPlaying(sObject* pObject)
+{
+	if (pObject)
+	{
+		if (pObject->pAnimationSet)
+		{
+			sAnimationSet* pAnimSet = pObject->pAnimationSet;
+			Entity animentity = pAnimSet->wickedanimentityindex;
+			AnimationComponent* animationcomponent = wiScene::GetScene().animations.GetComponent(animentity);
+			if (animationcomponent->IsPlaying())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool bBlockSceneUpdate = false;
 void WickedCall_RemoveObject( sObject* pObject )
 {
@@ -1922,7 +1835,6 @@ void WickedCall_RemoveObject( sObject* pObject )
 		if (pObject->pAnimationSet)
 		{
 			sAnimationSet* pAnimSet = pObject->pAnimationSet;
-			//while (pAnimSet != NULL) - wicked uses first animset to store all animations for object
 			{
 				if (pAnimSet->wickedanimentityindex > 0)
 				{				
@@ -1937,7 +1849,6 @@ void WickedCall_RemoveObject( sObject* pObject )
 					wiScene::GetScene().Entity_Remove(pAnimSet->wickedanimentityindex);
 					pAnimSet->wickedanimentityindex = 0;
 				}
-				//pAnimSet = pAnimSet->pNext;
 			}
 		}
 
@@ -2387,7 +2298,6 @@ void WickedCall_TextureMesh(sMesh* pMesh)
 								if (FileExistPrefDDS((LPSTR)sFoundFinalPathAndFilename.c_str()) == 0)
 								{
 									//PE: Check not needed sFoundTexturePath empty.
-									//sFoundFinalPathAndFilename = sFoundTexturePath + WickedGetEmissiveName().Get();
 									sFoundFinalPathAndFilename = WickedGetEmissiveName().Get();
 								}
 							}
@@ -2456,7 +2366,6 @@ void WickedCall_TextureMesh(sMesh* pMesh)
 
 							//PE: Moved here , We cant setup Emissive color before Emissive texture.
 							//PE: Always use dwEmmisiveColor if bWickedMaterialActive.
-							//if (dwEmmisiveColor != -1)
 							{
 								pMesh->mMaterial.Emissive.r = ((dwEmmisiveColor & 0xff000000) >> 24) / 255.0f;;
 								pMesh->mMaterial.Emissive.g = ((dwEmmisiveColor & 0x00ff0000) >> 16) / 255.0f;
@@ -2489,22 +2398,30 @@ void WickedCall_TextureMesh(sMesh* pMesh)
 							WickedCall_SetRenderOrderBias(pMesh, fRenderOrderBias);
 
 							int iCustomShaderID = WickedCustomShaderID();
-							float iCustomShaderParam1 = WickedCustomShaderParam1();
-							float iCustomShaderParam2 = WickedCustomShaderParam2();
-							float iCustomShaderParam3 = WickedCustomShaderParam3();
-							float iCustomShaderParam4 = WickedCustomShaderParam4();
-							float iCustomShaderParam5 = WickedCustomShaderParam5();
-							float iCustomShaderParam6 = WickedCustomShaderParam6();
-							float iCustomShaderParam7 = WickedCustomShaderParam7();
-							pObjectMaterial->customShaderID = iCustomShaderID;
-							pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
-							pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
-							pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
-							pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
-							pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
-							pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
-							pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
-
+							bool bValid = true;
+							if (iCustomShaderID == 5 && (bDoubleSided || pestrcasestr(pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].name.c_str(), "eyeglasses") )) //|| pObjectMaterial->GetBlendMode() == BLENDMODE_ALPHA)
+							{
+								pObjectMaterial->customShaderID = -1;
+								bValid = false;
+							}
+							if (bValid)
+							{
+								float iCustomShaderParam1 = WickedCustomShaderParam1();
+								float iCustomShaderParam2 = WickedCustomShaderParam2();
+								float iCustomShaderParam3 = WickedCustomShaderParam3();
+								float iCustomShaderParam4 = WickedCustomShaderParam4();
+								float iCustomShaderParam5 = WickedCustomShaderParam5();
+								float iCustomShaderParam6 = WickedCustomShaderParam6();
+								float iCustomShaderParam7 = WickedCustomShaderParam7();
+								pObjectMaterial->customShaderID = iCustomShaderID;
+								pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
+								pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
+								pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
+								pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
+								pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
+								pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
+								pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
+							}
 							bool bPlanerReflection = WickedPlanerReflection();
 							if (bPlanerReflection)
 							{
@@ -2568,22 +2485,30 @@ void WickedCall_TextureMesh(sMesh* pMesh)
 							WickedCall_SetRenderOrderBias(pMesh, fRenderOrderBias);
 
 							int iCustomShaderID = WickedCustomShaderID();
-							float iCustomShaderParam1 = WickedCustomShaderParam1();
-							float iCustomShaderParam2 = WickedCustomShaderParam2();
-							float iCustomShaderParam3 = WickedCustomShaderParam3();
-							float iCustomShaderParam4 = WickedCustomShaderParam4();
-							float iCustomShaderParam5 = WickedCustomShaderParam5();
-							float iCustomShaderParam6 = WickedCustomShaderParam6();
-							float iCustomShaderParam7 = WickedCustomShaderParam7();
-							pObjectMaterial->customShaderID = iCustomShaderID;
-							pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
-							pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
-							pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
-							pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
-							pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
-							pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
-							pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
-
+							bool bValid = true;
+							if (iCustomShaderID == 5 && (bDoubleSided || pestrcasestr(pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].name.c_str(), "eyeglasses") )) //|| pObjectMaterial->GetBlendMode() == BLENDMODE_ALPHA
+							{
+								pObjectMaterial->customShaderID = -1;
+								bValid = false;
+							}
+							if (bValid)
+							{
+								float iCustomShaderParam1 = WickedCustomShaderParam1();
+								float iCustomShaderParam2 = WickedCustomShaderParam2();
+								float iCustomShaderParam3 = WickedCustomShaderParam3();
+								float iCustomShaderParam4 = WickedCustomShaderParam4();
+								float iCustomShaderParam5 = WickedCustomShaderParam5();
+								float iCustomShaderParam6 = WickedCustomShaderParam6();
+								float iCustomShaderParam7 = WickedCustomShaderParam7();
+								pObjectMaterial->customShaderID = iCustomShaderID;
+								pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
+								pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
+								pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
+								pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
+								pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
+								pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
+								pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
+							}
 							bool bPlanerReflection = WickedPlanerReflection();
 							if (bPlanerReflection)
 							{
@@ -2647,21 +2572,30 @@ void WickedCall_TextureMesh(sMesh* pMesh)
 						WickedCall_SetRenderOrderBias(pMesh, fRenderOrderBias);
 
 						int iCustomShaderID = WickedCustomShaderID();
-						float iCustomShaderParam1 = WickedCustomShaderParam1();
-						float iCustomShaderParam2 = WickedCustomShaderParam2();
-						float iCustomShaderParam3 = WickedCustomShaderParam3();
-						float iCustomShaderParam4 = WickedCustomShaderParam4();
-						float iCustomShaderParam5 = WickedCustomShaderParam5();
-						float iCustomShaderParam6 = WickedCustomShaderParam6();
-						float iCustomShaderParam7 = WickedCustomShaderParam7();
-						pObjectMaterial->customShaderID = iCustomShaderID;
-						pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
-						pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
-						pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
-						pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
-						pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
-						pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
-						pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
+						bool bValid = true;
+						if (iCustomShaderID == 5 && (bDoubleSided || pestrcasestr(pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].name.c_str(), "eyeglasses") )) //|| pObjectMaterial->GetBlendMode() == BLENDMODE_ALPHA
+						{
+							pObjectMaterial->customShaderID = -1;
+							bValid = false;
+						}
+						if (bValid)
+						{
+							float iCustomShaderParam1 = WickedCustomShaderParam1();
+							float iCustomShaderParam2 = WickedCustomShaderParam2();
+							float iCustomShaderParam3 = WickedCustomShaderParam3();
+							float iCustomShaderParam4 = WickedCustomShaderParam4();
+							float iCustomShaderParam5 = WickedCustomShaderParam5();
+							float iCustomShaderParam6 = WickedCustomShaderParam6();
+							float iCustomShaderParam7 = WickedCustomShaderParam7();
+							pObjectMaterial->customShaderID = iCustomShaderID;
+							pObjectMaterial->customShaderParam1 = iCustomShaderParam1;
+							pObjectMaterial->customShaderParam2 = iCustomShaderParam2;
+							pObjectMaterial->customShaderParam3 = iCustomShaderParam3;
+							pObjectMaterial->customShaderParam4 = iCustomShaderParam4;
+							pObjectMaterial->customShaderParam5 = iCustomShaderParam5;
+							pObjectMaterial->customShaderParam6 = iCustomShaderParam6;
+							pObjectMaterial->customShaderParam7 = iCustomShaderParam7;
+						}
 
 						bool bPlanerReflection = WickedPlanerReflection();
 						if (bPlanerReflection)
@@ -3380,20 +3314,6 @@ void WickedCall_SetObjectTransparent(sObject* pObject)
 				{
 					pObject->ppMeshList[iM]->bTransparency = true;
 				}
-				else
-				{
-					//if (g_bSpecialCaseWeMustForceTransparencyChoicePerMesh == true)
-					//{
-					//	// this flag is set when called from 'recreateentitycursor' when user modifies object then clicks it in editor
-					//	// and need all transparency states to be properly restored!
-					//	pObject->ppMeshList[iM]->bTransparency = false;
-					//}
-					//else
-					//{
-					//PE: To respect fpe transparency=6 , we dont disable, but use fpe settings in mesh.
-					//PE: So we only support enabling transparent per mesh, (importer).
-					//}
-				}
 			}
 			WickedCall_SetMeshTransparent(pObject->ppMeshList[iM]);
 		}
@@ -3675,16 +3595,6 @@ void WickedCall_UpdateMeshVertexData(sMesh* pDBOMesh)
 					pos.z = *(float*)((float*)pDBOMesh->pVertexData + offsetMap.dwZ + (offsetMap.dwSize * v));
 					mesh->vertex_positions[v] = pos;
 				}
-				//PE: To remove light from object (particles) we also need to update normals.
-				//PE: Used CloneObject instead , leave it here if needed else where.
-				//if (offsetMap.dwNZ > 0)
-				//{
-				//	XMFLOAT3 nor = XMFLOAT3(0, 0, 0);
-				//	nor.x = *(float*)((float*)pDBOMesh->pVertexData + offsetMap.dwNX + (offsetMap.dwSize * v));
-				//	nor.y = *(float*)((float*)pDBOMesh->pVertexData + offsetMap.dwNY + (offsetMap.dwSize * v));
-				//	nor.z = *(float*)((float*)pDBOMesh->pVertexData + offsetMap.dwNZ + (offsetMap.dwSize * v));
-				//	mesh->vertex_normals[v] = nor;
-				//}
 				if (offsetMap.dwTU[0] > 0)
 				{
 					XMFLOAT2 tex = XMFLOAT2(0, 0);
@@ -3944,7 +3854,6 @@ void WickedCall_SetObjectPlanerReflection(sObject* pObject, bool bPlanerReflecti
 					wiScene::MaterialComponent* pObjectMaterial = wiScene::GetScene().materials.GetComponent(materialEntity);
 					if (pObjectMaterial)
 					{
-						//bool bPlanerReflection = WickedPlanerReflection();
 						if (bPlanerReflection)
 						{
 							pObjectMaterial->shaderType = MaterialComponent::SHADERTYPE_PBR_PLANARREFLECTION;
@@ -4013,7 +3922,6 @@ void WickedCall_SetObjectOutline(sObject* pObject, float fHighlight)
 			else if (fHighlight > 0.1)
 			{
 				//PE: Fire only one time. effect will be lost on next frame.
-				//void WickedCall_DrawObjctBox(sObject * pObject, XMFLOAT4 color, bool bThickLine, bool ForceBox);
 				WickedCall_DrawObjctBox(pObject, XMFLOAT4(0.8f, 0.8f, 0.8f, 0.8f), false, false);
 				bActivateStandaloneOutline = true;
 			}
@@ -4609,13 +4517,11 @@ void WickedCall_TextureMeshWithImagePtr(sMesh* pMesh, int iPutInEmissivemode)
 						// create a new resource manually
 						pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].name = sTextureName;
 						pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].resource = resource;
-						//WickedCall_AddImageToList(pObjectMaterial->textures[MaterialComponent::BASECOLORMAP].resource, IMAGERES_LEVEL, sTextureName);
 						if (iPutInEmissivemode == 1)
 						{
 							// create second emissive texture so it is lit same from any angle, and reduce baseColor influence (except its alpha mask)
 							sprintf(pMassivelyRandomTexName, "TotallyRandom%d", (int)(rand() % 99999));
 							sTextureName = pMassivelyRandomTexName;// "OldImagePtrTextureEmssive";
-							//WickedCall_DeleteImage(sTextureName); // and the same for this, unique names needed for created textures for management purposes
 
 							std::shared_ptr<wiResource> resource2 = wiResourceManager::GetResource( sTextureName, 1, &found );
 
@@ -4706,7 +4612,6 @@ void WickedCall_UpdateObject(sObject* pObject)
 			}
 			// apply world
 			pTransform->Translate(XMFLOAT3(pObject->position.vecPosition.x, pObject->position.vecPosition.y, pObject->position.vecPosition.z));
-			//pObject->position.vecScale.x = 0.20
 			if (pObject->bUseFixedSize)
 				pTransform->Scale(XMFLOAT3(pObject->vecFixedSize.x, pObject->vecFixedSize.y, pObject->vecFixedSize.z));
 			else
@@ -4814,9 +4719,6 @@ void WickedCall_UpdateSceneForPick(void)
 {
 	// when position/rot/etc an object, and then need to instantly
 	// cast a ray to pick, need to update scene
-
-	//wiScene::GetScene().Update(0); //PE: Very expensive, only update transforms.
-
 	//PE: Only transform update needed.
 	wiScene::GetScene().UpdateSceneTransform(0);
 }
@@ -4883,6 +4785,25 @@ void WickedCall_SetObjectPreventAnyApparentOcclusion (sObject* pObject, bool bPr
 				if (object)
 				{
 					object->SetRenderPreventAnyKindOfCulling(bPreventAnyApparentOcclusion);
+				}
+			}
+		}
+	}
+}
+
+void WickedCall_SetDisableCollision(sObject* pObject,bool collision)
+{
+	for (int iF = 0; iF < pObject->iFrameCount; iF++)
+	{
+		sFrame* pFrame = pObject->ppFrameList[iF];
+		if (pFrame)
+		{
+			if (pFrame->wickedobjindex > 0)
+			{
+				ObjectComponent* object = wiScene::GetScene().objects.GetComponent(pFrame->wickedobjindex);
+				if (object)
+				{
+					object->SetDisableCollision(collision);
 				}
 			}
 		}
@@ -6912,7 +6833,6 @@ void WickedCall_EnableThumbLight(bool On)
 		}
 		if (!g_entityThumbLight2)
 		{
-			//g_entityThumbLight2 = WickedCall_AddLight(2);
 			g_entityThumbLight2 = wiScene::GetScene().Entity_CreateLight("thumbLight2", XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 8, 2900);
 			LightComponent* lightCamera = wiScene::GetScene().lights.GetComponent(g_entityThumbLight2);
 			lightCamera->SetCastShadow(false); //PE: No need for shadows its a editor light.
@@ -6966,35 +6886,6 @@ void WickedCall_SetSpriteBoundBox(bool bShow,float fX1, float fY1,float fX2, flo
 		fY2 -= fMouseCenterOffset;
 		DrawRubberBand(fX1, fY1, fX2, fY2);
 	}
-/*
-	if (bShow == true)
-	{
-		fY1 -= 20; fY2 -= 20; // seems to help mouse vs screen accuracy (if change at source, free flight messes up)
-		pboundbox[0]->params.pos.x = fX1;
-		pboundbox[0]->params.pos.y = fY1;
-		pboundbox[0]->params.siz.x = fX2 - fX1;
-		pboundbox[0]->params.siz.y = 2;
-		pboundbox[1]->params.pos.x = fX1;
-		pboundbox[1]->params.pos.y = fY1;
-		pboundbox[1]->params.siz.x = 2;
-		pboundbox[1]->params.siz.y = fY2 - fY1;
-		pboundbox[2]->params.pos.x = fX1;
-		pboundbox[2]->params.pos.y = fY2-2;
-		pboundbox[2]->params.siz.x = fX2 - fX1;
-		pboundbox[2]->params.siz.y = 2;
-		pboundbox[3]->params.pos.x = fX2-2;
-		pboundbox[3]->params.pos.y = fY1;
-		pboundbox[3]->params.siz.x = 2;
-		pboundbox[3]->params.siz.y = fY2 - fY1;
-	}
-	else
-	{
-		pboundbox[0]->params.pos.x = -999999;
-		pboundbox[1]->params.pos.x = -999999;
-		pboundbox[2]->params.pos.x = -999999;
-		pboundbox[3]->params.pos.x = -999999;
-	}
-*/
 }
 
 void WickedCall_SetSunDirection(float fAx, float fAy, float fAz)
@@ -7016,9 +6907,6 @@ void WickedCall_SetSunColors(float fRed, float fGreen, float fBlue,float fEnergy
 	lightSun->color.z = fBlue;
 	lightSun->energy = fEnergy;
 	lightSun->fov = fFov;
-	//lightSun->shadowBias = fShadowBias; no longer exists
-
-	//SetVolumetricsEnabled
 }
 #include "master.h"
 
@@ -7070,10 +6958,6 @@ void WickedCall_DrawImguiNow(void)
 	void ImGuiHook_RenderCall_Direct(void* ctxptr, void* d3dptr);
 	extern LPGGDEVICE				m_pD3D;
 	extern LPGGIMMEDIATECONTEXT		m_pImmediateContext;
-	//GraphicsDevice* device = wiRenderer::GetDevice();
-	//void* pContext = device->GetDeviceContext(0);
-	//ImGuiHook_RenderCall((void*)pContext);
-	//ImGuiHook_RenderCall((void*)m_pImmediateContext);
 	ImGuiHook_RenderCall_Direct((void*)m_pImmediateContext, (void*)m_pD3D);
 }
 
@@ -7201,106 +7085,18 @@ void WickedCall_DisplayCubes(bool Visible)
 
 void WickedCall_CreateReflectionProbe(float x, float y, float z,char *name,float size)
 {
-	/*
-	Entity entityProbe;
-	XMFLOAT3 posProbe = XMFLOAT3(x, y, z);
-	cstr sname = cstr("envprobe") + cstr(name);
-	Scene& scene = wiScene::GetScene();
-	for (size_t i = 0; i < scene.probes.GetCount(); ++i)
-	{
-		entityProbe = wiScene::GetScene().Entity_FindByName(sname.Get());
-		if (entityProbe)
-		{
-			// Just update.
-			EnvironmentProbeComponent* probe = wiScene::GetScene().probes.GetComponent(entityProbe);
-			probe->position = posProbe;
-			probe->range = size;
-			probe->IsDirty();
-
-			wiScene::TransformComponent* pTransform = wiScene::GetScene().transforms.GetComponent(entityProbe);
-			pTransform->ClearTransform();
-			pTransform->Translate(posProbe);
-			pTransform->Scale(XMFLOAT3(size, size, size));
-			pTransform->UpdateTransform();
-			pTransform->SetDirty();
-			WickedCall_UpdateProbes(); //refresh all.
-
-			// updated this existing probe successfully
-			return;
-		}
-	}
-
-	// cannot have more than 16 light probes it seems (lighting messes up big style!)
-	if (scene.probes.GetCount() >= 16)
-		return;
-
-	// Create a new probe
-	entityProbe = wiScene::GetScene().Entity_CreateEnvironmentProbe(sname.Get(), posProbe);
-	EnvironmentProbeComponent* probe = wiScene::GetScene().probes.GetComponent(entityProbe);
-	probe->range = size;
-	wiScene::TransformComponent* pTransform = wiScene::GetScene().transforms.GetComponent(entityProbe);
-	pTransform->ClearTransform();
-	pTransform->Translate(posProbe);
-	pTransform->Scale(XMFLOAT3(size, size, size));
-	pTransform->UpdateTransform();
-	pTransform->SetDirty();
-
-	// refresh all probes
-	WickedCall_UpdateProbes();
-	*/
+	// no code was here, can we delete all calls to this function ?
 }
-
 
 void WickedCall_MoveReflectionProbe(float x, float y, float z, char *name, float size)
 {
-	/*
-	Entity entityProbe;
-	XMFLOAT3 posProbe = XMFLOAT3(x, y, z);
-	cstr sname = cstr(name);
-	Scene& scene = wiScene::GetScene();
-	entityProbe = wiScene::GetScene().Entity_FindByName(sname.Get());
-	if (entityProbe)
-	{
-		// Just update.
-		EnvironmentProbeComponent* probe = wiScene::GetScene().probes.GetComponent(entityProbe);
-		probe->position = posProbe;
-		probe->range = size;
-		probe->IsDirty();
-
-		wiScene::TransformComponent* pTransform = wiScene::GetScene().transforms.GetComponent(entityProbe);
-		pTransform->ClearTransform();
-		pTransform->Translate(posProbe);
-		pTransform->Scale(XMFLOAT3(size, size, size));
-		pTransform->UpdateTransform();
-		pTransform->SetDirty();
-		WickedCall_UpdateProbes(); //refresh all.
-
-		// updated this existing probe successfully
-		return;
-	}
-	return;
-	*/
+	// no code was here, can we delete all calls to this function ?
 }
 
 void WickedCall_DeleteReflectionProbe(char *name)
 {
-	/*
-	Entity entityProbe;
-	cstr sname = cstr("envprobe") + cstr(name);
-	Scene& scene = wiScene::GetScene();
-	for (size_t i = 0; i < scene.probes.GetCount(); ++i)
-	{
-		entityProbe = wiScene::GetScene().Entity_FindByName(sname.Get());
-		if (entityProbe)
-		{
-			// delete probe entity
-			wiScene::GetScene().Entity_Remove(entityProbe);
-		}
-	}
-	WickedCall_UpdateProbes(); //refresh all.
-	*/
+	// no code was here, can we delete all calls to this function ?
 }
-
 
 //PE: Capsule need more work. just some test code.
 void WickedCall_DrawObjctCapsule(sObject* pObject, XMFLOAT4 color)
@@ -7595,7 +7391,6 @@ void Wicked_Memory_Use_Textures(void)
 
 	//PE: Displaying everything directly is way better.
 	wiScene::Scene* pScene = &wiScene::GetScene();
-	//wiScene::MaterialComponent& material = *pScene->materials.GetComponent(materialEntity);
 	long usedsize = 0;
 	long usedFilesize = 0;
 	auto size = pScene->materials.GetCount();
@@ -7743,46 +7538,6 @@ void WickedCall_SetExposure(float exposure)
 {
 	master.masterrenderer.setExposure(exposure);
 }
-
-/* Experiment to stain surfaces, should not use decal projection
-bool bDoJustOne = true;
-
-void WickedCall_CreateDecal(sObject* pObject)
-{
-	// get object to attach it to
-	//for (int i = 0; i < pObject->iMeshCount; i++)
-	//{
-		//sMesh* pMesh = pObject->ppMeshList[i];
-		//if (pMesh)
-		//{
-	if (bDoJustOne == true)
-	{
-			Scene& scene = wiScene::GetScene();
-			//Entity entity = scene.Entity_CreateDecal("DecalProjection", "gamecore/extras/enhanced/EAI Enhanced Weapon_Arms_UV_Template.png");
-			Entity entity = scene.Entity_CreateDecal("DecalProjection", "databank/bloodsplash1.png");
-			TransformComponent& transform = *scene.transforms.GetComponent(entity);
-			//transform.MatrixTransform(pObject->orientation);
-			//transform.RotateRollPitchYaw(XMFLOAT3(0, 0, 0)); //XMFLOAT3(XM_PIDIV2, 0, 0));
-			//transform.Scale(XMFLOAT3(200, 200, 200));
-			//scene.Component_Attach(entity, pMesh->wickedmeshindex);
-
-			transform.ClearTransform();
-			float x = 5000;// 5000 + (rand() % 500);
-			float z = 0;// rand() % 500;
-			transform.Translate(XMFLOAT3(x, 60, z));
-			transform.RotateRollPitchYaw(XMFLOAT3(XMFLOAT3(XM_PIDIV2, 0, 0)));
-			transform.Scale(XMFLOAT3(40, 40, 40));
-			transform.UpdateTransform();
-			transform.SetDirty();
-
-			bDoJustOne = false;
-	}
-
-			//break;
-		//}
-	//}
-}
-*/
 
 #ifdef WICKEDPARTICLESYSTEM
 uint32_t WickedCall_LoadWiSceneDirect(Scene& scene2,char* filename, bool attached, char* changename, char* changenameto)
@@ -8103,17 +7858,6 @@ void WickedCall_UpdateEmitters(void)
 				{
 					AABB aabb;
 					XMFLOAT3 pos = pTransform->GetPosition();
-					//if (bIsUsingWidget && emitter_root != transform_entity)
-					//{
-					//	TransformComponent* root_tranform = scene.transforms.GetComponent(emitter_root);
-					//	//PE: Need to add root here , as its not updated before next frame in wicked.
-					//	if (root_tranform)
-					//	{
-					//		pos.x += root_tranform->GetPosition().x;
-					//		pos.y += root_tranform->GetPosition().y;
-					//		pos.z += root_tranform->GetPosition().z;
-					//	}
-					//}
 
 					XMFLOAT3 sca = pTransform->GetScale();
 					aabb._min = XMFLOAT3(pos.x - sca.x, pos.y, pos.z - sca.z);
@@ -8164,7 +7908,6 @@ void WickedCall_UpdateEmitters(void)
 							if (ec->bFollowCamera)
 							{
 								float fX, fY, fZ;
-								//float PlayerHeight = 62.0f;
 								fX = CameraPositionX();
 								//PE: PlayerHeight might have to be removed in GGM
 								fY = CameraPositionY(); // -PlayerHeight;
@@ -8209,7 +7952,6 @@ uint32_t WickedCall_CreateEmitter(std::string& name, float posX, float posY, flo
 	ec->count = 40;
 	ec->life = 2.5f;
 	ec->size = 2;
-	//ec->random_color = 1.0f;
 	ec->gravity = XMFLOAT3(0, 9, 0);
 
 	TransformComponent& transform = scene.transforms.Create(entity);
@@ -8233,7 +7975,6 @@ uint32_t WickedCall_CreateEmitter(std::string& name, float posX, float posY, flo
 		root = CreateEntity();
 		scene.transforms.Create(root);
 		scene.layers.Create(root).layerMask = ~0;
-		//emitter_root = root;
 	}
 
 	if (!bUsePrevRoot)
@@ -8301,4 +8042,96 @@ uint32_t GetVisibleWEmitters( void )
 }
 
 #endif
+
+
+void WickedCall_SetShaderParameter(int obj, int parameter , float value)
+{
+	sObject* GetObjectData(int iID);
+	sObject* pObject = GetObjectData(obj);
+	if (pObject)
+	{
+		for (int i = 0; i < pObject->iMeshCount; i++)
+		{
+			sMesh* mesh = pObject->ppMeshList[i];
+
+			if (mesh)
+			{
+				wiScene::MeshComponent* meshComponent = wiScene::GetScene().meshes.GetComponent(mesh->wickedmeshindex);
+
+				if (meshComponent)
+				{
+					// get material settings from mesh material or WEMaterial
+					uint64_t materialEntity = meshComponent->subsets[0].materialID;
+					wiScene::MaterialComponent* pMeshMaterial = wiScene::GetScene().materials.GetComponent(materialEntity);
+					if (pMeshMaterial->customShaderID >= 0)
+					{
+						bool bChanged = false;
+						if (parameter == 1)
+						{
+							if (value != pMeshMaterial->customShaderParam1)
+							{
+								pMeshMaterial->customShaderParam1 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 2)
+						{
+							if (value != pMeshMaterial->customShaderParam2)
+							{
+								pMeshMaterial->customShaderParam2 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 3)
+						{
+							if (value != pMeshMaterial->customShaderParam3)
+							{
+								pMeshMaterial->customShaderParam3 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 4)
+						{
+							if (value != pMeshMaterial->customShaderParam4)
+							{
+								pMeshMaterial->customShaderParam4 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 5)
+						{
+							if (value != pMeshMaterial->customShaderParam5)
+							{
+								pMeshMaterial->customShaderParam5 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 6)
+						{
+							if (value != pMeshMaterial->customShaderParam6)
+							{
+								pMeshMaterial->customShaderParam6 = value;
+								bChanged = true;
+							}
+						}
+						if (parameter == 7)
+						{
+							if (value != pMeshMaterial->customShaderParam7)
+							{
+								pMeshMaterial->customShaderParam7 = value;
+								bChanged = true;
+							}
+						}
+						if(bChanged)
+							pMeshMaterial->SetDirty();
+
+					}
+				}
+			}
+		}
+
+	}
+
+}
+
 

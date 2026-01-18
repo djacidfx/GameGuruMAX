@@ -6,7 +6,6 @@
 #include "gameguru.h"
 #include "CObjectsC.h"
 
-#ifdef ENABLEIMGUI
 #include "..\Imgui\imgui.h"
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -14,18 +13,13 @@
 #include "..\Imgui\imgui_internal.h"
 #include "..\Imgui\imgui_impl_win32.h"
 #include "..\Imgui\imgui_gg_dx11.h"
-#endif
 
-#ifdef WICKEDENGINE
 #include ".\..\..\Guru-WickedMAX\wickedcalls.h"
 #include ".\\..\..\\Guru-WickedMAX\\GPUParticles.h"
 using namespace GPUParticles;
-#endif
 
-#ifdef WICKEDENGINE
 #include "GGRecastDetour.h"
 extern GGRecastDetour g_RecastDetour;
-#endif
 
 #ifdef OPTICK_ENABLE
 #include "optick.h"
@@ -108,7 +102,6 @@ void entity_init ( void )
 				if (  ObjectExist(t.tobj) == 1 ) 
 				{
 					//  Create attachents for entity
-					//entity_createattachment ( ); see below
 					//  Reset AI Obstacle Center references (used later by physics placement)
 					t.entityelement[t.e].abscolx_f=-1;
 					t.entityelement[t.e].abscolz_f=-1;
@@ -120,7 +113,6 @@ void entity_init ( void )
 						if ( t.entityelement[t.e].staticflag == 1 ) bSceneStatic = true;
 
 						// leelee, sometimes want to make dynamic immobile entities AI obstacles!! (exploding crate in Escape level)
-						// if ( t.entityelement[t.e].staticflag == 0 && t.entityelement[t.e].eleprof.isimmobile == 1 ) bSceneStatic = true;
 						if ( bSceneStatic == true && t.entityprofile[t.entid].collisionmode != 11 && t.entityprofile[t.entid].collisionmode != 12 ) 
 						{
 							t.tfullheight=1;
@@ -128,22 +120,6 @@ void entity_init ( void )
 							if (  t.entityprofile[t.entid].collisionmode >= 50 && t.entityprofile[t.entid].collisionmode<60 ) 
 							{
 								t.ttreemode=t.entityprofile[t.entid].collisionmode-50;
-								//  dont need to setup ai for multiplayer since it doesnt use any ai - unless coop mode!
-								if ( g.aidisabletreeobstacles == 0 && (t.game.runasmultiplayer == 0 || ( g.mp.coop  ==  1 && t.entityprofile[t.entid].ismultiplayercharacter  ==  0 ) ) ) 
-								{
-									darkai_setup_tree ( );
-								}
-							}
-							else
-							{
-								//  dont need to setup ai for multiplayer since it doesnt use any ai
-								if (  t.game.runasmultiplayer == 0 || ( g.mp.coop  ==  1 && t.entityprofile[t.entid].ismultiplayercharacter  ==  0 ) ) 
-								{
-									if (g.aidisableobstacles == 0 && t.entityprofile[t.entid].collisionmode != 11 && t.entityprofile[t.entid].collisionmode != 12)
-									{
-										darkai_setup_entity();
-									}
-								}
 							}
 						}
 					}
@@ -167,7 +143,6 @@ void entity_init ( void )
 					//  ensure all transparency modes set for each entity
 					if (  t.entityprofile[t.entid].ismarker == 0 ) 
 					{
-						#ifdef WICKEDENGINE
 						//PE: Wicked material can overwrite objects settings.
 						if (t.entityelement[t.e].eleprof.WEMaterial.MaterialActive) {
 							WickedSetEntityId(t.entid);
@@ -177,19 +152,14 @@ void entity_init ( void )
 							WickedSetElementId(0);
 						}
 						else 
-						#endif
 						{
 							int iNeverFive = t.entityelement[t.e].eleprof.transparency;
 							if (iNeverFive == 5) iNeverFive = 6;
-							#ifdef WICKEDENGINE
 							WickedSetEntityId(t.entid);
 							WickedSetElementId(t.e);
 							SetObjectTransparency(t.entityelement[t.e].obj, iNeverFive);
 							WickedSetEntityId(-1);
 							WickedSetElementId(0);
-							#else
-							SetObjectTransparency(t.entityelement[t.e].obj, iNeverFive);
-							#endif
 						}
 					}
 					// ensure correct zdepth when game level starts
@@ -341,9 +311,7 @@ void entity_bringnewentitiestolife (bool bAllNewOnes)
 	}
 }
 
-#ifdef WICKEDENGINE
 float g_fActivationWaveDistance = 0.0f;
-#endif
 
 void entity_initafterphysics ( void )
 {
@@ -367,9 +335,7 @@ void entity_initafterphysics ( void )
 	}
 
 	// special wave to activate physics in a sequence
-	#ifdef WICKEDENGINE
 	g_fActivationWaveDistance = 0.0f;
-	#endif
 }
 
 void entity_refreshelementforuse ( void )
@@ -461,7 +427,6 @@ void entity_freeragdoll ( void )
 	}
 }
 
-#ifdef WICKEDENGINE
 void entity_resetlimbtwists(sObject* pObject, int e)
 {
 	// reset any animation motion within the object
@@ -516,7 +481,6 @@ void entity_resetlimbtwists(sObject* pObject, int e)
 		}
 	}
 }
-#endif
 
 void entity_free ( void )
 {
@@ -554,7 +518,6 @@ void entity_free ( void )
 					t.tentid=t.entid ; t.tte=t.e ; t.tobj=t.obj ; entity_resettodefaultanimation ( );
 					ShowObject (  t.obj );
 
-					#ifdef WICKEDENGINE
 					sObject* pObject = GetObjectData(t.obj);
 					if (t.entityprofile[t.entid].ischaracter == 1)
 					{
@@ -563,11 +526,6 @@ void entity_free ( void )
 						// new ragdoll plus wipes pivot, need this restoring
 						RotateLimb(t.obj, 0, 0, 0, 0);
 						RotateObject (t.obj, t.entityelement[t.e].rx, t.entityelement[t.e].ry, t.entityelement[t.e].rz);
-
-						// pivot character to face right way
-						//ResetObjectPivot(t.obj);
-						//RotateObject(t.obj, 0, 180, 0); this inverts rotation of character when load a saved game position!!
-						//FixObjectPivot(t.obj);
 					}
 					else
 					{
@@ -579,7 +537,6 @@ void entity_free ( void )
 					WickedCall_UpdateObject(pObject);
 					// also force the new frame (skipping the slerp as we only have one update once pass here)
 					WickedCall_InstantObjectFrameUpdate(pObject);
-					#endif
 				}
 			}
 			entity_freeattachment ( );
@@ -599,16 +556,16 @@ void entity_free ( void )
 		t.entityelement[t.e].soundset2=0;
 		if ( t.entityelement[t.e].soundset3>0  )  deleteinternalsound(t.entityelement[t.e].soundset3);
 		t.entityelement[t.e].soundset3 = 0;
+		if (t.entityelement[t.e].soundset4 > 0)  deleteinternalsound(t.entityelement[t.e].soundset4);
 		t.entityelement[t.e].soundset4 = 0;
 		if (t.entityelement[t.e].soundset5 > 0)  deleteinternalsound(t.entityelement[t.e].soundset5);
 		t.entityelement[t.e].soundset5 = 0;
 		if (t.entityelement[t.e].soundset6 > 0)  deleteinternalsound(t.entityelement[t.e].soundset6);
 		t.entityelement[t.e].soundset6 = 0;
-		#ifdef WICKEDENGINE
+
 		// reset any animation motion within the object
 		sObject* pObject = GetObjectData(t.obj);
 		entity_resetlimbtwists(pObject, t.e);
-		#endif
 	}
 }
 
@@ -666,48 +623,11 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].plrvisible = 0;
 	t.entityelement[t.e].isclone = 0;
 	t.entityelement[t.e].consumed = 0;
-	//t.entityelement[t.e].delaydestroytimer = 0;
-	//t.entityelement[t.e].delaydestroy = 0;
 	t.entityelement[t.e].distance = 0;
 	t.entityelement[t.e].soundplaying = 0;
 	t.entityelement[t.e].iCanGoUnderwater = 0;
-	//t.entityelement[t.e].objectivecurrentrange = 0;
-	//t.entityelement[t.e].objectiveradarrange = 0;
-	//t.entityelement[t.e].isanobjective = 0;
-	//t.entityelement[t.e].cullimmobile = 0;
-	//t.entityelement[t.e].positionchanged = 0;
-	//t.entityelement[t.e].camrotz = 0;
-	//t.entityelement[t.e].camroty = 0;
-	//t.entityelement[t.e].camrotx = 0;
-	//t.entityelement[t.e].offsetanglez = 0.0f;
-	//t.entityelement[t.e].offsetangley = 0.0f;
-	//t.entityelement[t.e].offsetanglex = 0.0f;
-	//t.entityelement[t.e].camoffsetz = 0;
-	//t.entityelement[t.e].camoffsety = 0;
-	//t.entityelement[t.e].camoffsetx = 0;
-	//t.entityelement[t.e].camuse = 0;
-	//t.entityelement[t.e].isimmune = 0;
-	//t.entityelement[t.e].shotbyammo_s = "";
-	//t.entityelement[t.e].shotby = 0;
-	//t.entityelement[t.e].radardistance = 0;
-	//t.entityelement[t.e].onradar = 0;
-	//t.entityelement[t.e].usefade = 0;
-	//t.entityelement[t.e].cullstate = 0;
 	t.entityelement[t.e].ishidden = 0;
 	t.entityelement[t.e].precreatedspawnedentityelementindex = 0;
-	//t.entityelement[t.e].reserved2 was entitydammult_f = 0.0f;
-	//t.entityelement[t.e].floorpositiony = 0.0f;
-	//t.entityelement[t.e].hideshadow = 0;
-	//t.entityelement[t.e].isaltammo = 0;
-	//t.entityelement[t.e].nobulletcol = 0;
-	//t.entityelement[t.e].lastdamagez_f = 0.0f;
-	//t.entityelement[t.e].lastdamagey_f = 0.0f;
-	//t.entityelement[t.e].lastdamagex_f = 0.0f;
-	//t.entityelement[t.e].reserve5 = 0;
-	//t.entityelement[t.e].reserve4 = 0;
-	//t.entityelement[t.e].reserve3 = 0;
-	//t.entityelement[t.e].reserve2 = 0;
-	//t.entityelement[t.e].reserve1 = 0;
 	t.entityelement[t.e].explodefusetime = 0;
 	t.entityelement[t.e].destroyme = 0;
 	t.entityelement[t.e].usingphysicsnow = 0;
@@ -724,35 +644,12 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].soundset2 = 0;
 	t.entityelement[t.e].soundset1 = 0;
 	t.entityelement[t.e].soundset = 0;
-	//t.entityelement[t.e].blockedtoz = 0;
-	//t.entityelement[t.e].blockedtoy = 0;
-	//t.entityelement[t.e].blockedtox = 0;
-	//t.entityelement[t.e].blockedby = 0;
-	//t.entityelement[t.e].invincibleactive = 0;
-	//t.entityelement[t.e].collisionactive = 0;
 	t.entityelement[t.e].activated = 0;
 	t.entityelement[t.e].whoactivated = 0;
 	t.entityelement[t.e].collected = 0;
-	//t.entityelement[t.e].delaydir = 0;
-	//t.entityelement[t.e].delaydamagez_f = 0.0f;
-	//t.entityelement[t.e].delaydamagey_f = 0.0f;
-	//t.entityelement[t.e].delaydamagex_f = 0.0f;
-	//t.entityelement[t.e].delayimpact = 0;
-	//t.entityelement[t.e].delaydamage = 0;
-	//t.entityelement[t.e].delaydamagesource = 0;
-	//t.entityelement[t.e].delaydamagetimer = 0.0f;
-	//t.entityelement[t.e].delaydamagecount = 0.0f;
-	//t.entityelement[t.e].shotdamagetype = 0;
-	//t.entityelement[t.e].shotdamagesource = 0;
-	//t.entityelement[t.e].shotdamage = 0;
 	t.entityelement[t.e].beenkilled = 0;
-	//t.entityelement[t.e].lifecode = 0;
 	t.entityelement[t.e].briefimmunity = 0;
 	t.entityelement[t.e].health = 0;
-	//t.entityelement[t.e].floatvalue = 0.0f;
-	//t.entityelement[t.e].floatrate = 0;
-	//t.entityelement[t.e].spinvalue = 0.0f;
-	//t.entityelement[t.e].spinrate = 0;
 	t.entityelement[t.e].animframeupdate = 0;
 	t.entityelement[t.e].destanimframe = 0.0f;
 	t.entityelement[t.e].animonce = 0;
@@ -761,39 +658,17 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].animdo = 0;
 	t.entityelement[t.e].animdir = 0;
 	t.entityelement[t.e].animset = 0;
-	//t.entityelement[t.e].decalsizey = 0.0f;
-	//t.entityelement[t.e].decalsizex = 0.0f;
-	//t.entityelement[t.e].decalslotused = 0;
-	//t.entityelement[t.e].decalloop = 0.0f;
-	//t.entityelement[t.e].decalmode = 0;
-	//t.entityelement[t.e].decalindex = 0;
 	t.entityelement[t.e].plrdist = 0.0f;
-	//t.entityelement[t.e].crouchprofile = 0;
-	//t.entityelement[t.e].nofloorlogic = 0;
-	//t.entityelement[t.e].raycastlaststate = 0;
-	//t.entityelement[t.e].raycastcount = 0;
-	//t.entityelement[t.e].priorityduration = 0;
-	//t.entityelement[t.e].priorityai = 0;
-	//t.entityelement[t.e].logictimestamp = 0;
-	//t.entityelement[t.e].logiccountburst = 0;
-	//t.entityelement[t.e].logiccount = 0.0f;
-	//t.entityelement[t.e].limbslerp = 0;
 	t.entityelement[t.e].colb = 0;
 	t.entityelement[t.e].colg = 0;
 	t.entityelement[t.e].colr = 0;
-	#ifdef WICKEDENGINE
 	t.entityelement[t.e].soundset5 = 0;
 	t.entityelement[t.e].soundset6 = 0;
 	t.entityelement[t.e].floorposy = -90000.0f;
 	t.entityelement[t.e].delay_floorposy = -90000.0f;
-	#else
-	t.entityelement[t.e].floorposy = 0;
-	t.entityelement[t.e].delay_floorposy = 0;
-	#endif
 	t.entityelement[t.e].dry = 0.0f;
 	t.entityelement[t.e].hoverfactoroverride = 0;
 	t.entityelement[t.e].nogravity = 0;
-	//t.entityelement[t.e].norotate = 0;
 	t.entityelement[t.e].scalez = 0.0f;
 	t.entityelement[t.e].scaley = 0.0f;
 	t.entityelement[t.e].scalex = 0.0f;
@@ -814,9 +689,7 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].customlastx = 0.0f;
 	t.entityelement[t.e].customlasty = 0.0f;
 	t.entityelement[t.e].customlastz = 0.0f;
-	//t.entityelement[t.e].attachmentblobobj = 0;
 	t.entityelement[t.e].attachmentobjfirespotlimb = 0;
-	//t.entityelement[t.e].attachmentweapontype = 0;
 	t.entityelement[t.e].attachmentbaseobj = 0;
 	t.entityelement[t.e].attachmentobj = 0;
 	t.entityelement[t.e].obj = 0;
@@ -824,28 +697,12 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].profileobj = 0;
 	t.entityelement[t.e].bankindex = 0;
 	t.entityelement[t.e].maintype = 0;
-	//t.entityelement[t.e].dormant = 0;
 	t.entityelement[t.e].active = 0;
-	//t.entityelement[t.e].fakeplrindex = 0;
-	//t.entityelement[t.e].servercontrolled = 0;
 	t.entityelement[t.e].editorfixed = 0;
-	//t.entityelement[t.e].lastdamagepaused = 0;
-	//t.entityelement[t.e].lastdamagetimer = 0;
-	//t.entityelement[t.e].etimerpaused = 0;
 	t.entityelement[t.e].etimer = 0;
 	t.entityelement[t.e].ttarget = 0;
-	//t.entityelement[t.e].aimovez = 0.0f;
-	//t.entityelement[t.e].aimovex = 0.0f;
-	//t.entityelement[t.e].aimoved = 0;
-	//t.entityelement[t.e].eyeoffset = 0;
-	//t.entityelement[t.e].spineraim = 0.0f;
-	//t.entityelement[t.e].spiner = 0.0f;
 	t.entityelement[t.e].spine = 0;
-	//t.entityelement[t.e].curvcmz = 0;
-	//t.entityelement[t.e].curvcmy = 0;
-	//t.entityelement[t.e].curvcmx = 0;
 	t.entityelement[t.e].isflak = 0;
-	//t.entityelement[t.e].enterwater = 0;
 	t.entityelement[t.e].animspeedmod = 1.0f;
 	t.entityelement[t.e].dc_obj[0] = 0;
 	t.entityelement[t.e].dc_obj[1] = 0;
@@ -863,7 +720,6 @@ void entity_reset_defaults(void)
 	t.entityelement[t.e].dc_entid[6] = 0;
 	t.entityelement[t.e].draw_call_obj = 0;
 	t.entityelement[t.e].dc_merged = false;
-	#ifdef WICKEDENGINE
 	// wipe out relational data!
 	t.entityelement[t.e].eleprof.iObjectLinkID = 0;
 	for (int i = 0; i < 10; i++)
@@ -875,7 +731,6 @@ void entity_reset_defaults(void)
 
 	t.entityelement[t.e].eleprof.blendmode = 0;
 
-	#endif
 }
 void entity_delete ( void )
 {
@@ -894,18 +749,7 @@ void entity_delete ( void )
 				}
 			}
 
-			//  delete character creator object
-			#ifdef VRTECH
-			///t.ccobjToDelete = t.obj;
-			///characterkit_deleteEntity ( );
-			#else
-			t.ccobjToDelete = t.obj;
-			characterkit_deleteEntity ( );
-			#endif
-
 			t.entid = t.entityelement[t.e].bankindex;
-			//PE: Clear entityprofile.
-			//if (t.entityprofile[t.entid].ismarker == 0)
 
 			t.entityelement[t.e].bankindex=0;
 			t.entityelement[t.e].obj=0;
@@ -967,9 +811,7 @@ void entity_resumeanimations ( void )
 	UnDim (  t.storeanimspeeds );
 }
 
-#ifdef WICKEDENGINE
 bool g_bOnlyOneRagdollPlusPerCycleForPerformance = false;
-#endif
 
 void entity_loop ( void )
 {
@@ -979,18 +821,14 @@ void entity_loop ( void )
 
 	// so avoid ALL physics activating at once and slowing the level start,
 	// we pace it out from the camera position outward
-	#ifdef WICKEDENGINE
 	if (g_fActivationWaveDistance < 999999)
 	{
 		float fSlice = 50.0f;
 		g_fActivationWaveDistance = ODEProjectActivationWave (g_fActivationWaveDistance, fSlice);
 	}
-	#endif
 
 	//  Handle all entities in level 
-	#ifdef WICKEDENGINE
 	g_bOnlyOneRagdollPlusPerCycleForPerformance = true;
-	#endif
 	for ( t.e = 1 ; t.e <= g.entityelementlist; t.e++ )
 	{
 		// 011016 - scenes with LARGE number of static entities hitting perf hard
@@ -1004,7 +842,6 @@ void entity_loop ( void )
 			//  Entity object
 			t.tobj=t.entityelement[t.e].obj;
 
-			#ifdef WICKEDENGINE
 			extern bool g_bShowRecastDetourDebugVisuals;
 			if (t.entityprofile[t.entid].ischaracter == 1)
 			{
@@ -1652,11 +1489,6 @@ void entity_loop ( void )
 									}
 									PositionObject (t.tobj, t.entityelement[t.e].x, t.entityelement[t.e].y, t.entityelement[t.e].z);
 								}
-
-								// keep gun attached to hand during death anim (no longer can use the regular call)
-								//int iObjStore = t.tobj;
-								//entity_controlattachments ();
-								//t.tobj = iObjStore;
 							}
 						}
 					}
@@ -1717,7 +1549,6 @@ void entity_loop ( void )
 					}
 				}
 			}
-			#endif
 
 			// Entity Prompt Local
 			extern bool bActivatePromptXYOffset;
@@ -1730,7 +1561,6 @@ void entity_loop ( void )
 			{
 				if ( ObjectExist(t.tobj) == 1 ) 
 				{
-					#ifdef VRTECH
 					if ( Timer()>(int)t.entityelement[t.e].overprompttimer ) 
 					{
 						if ( t.entityelement[t.e].overpromptuse3D == false ) 
@@ -1781,20 +1611,6 @@ void entity_loop ( void )
 							lua_updateperentity3d ( t.e, t.entityelement[t.e].overprompt_s.Get(), t.entityelement[t.e].overprompt3dX, t.entityelement[t.e].overprompt3dY, t.entityelement[t.e].overprompt3dZ, t.entityelement[t.e].overprompt3dAY, t.entityelement[t.e].overprompt3dFaceCamera );
 						}
 					}
-					#else
-					if (  Timer()>(int)t.entityelement[t.e].overprompttimer ) 
-					{
-						t.entityelement[t.e].overprompttimer=0;
-					}
-					else
-					{
-						if (  GetInScreen(t.tobj) == 1 ) 
-						{
-							t.t_s=t.entityelement[t.e].overprompt_s ; t.twidth=getbitmapfontwidth(t.t_s.Get(),1)/2;
-							pastebitmapfont(t.t_s.Get(),GetScreenX(t.tobj)-t.twidth,GetScreenY(t.tobj),1,255);
-						}
-					}
-					#endif
 				}
 			}
 
@@ -1873,7 +1689,6 @@ void entity_loop ( void )
 							t.tplrproxa_f=atan2deg(t.tplrproxx_f,t.tplrproxz_f);
 							if (  t.tplrproxd_f<t.entityprofile[t.entid].fatness ) 
 							{
-								//t.playercontrol.pushforce_f = 1.0f;
 								float fDepthOfPen = t.entityprofile[t.entid].fatness - t.tplrproxd_f;
 								if (fDepthOfPen > 1.0f)
 								{
@@ -1969,6 +1784,14 @@ void entity_loop ( void )
 						t.entityelement[t.e].soundisnonthreedee=1;
 					}
 				}
+				if (t.entityelement[t.e].soundset4 > 0)
+				{
+					PositionSound(t.entityelement[t.e].soundset4, CameraPositionX(0), CameraPositionY(0), CameraPositionZ(0));
+					if (SoundPlaying(t.entityelement[t.e].soundset4) == 1)
+					{
+						t.entityelement[t.e].soundisnonthreedee = 1;
+					}
+				}
 				if (t.entityelement[t.e].soundset5 > 0)
 				{
 					PositionSound(t.entityelement[t.e].soundset5, CameraPositionX(0), CameraPositionY(0), CameraPositionZ(0));
@@ -2008,11 +1831,7 @@ void entity_loop ( void )
 						{
 							if ( t.ttemploop != g.mp.me ) 
 							{
-								#ifdef PHOTONMP
 								 int iAlive = PhotonGetPlayerAlive(t.ttemploop);
-								#else
-								 int iAlive = SteamGetPlayerAlive(t.ttemploop);
-								#endif
 								if ( t.e == t.mp_playerEntityID[t.ttemploop] && t.mp_forcePosition[t.ttemploop]>0 && iAlive == 1 ) 
 								{
 									t.tconstantlygluehead=0;
@@ -2054,10 +1873,8 @@ void entity_loop ( void )
 			}
 
 			// handle particle emitter entity (for when in game)
-			#ifdef WICKEDENGINE
 			entity_updateparticleemitter(t.e);
 			entity_updateautoflatten(t.e);
-			#endif
 
 			// flag to destroy entity dead (can be set from LUA command or explosion trigger)
 			if ( t.entityelement[t.e].destroyme == 1 ) 
@@ -2104,7 +1921,6 @@ void entity_loop ( void )
 					darkai_killai ( );
 
 					//  Convert object back to instance and hide it
-					darkai_character_remove ( );
 					t.charanimstates[t.tcharanimindex] = t.charanimstate;
 				}
 				else
@@ -2231,7 +2047,6 @@ void entity_loop ( void )
 					t.ttte = t.ee ; entity_applydamage() ; t.ee=t.ttte;
 					// create a huge bang
 					t.entityelement[t.ee].destroyme=1;
-					#ifdef WICKEDENGINE
 					// customize the barrel explosion in "projectiletypes\common\explode"
 					t.tProjectileName_s = "";
 					t.tProjectileResult = WEAPON_PROJECTILERESULT_EXPLODE;
@@ -2251,10 +2066,6 @@ void entity_loop ( void )
 							break;
 						}
 					}
-					#else
-					t.tProjectileName_s = "";
-					t.tProjectileResult = WEAPON_PROJECTILERESULT_EXPLODE;
-					#endif
 					t.tx_f=t.entityelement[t.ee].x; 
 					float fRaiseAboveTheFloor = t.entityelement[t.ee].eleprof.explodeheight;
 					if (fRaiseAboveTheFloor < 5) fRaiseAboveTheFloor = 5;
@@ -2379,30 +2190,7 @@ void entity_loopanim ( void )
 							float offsetu = col * scaleu;
 							float offsetv = row * scalev;
 							WickedCall_SetObjectTextureUV(pObject, 1.0f, 1.0f, offsetu, offsetv);
-							//PE: HLSL code why 1.0,1.0 works.
-							//material.texMulAdd.xy = scale
-							//material.texMulAdd.zw = offset
-							//input.uvsets = float4(input.GetUV0() * material.texMulAdd.xy + material.texMulAdd.zw, input.GetUV1());
-							//const float2 UV_baseColorMap = GetMaterial().uvset_baseColorMap == 0 ? input.uvsets.xy : input.uvsets.zw;
 						}
-						//PE: old way.
-						//if (g_bUVDataChangeObjectSeqOnce == false && t.e > g_iUVDataChangeObjectSeqE)
-						//{
-						//	if (ObjectExist(t.tobj) == 1)
-						//	{
-						//		LockVertexDataForLimbCore(t.tobj, 0, 1);
-						//		SetVertexDataNormals(0, 0, 1, 0);
-						//		SetVertexDataNormals(1, 0, 1, 0);
-						//		SetVertexDataNormals(2, 0, 1, 0);
-						//		SetVertexDataNormals(3, 0, 1, 0);
-						//		SetVertexDataNormals(4, 0, 1, 0);
-						//		SetVertexDataNormals(5, 0, 1, 0);
-						//		UnlockVertexData();
-						//		SetObjectUVManually(t.tobj, t.entityelement[t.e].fDecalFrame, t.entityprofile[t.entid].iDecalRows, t.entityprofile[t.entid].iDecalColumns);
-						//	}
-						//	g_bUVDataChangeObjectSeqOnce = true;
-						//	g_iUVDataChangeObjectSeqE = t.e;
-						//}
 					}
 					else
 					{
@@ -2693,9 +2481,12 @@ void entity_updatepos ( void )
 			// used when resetpositionxyz needs to set exact XYZ position of refreshed/loaded entity
 		}
 		else
-		{
+		{ 
+			/* removed to fix CineGuru collision bug where entity would snap to ground - that is, we retain the position set in the level 
 			if (t.entityelement[t.te].nogravity == 0 && t.entityelement[t.te].collected == 0)
 			{
+				//LB: if collision mode sets no physics, cannot apply a gravity assumption (fixes CineGuru collision bug)
+				int entid = t.entityelement[t.te].bankindex;
 				// non physics objects stick with the floor
 				t.tterrainfloorposy_f = BT_GetGroundHeight (t.terrain.TerrainID, t.entityelement[t.te].x, t.entityelement[t.te].z);
 				t.entityelement[t.te].y = t.tterrainfloorposy_f;
@@ -2704,6 +2495,7 @@ void entity_updatepos ( void )
 			{
 				// no gravity allows entities to be in the sky (birds and blimps)
 			}
+			*/
 		}
 		PositionObject (t.tobj, t.entityelement[t.te].x, t.entityelement[t.te].y, t.entityelement[t.te].z);
 	}
@@ -2712,65 +2504,18 @@ void entity_updatepos ( void )
 void entity_determinedamagemultiplier ( void )
 {
 	t.tdamagemultiplier_f=1.0f;
-	/* 190316 - removed head damage hard coding, now in scripts
-	//  Check if limb is in any headlimb range (takes ttentid,bulletraylimbhit,tobj)
-	if (  t.bulletraylimbhit>0 ) 
-	{
-		if (  t.ttentid>0 ) 
-		{
-			if (  t.bulletraylimbhit >= t.entityprofile[t.ttentid].headframestart && t.bulletraylimbhit <= t.entityprofile[t.ttentid].headframefinish ) 
-			{
-				if (  t.tobj>0 ) 
-				{
-					if (  ObjectExist(t.tobj) == 1 ) 
-					{
-						if (  t.entityelement[t.ttte].health>0 ) 
-						{
-							//  work out if object has limbs
-							PerformCheckListForLimbs (  t.tobj );
-							t.tlimbmax=ChecklistQuantity()-1;
-							//  small visual indicator the headshot worked!
-							//  but not if a character creator entity
-							if (  t.entityprofile[t.ttentid].ischaractercreator  ==  0 ) 
-							{
-								for ( t.tlmb = t.entityprofile[t.ttentid].headframestart ; t.tlmb<=  t.entityprofile[t.ttentid].headframefinish; t.tlmb++ )
-								{
-									if (  t.tobj <= t.tlimbmax ) 
-									{
-										RotateLimb (  t.tobj,t.tlmb,Rnd(80)-40,Rnd(80)-40,0 );
-									}
-								}
-							}
-						}
-					}
-				}
-				t.tdamagemultiplier_f=4.0f;
-			}
-		}
-	}
-	return;
-	*/
 }
 
 void entity_determinegunforce ( void )
 {
 	//  bulletraytype (1-pierce, 2-shotgun pellets)
 	t.bulletraytype=g.firemodes[t.gunid][g.firemode].settings.damagetype;
-	#ifdef WICKEDENGINE
 	t.tforce_f = g.firemodes[t.gunid][g.firemode].settings.force*2.0 * t.playercontrol.fWeaponDamageMultiplier;
 	if (  t.gun[t.gunid].settings.ismelee == 2 || g.firemodes[t.gunid][g.firemode].settings.usemeleedamageonly > 0)
 	{
 		//  100415 - added separate force for melee attacks
 		t.tforce_f=g.firemodes[t.gunid][g.firemode].settings.meleeforce*2.0 * t.playercontrol.fMeleeDamageMultiplier;
 	}
-	#else
-	t.tforce_f = g.firemodes[t.gunid][g.firemode].settings.force*2.0;
-	if (t.gun[t.gunid].settings.ismelee == 2)
-	{
-		//  100415 - added separate force for melee attacks
-		t.tforce_f = g.firemodes[t.gunid][g.firemode].settings.meleeforce*2.0;
-	}
-	#endif
 	else
 	{
 		//  regular bullet type force modifiers
@@ -2848,7 +2593,6 @@ void entity_applydamage ( void )
 	if (  t.tallowanykindofdamage == 0 ) 
 	{
 		// 010216 - if 'isimmobile' was set in FPE, it cannot be reduced to zero health
-		//if (  t.entityprofile[t.ttentid].isimmobile == 1 && t.entityprofile[t.ttentid].ischaracter == 0  )  return;
 		t.ttentid=t.entityelement[t.ttte].bankindex;
 		if (  t.entityprofile[t.ttentid].isimmobile == 1 && t.entityprofile[t.ttentid].ischaracter == 0  )
 		{
@@ -2931,13 +2675,11 @@ void entity_applydamage ( void )
 		ODEAddBodyForce (  t.tobj,t.tdx_f,t.tdy_f,t.tdz_f,0,0,0 );
 		ODESetAngularVelocity (  t.tobj,Rnd(600)-300,Rnd(200)-100,Rnd(600)-300 );
 	}
-	#ifdef WICKEDENGINE
 	if (t.tcharanimindex > 0)
 	{
 		// any damage implied on a character instantly pushes it out of dormancy
 		t.charanimstates[t.tcharanimindex].dormant = 0;
 	}
-	#endif
 	t.tcharanimindex = istorecharindex;
 
 	//  work out damage and see if entity gets destroyed
@@ -2967,11 +2709,7 @@ void entity_applydamage ( void )
 						//  13032015 0XX - Team Multiplayer
 						if (  g.mp.team  ==  0 || g.mp.friendlyfireoff  ==  0 || t.mp_team[tpindex]  !=  t.mp_team[g.mp.me] ) 
 						{
-							// Ignore setentityhealth lua message if it is a player
-							//if ( t.tallowanykindofdamage == 0 )
-							//{
-								SteamApplyPlayerDamage (  tpindex,t.tdamage, t.brayx2_f-t.brayx1_f, t.brayy2_f-t.brayy1_f, t.brayz2_f-t.brayz1_f, t.tSteamForce_f, t.bulletraylimbhit );
-							//}
+							SteamApplyPlayerDamage (  tpindex,t.tdamage, t.brayx2_f-t.brayx1_f, t.brayy2_f-t.brayy1_f, t.brayz2_f-t.brayz1_f, t.tSteamForce_f, t.bulletraylimbhit );
 						}
 					}
 				}
@@ -3066,14 +2804,10 @@ void entity_applydamage ( void )
 				iThirdPersonCharacter = t.playercontrol.thirdperson.characterindex;
 
 		//  if character
-#ifdef WICKEDENGINE
 		int iStoreCharAnimIndex = t.tcharanimindex;
 		entity_find_charanimindex_fromttte();
 		int iCharacterIndexToUse = t.tcharanimindex;
 		t.tcharanimindex = iStoreCharAnimIndex;
-#else
-		int iCharacterIndexToUse = t.tcharanimindex;
-#endif
 		t.tapplyragdollforce = 0;
 		if (iThirdPersonCharacter > 0) iCharacterIndexToUse = iThirdPersonCharacter;
 		if (t.entityelement[t.ttte].eleprof.explodable != 0) iCharacterIndexToUse = 0;
@@ -3171,14 +2905,8 @@ void entity_applydamage ( void )
 				//  Prepare character for eventual fade out
 				if (t.entityprofile[t.ttentid].ragdoll == 1)
 				{
-					t.charanimstates[iCharacterIndexToUse].timetofadeout = Timer() + AICORPSETIME;
+					t.charanimstates[iCharacterIndexToUse].timetofadeout = Timer() + 20000; // from old AICORPSETIME
 					t.charanimstates[iCharacterIndexToUse].fadeoutvalue_f = 1.0;
-				}
-				else
-				{
-					// if not ragdoll, used own die anim, remove right away
-					// 071018 - caused legacy nonragdoll characters not to play their exit animations
-					// t.entityelement[t.ttte].destroyme = 1;
 				}
 			}
 
@@ -3235,7 +2963,6 @@ void entity_applydamage ( void )
 				}
 
 				// and ensure entity is destroyed (active to zero)
-				//t.entityelement[t.ttte].destroyme = 1; // tried this but hide the object and killed the ragdoll
 				t.entityelement[t.ttte].active = 0;
 				t.entityelement[t.ttte].health = 0;
 				t.entityelement[t.ttte].lua.flagschanged = 2;
@@ -3260,7 +2987,6 @@ void entity_applydamage ( void )
 	}
 
 	bool bAllowRagdollForceToBeRecorded = false;
-	#ifdef WICKEDENGINE
 	// as bullet hits can be interceded with an animation, and then a tru destroy to create the ragdoll, 
 	// for MAX< record the ragdoll force from the original hit so we can apply when we finally become a ragdoll :)
 	if (t.tforce_f > 0.0f && t.bulletraylimbhit != -1)
@@ -3275,12 +3001,10 @@ void entity_applydamage ( void )
 	{
 		// but retains last good ragdoll force values if called again but with no force (see soldier attack behavior in MAX)
 	}
-	#endif
 
 	// apply bullet directional force if all the elements in the equation are good
 	if (bAllowRagdollForceToBeRecorded == true )
 	{
-		//if ( t.tapplyragdollforce == 1 ) 
 		{
 			t.entityelement[t.ttte].ragdollified=1;
 			t.entityelement[t.ttte].ragdollifiedforcex_f=(t.brayx2_f-t.brayx1_f)*0.8;
@@ -3746,8 +3470,7 @@ void entity_hasbulletrayhit(void)
 	{
 		if (t.tttriggerdecalimpact >= 10 && t.tttriggerdecalimpact != 16 && t.bulletrayhite >= 0 )
 		{
-			if (t.bulletrayhite == 0 || t.entityelement[t.bulletrayhite].staticflag == 1 ||
-				(t.entityelement[t.bulletrayhite].staticflag == 0 && t.entityelement[t.bulletrayhite].eleprof.isimmobile == 1) )
+			if (t.bulletrayhite == 0 || t.entityelement[t.bulletrayhite].staticflag == 1 || t.entityelement[t.bulletrayhite].iAllowBuletHole == 1 )
 			{
 				int iMaterialIndex = t.tttriggerdecalimpact - 10;
 				bulletholes_add(iMaterialIndex, t.brayx2_f, t.brayy2_f, t.brayz2_f, vecRayHitNormal.x, vecRayHitNormal.y, vecRayHitNormal.z);
@@ -3838,7 +3561,6 @@ void entity_triggerdecalatimpact ( float fX, float fY, float fZ )
 		{
 			if ( t.playercontrol.startviolent != 0 && g.quickparentalcontrolmode != 2 ) 
 			{
-				#ifdef WICKEDPARTICLESYSTEM
 				t.decalid = t.decalglobal.bloodsplatid; t.decalorient = 0;
 				if (t.decal[t.decalid].newparticle.bWPE)
 				{
@@ -3848,7 +3570,6 @@ void entity_triggerdecalatimpact ( float fX, float fY, float fZ )
 					decalelement_create();
 				}
 				else
-				#endif
 				{
 					for (t.iter = 1; t.iter <= 3 + Rnd(1); t.iter++)
 					{
@@ -4374,36 +4095,14 @@ void entity_converttoclonetransparent ( void )
 
 bool entity_isuniquespecularoruv ( int ee )
 {
-	/* not used in MAX
-	bool bUnique = false; 
-	if ( ee != -1  ) 
-	{
-		// specular can be overridden per entity
-		if ( t.entityelement[ee].eleprof.specularperc != 100.0f ) 
-			bUnique = true;
-
-		// UV data scroll/scale can be overridden per entity
-		int eentid = t.entityelement[ee].bankindex;
-		if ( t.entityprofile[eentid].uvscrollu != 0.0f 
-		||   t.entityprofile[eentid].uvscrollv != 0.0f 
-		||   t.entityprofile[eentid].uvscaleu != 1.0f 
-		||   t.entityprofile[eentid].uvscalev != 1.0f )
-			bUnique = true;
-	}
-	return bUnique;
-	*/
 	return false;
 }
 
 void entity_converttoinstance ( void )
 {
 	// takes tte
-	#ifdef WICKEDENGINE
 	// really needed this when I had ragdoll objects, call it if object has been ragdollified
 	if (t.entityelement[t.tte].ragdollified == 1)
-	#else
-	if (t.entityelement[t.tte].isclone == 1 ) 
-	#endif
 	{
 		t.tobj=t.entityelement[t.tte].obj;
 		if ( t.tobj>0 ) 
@@ -4421,29 +4120,14 @@ void entity_converttoinstance ( void )
 				DeleteObject (  t.tobj );
 				t.ttsourceobj=g.entitybankoffset+t.entityelement[t.tte].bankindex;
 
-				#ifdef WICKEDENGINE
 				WickedSetElementId(t.tte);
 				WickedSetEntityId(t.entityelement[t.tte].bankindex);
-				#endif
 
-				#ifdef WICKEDENGINE
 				// always clone for now (instance work during performance opt)
 				CloneObject (t.tobj, t.ttsourceobj, 1);
-				#else
-				#ifdef VRTECH
-				if ( t.entityprofile[t.entityelement[t.tte].bankindex].cpuanims==0 && t.entityprofile[t.entityelement[t.tte].bankindex].ischaracter == 0 )
-				#else
-				if ( t.entityprofile[t.entityelement[t.tte].bankindex].cpuanims==0 )
-				#endif
-					InstanceObject (t.tobj, t.ttsourceobj);
-				else
-					CloneObject (t.tobj, t.ttsourceobj, 1);
-				#endif
 
-				#ifdef WICKEDENGINE
 				WickedSetElementId(0);
 				WickedSetEntityId(-1);
-				#endif
 
 				// restore any radius settings the original object might have had
 				SetSphereRadius (  t.tobj,-1 );
@@ -4452,11 +4136,6 @@ void entity_converttoinstance ( void )
 				entity_prepareobj ( );
 				entity_positionandscale ( );
 				if (  t.tstorevis == 0  )  HideObject (  t.tobj );
-				#ifdef VRTECH
-				///characterkit_convertCloneInstance ( );
-				#else
-				characterkit_convertCloneInstance ( );
-				#endif
 				if ( t.entityprofile[t.tentid].addhandlelimb == 0 )
 				{
 					// 301115 - override parent LOD distance with LODModifier
@@ -4475,21 +4154,9 @@ void entity_createobj ( void )
 	{
 		if (  t.tupdatee != -1  )  t.entityelement[t.tupdatee].profileobj = t.sourceobj;
 
-		#ifdef WICKEDENGINE
 		// wicked handles instances inside engine, so always clone
 		bool bCreateAsClone = true;
-		#else
-		EnableObjectZWrite (  t.sourceobj );
-		//  Create new object
-		bool bUniqueSpecular = entity_isuniquespecularoruv ( t.tupdatee );
 
-		//PE: We also need it to be a clone in Classic for head to work.
-		bool bCreateAsClone = false;
-		if ( t.entityprofile[t.tentid].ismarker != 0 || t.entityprofile[t.tentid].cpuanims != 0 || t.entityprofile[t.gridentity].isebe != 0 || bUniqueSpecular == true ) bCreateAsClone = true;
-		if ( t.entityprofile[t.tentid].ischaractercreator == 1 ) bCreateAsClone = true; // needed to keep head attached!
-		#endif
-
-		#ifdef WICKEDENGINE
 		if (t.tupdatee != -1 && t.entityelement[t.tupdatee].eleprof.bUseFPESettings)
 		{
 			//PE: Make sure to copy over master object to entity material.
@@ -4519,15 +4186,12 @@ void entity_createobj ( void )
 			if (t.entityprofile[t.tentid].animmax > 0)  bUseInstancing = false;
 			if (t.entityprofile[t.tentid].bIsDecal)  bUseInstancing = false;
 
-			//if (memcmp(&t.entityprofile[t.tentid].WEMaterial,&t.entityelement[t.tupdatee].eleprof.WEMaterial,sizeof(WickedMaterial)) != 0) bUseInstancing = false;
-
 			extern int active_tools_obj;
 			extern int active_tools_entity_index;
 			extern sObject* g_selected_editor_object;
 			extern int g_selected_editor_objectID;
 
 			//PE: Cursor always real clone , if changing materials ...
-			//g_selected_editor_object == g_ObjectList[t.obj]
 			if (t.widget.pickedEntityIndex == t.tupdatee || t.obj == 70000 || t.gridentityobj == t.obj || active_tools_obj == t.obj || active_tools_entity_index == t.tupdatee || t.tentitytoselect == t.tupdatee)
 			{
 				bUseInstancing = false;
@@ -4545,7 +4209,6 @@ void entity_createobj ( void )
 						//PE: This will make that many more object is included in instancing.
 						Wicked_Copy_Material_To_Grideleprof((void*)pObject, 0, &mastereleprof);
 						WickedMaterial *Master_WEMaterial = NULL;
-						//Master_WEMaterial = &t.entityprofile[t.tentid].WEMaterial;
 						Master_WEMaterial = &mastereleprof.WEMaterial;
 						DWORD dwMeshCount = pObject->iMeshCount;
 						for (int iMesh = 0; iMesh < (int)dwMeshCount; iMesh++)
@@ -4632,7 +4295,6 @@ void entity_createobj ( void )
 			}
 		}
 
-		#endif
 
 		if ( bCreateAsClone == true )
 		{
@@ -4644,12 +4306,10 @@ void entity_createobj ( void )
 			InstanceObject (  t.obj,t.sourceobj );
 			if (  t.tupdatee != -1  )  t.entityelement[t.tupdatee].isclone = 0;
 		}
-		#ifdef WICKEDENGINE
 		iUseMasterObjectID = 0;
 		bUseInstancing = false;
 		WickedSetEntityId(-1);
 		WickedSetElementId(0);
-		#endif
 
 		//LB: incorporate overrideanimset into object creation step (during editing/loading/etc)
 		if (t.obj > 0)
@@ -4667,7 +4327,6 @@ void entity_createobj ( void )
 			}
 		}
 
-		#ifdef WICKEDENGINE
 		if (t.entityprofile[t.tentid].islightmarker == 1)
 		{
 			sObject* pObject = g_ObjectList[t.obj];
@@ -4675,7 +4334,6 @@ void entity_createobj ( void )
 				WickedCall_SetObjectCastShadows(pObject, false);
 			t.entityprofile[t.tentid].castshadow = -1;
 		}
-		#endif
 		//  restore any radius settings the original object might have had
 		SetSphereRadius (  t.obj,-1 );
 
@@ -4734,16 +4392,6 @@ void entity_createobj ( void )
 
 		// prepare correct depth mode
 		entity_preparedepth(t.tentid, t.tobj);
-
-		//  check if a character creator entity
-		#ifdef VRTECH
-		#else
-		if (  t.entityprofile[t.tentid].ischaractercreator  ==  1 ) 
-		{
-			t.tccSetTentid = 1;
-			characterkit_addEntityToMap ( );
-		}
-		#endif
 
 		if (  t.tupdatee != -1  ) 
 		{
@@ -5115,10 +4763,8 @@ void entity_resettodefaultanimation ( void )
 	if ( t.tte != -1 ) 
 	{
 		bool isWicked = false;
-		#ifdef WICKEDENGINE
 		//PE: Wicked is always clone.
 		isWicked = true;
-		#endif
 		if ( t.entityelement[t.tte].isclone == 1 || isWicked )
 		{
 			// CLONE
@@ -5131,7 +4777,6 @@ void entity_resettodefaultanimation ( void )
 			if ( t.entityelement[t.tte].staticflag == 1 ) 
 			{
 				// do not animate if marked as static
-				#ifdef WICKEDENGINE
 				//PE: Allow static animation in wicked editor. if set in fpe.
 				if (t.entityprofile[t.tentid].animmax > 0 && t.entityprofile[t.tentid].playanimineditor > 0)
 				{
@@ -5144,7 +4789,6 @@ void entity_resettodefaultanimation ( void )
 					extern void entity_loop_using_negative_playanimineditor(int e, int obj, cstr animname);
 					entity_loop_using_negative_playanimineditor(t.tte, t.tobj, t.entityprofile[t.tentid].playanimineditor_name);
 				}
-				#endif
 			}
 			else
 			{		
@@ -5180,12 +4824,6 @@ void entity_positionandscale ( void )
 	PositionObject (  t.tobj,t.entityelement[t.tte].x,t.entityelement[t.tte].y,t.entityelement[t.tte].z );
 	RotateObject (  t.tobj,t.entityelement[t.tte].rx,t.entityelement[t.tte].ry,t.entityelement[t.tte].rz );
 	ScaleObject (  t.tobj,100+t.entityelement[t.tte].scalex,100+t.entityelement[t.tte].scaley,100+t.entityelement[t.tte].scalez );
-	//PE: Particle scale bug fix.
-	//if (t.entityprofile[t.entityelement[t.tte].bankindex].ismarker == 10)
-	//{
-	//	float fScale = t.entityprofile[t.entityelement[t.tte].bankindex].scale;
-	//	ScaleObject (t.tobj, fScale, fScale, fScale);
-	//}
 	//LB: object is rotated AFTER being created, so ensure particle knows rotation of entity
 	if (t.entityprofile[t.entityelement[t.tte].bankindex].ismarker == 10)
 		entity_updateparticleemitter(t.tte);
@@ -5212,7 +4850,6 @@ void entity_positionandscale ( void )
 	return;
 }
 
-#ifdef WICKEDENGINE
 
 #define STOPPROBELIGHTLEAK
 
@@ -5416,7 +5053,6 @@ void entity_deleteprobe(int obj)
 		WickedCall_DeleteReflectionProbe(name.Get());
 	}
 }
-#endif
 
 void entity_updateentityobj ( void )
 {
@@ -5463,44 +5099,6 @@ void entity_updateentityobj ( void )
 			entity_createobj ( );
 			t.tobj=t.obj ; t.tte=t.tupdatee ; entity_positionandscale ( );
 			t.entityelement[t.tupdatee].obj=t.obj;
-
-			// also punch terrain to flatten area where entity is placed
-			if ( g.gridlayershowsingle == 0 ) 
-			{
-				#ifdef WICKEDENGINE
-				// auto flatten is dynamic
-				#else
-				// only when not in INSIDE edit mode
-				if ( t.gridedit.autoflatten == 1 && t.entityprofile[t.tentid].ismarker == 0 ) 
-				{
-					t.terrain.terrainpainteroneshot=1;
-					t.terrain.X_f=ObjectPositionX(t.obj);
-					t.terrain.Y_f=ObjectPositionZ(t.obj);
-					t.terrain.shapeA_f=ObjectAngleY(t.obj);
-					t.terrain.shapeWidth_f=ObjectSizeX(t.obj,1);
-					t.terrain.shapeLong_f=ObjectSizeZ(t.obj,1);
-					t.terrain.shapeHeight_f=ObjectPositionY(t.obj);
-				}
-				#endif
-			}
-
-			/*
-			// if entity is a light, has a probe
-			#ifdef WICKEDENGINE
-			int entid = t.entityelement[t.tupdatee].bankindex;
-			if (entid > 0)
-			{
-				if (t.entityprofile[entid].ismarker == 2)
-				{
-					float fLightProbeScale = t.entityelement[t.tupdatee].eleprof.light.fLightHasProbe;
-					if ( fLightProbeScale > 0 )
-						entity_placeprobe(t.entityelement[t.tupdatee].obj, fLightProbeScale);
-					else
-						entity_deleteprobe(t.entityelement[t.tupdatee].obj);
-				}
-			}
-			#endif
-			*/
 		}
 	}
 	if ( t.tentid == 0 ) 

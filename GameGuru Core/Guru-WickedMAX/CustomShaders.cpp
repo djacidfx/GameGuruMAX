@@ -73,6 +73,8 @@ Shader shaderShadowTreeAnimateVS;
 Shader shaderWaterPS;
 Shader shaderGlassPS;
 Shader shaderGridPS;
+Shader damageBloodPS;
+Shader damageBloodVS;
 
 void AddCustomShaders(void)
 {
@@ -90,8 +92,6 @@ void AddCustomShaders(void)
 	PipelineState pso[RENDERPASS_COUNT];
 	for (int i = 0; i < RENDERPASS_COUNT; i++)
 	{
-		//desc,RENDERPASS_MAIN,PSTYPE_OBJECT,SHADERTYPE_PBR, , false, false, true
-		//wiRenderer::AddPipelineDesc(desc[i], i, PSTYPE_OBJECT, MaterialComponent::SHADERTYPE::SHADERTYPE_PBR, BLENDMODE_ADDITIVE, OBJECTRENDERING_DOUBLESIDED_DISABLED, false, true, false);
 		wiRenderer::AddPipelineDesc(desc[i], i, PSTYPE_OBJECT, MaterialComponent::SHADERTYPE::SHADERTYPE_PBR, BLENDMODE_OPAQUE, OBJECTRENDERING_DOUBLESIDED_ENABLED, false, true, false);
 		if (customShader.bActive)
 		{
@@ -175,5 +175,40 @@ void AddCustomShaders(void)
 	customgridShader.renderTypeFlags = RENDERTYPE_TRANSPARENT; // RENDERTYPE_TRANSPARENT;
 	customgridShader.pso[RENDERPASS_MAIN] = psogrid;
 	RegisterCustomShader(customgridShader);
+
+
+	//PE: blood damage shader.
+	PipelineState psoBloodDamage;
+	PipelineStateDesc descBloodDamage;
+	CustomShader customBloodDamageShader;
+	if (!LoadShader(PS, damageBloodPS, "damageBloodPS.cso"))
+		customBloodDamageShader.bActive = false;
+	if (!LoadShader(VS, damageBloodVS, "damageBloodVS.cso"))
+		customShader.bActive = false;
+
+
+	PipelineStateDesc desc2[RENDERPASS_COUNT];
+	PipelineState pso2[RENDERPASS_COUNT];
+	for (int i = 0; i < RENDERPASS_COUNT; i++)
+	{
+		wiRenderer::AddPipelineDesc(desc2[i], i, PSTYPE_OBJECT, MaterialComponent::SHADERTYPE::SHADERTYPE_PBR, BLENDMODE_OPAQUE, OBJECTRENDERING_DOUBLESIDED_ENABLED, false, true, false);
+		if (customShader.bActive)
+		{
+			if (i == RENDERPASS_MAIN)
+			{
+				desc2[i].ps = &damageBloodPS;
+				desc2[i].vs = &damageBloodVS;
+			}
+		}
+		wiRenderer::GetDevice()->CreatePipelineState(&desc2[i], &pso2[i]);
+	}
+
+	customBloodDamageShader.name = "Blood Damage";
+	customBloodDamageShader.renderTypeFlags = RENDERTYPE_OPAQUE; // RENDERTYPE_TRANSPARENT;
+	for (int i = 0; i < RENDERPASS_COUNT; i++)
+		customBloodDamageShader.pso[i] = pso2[i];
+
+	RegisterCustomShader(customBloodDamageShader);
+
 
 }

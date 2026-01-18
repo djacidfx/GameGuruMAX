@@ -6,10 +6,8 @@
 #include "gameguru.h"
 #include "CObjectsC.h"
 
-#ifdef WICKEDENGINE
 #include "GGTerrain/GGTerrain.h"
 #include "GGTerrain/GGGrass.h"
-#endif
 
 #ifdef OPTICK_ENABLE
 #include "optick.h"
@@ -217,7 +215,7 @@ void lighting_loop(void)
 		for (int ee = 1; ee <= g.entityelementlist; ee++)
 		{
 			int entid = t.entityelement[ee].bankindex;
-			if (entid > 0)
+			if (entid > 0 && entid < t.entityprofile.size())
 			{
 				if (t.entityprofile[entid].ismarker == 2)
 				{

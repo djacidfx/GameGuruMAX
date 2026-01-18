@@ -45,6 +45,13 @@ using namespace GGThread;
 #	define snprintf _snprintf
 #endif
 
+// Globals to help with nav mesh visualisation
+bool g_bRefreshNavMeshDebugObjectWhenFocusChanges = false;
+int g_iLastFocusNavMeshVisualAtX = 0;
+int g_iLastFocusNavMeshVisualAtZ = 0;
+int g_iFocusNavMeshVisualAtX = 0;
+int g_iFocusNavMeshVisualAtZ = 0;
+
 // logging place holders
 void tileLog( int type, const char* format, ... )
 {
@@ -446,8 +453,20 @@ void Sample_TileMesh::handleRender()
 	{
 		if (m_drawMode != DRAWMODE_NAVMESH_INVIS)
 		{
-			m_dd.setDebugObjectSlot(1);
+			// can visualise entire nav mesh by only drawing whereever the camera is focused
+			extern float CameraPositionX(int);
+			extern float CameraPositionZ(int);
+			g_iFocusNavMeshVisualAtX = CameraPositionX(0);
+			g_iFocusNavMeshVisualAtZ = CameraPositionZ(0);
+			if (abs(g_iFocusNavMeshVisualAtX - g_iLastFocusNavMeshVisualAtX) > 500 || abs(g_iFocusNavMeshVisualAtZ - g_iLastFocusNavMeshVisualAtZ) > 500)
+			{
+				g_bRefreshNavMeshDebugObjectWhenFocusChanges = true;
+				g_iLastFocusNavMeshVisualAtX = g_iFocusNavMeshVisualAtX;
+				g_iLastFocusNavMeshVisualAtZ = g_iFocusNavMeshVisualAtZ;
+			}
+			m_dd.setDebugObjectSlot(1, g_bRefreshNavMeshDebugObjectWhenFocusChanges);
 			duDebugDrawNavMeshWithClosedList(&m_dd, *m_navMesh, *m_navQuery, m_navMeshDrawFlags);
+			g_bRefreshNavMeshDebugObjectWhenFocusChanges = false;
 		}
 		if (m_drawMode == DRAWMODE_NAVMESH_BVTREE)
 		{

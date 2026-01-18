@@ -6,9 +6,6 @@
 #include "stdafx.h"
 #include "gameguru.h"
 
-// Externals
-extern bool g_bSkipTerrainRender;
-
 // 
 //  Common Code - Image and Effect Functions
 // 
@@ -95,9 +92,6 @@ void loadinternalimageexcompressquality ( char* tfile_s, int imgid, int compress
 	cstr tryfile_s =  "";
 	int tstarttry = 1;
 	int ttry = 0;
-	// 110917 - always prefer DDS if sits alongside PNG or JPG
-	// if ( strcmp ( Lower(Right(tfile_s,4)) , ".jpg" ) == 0  )  tstarttry = 2; else tstarttry = 1;
-	// if ( strcmp ( Lower(Right(tfile_s,4)) , ".png" ) == 0  )  tstarttry = 2; else tstarttry = 1;
 	for ( ttry = tstarttry; ttry <= 4; ttry++ )
 	{
 		if ( ttry == 1  ) { tryfile_s = Left(tfile_s,Len(tfile_s)-4); tryfile_s += ".dds"; }
@@ -458,93 +452,18 @@ int loadinternaltextureex ( char* tfile_s, int compressmode, int quality )
 int loadinternaleffectunique ( char* tfile_s, int makeunique )
 {
 	int effectid = 0;
-	#ifdef WICKEDENGINE
 	// WickedEngine has its own shaders
-	#else
-	int tt = 0;
-
-	//  Default return
-	effectid=0;
-
-	//  Scan for existing
-	if (  g.effectbankmax>0 && makeunique == 0 ) 
-	{
-		for ( tt = 1 ; tt<=  g.effectbankmax; tt++ )
-		{
-			if ( strcmp ( tfile_s , t.effectbank_s[tt].Get() ) == 0 ) { effectid = g.effectbankoffset+tt ; break; }
-		}
-	}
-	else
-	{
-		tt=g.effectbankmax+1;
-	}
-
-	//  Did not find, load it
-	if (  tt>g.effectbankmax ) 
-	{
-		if (  FileExist(tfile_s) == 1 ) 
-		{
-			++g.effectbankmax;
-			Dim (  t.effectbank_s,g.effectbankmax  );
-			effectid=g.effectbankoffset+g.effectbankmax;
-			LoadEffect (  tfile_s,effectid,0 );
-			if (  GetEffectExist(effectid) == 1 ) 
-			{
-				t.effectbank_s[g.effectbankmax]=tfile_s;
-				filleffectparamarray(effectid);
-			}
-			else
-			{
-				//  could not use effect
-				--g.effectbankmax;
-				effectid=0;
-			}
-		}
-	}
-	#endif
 	return effectid;
 }
 
 void deleteinternaleffect ( int iEffectIndex )
 {
-	#ifdef WICKEDENGINE
 	// WickedEngine has its own shaders
-	#else
-	// Scan for existing
-	int effectid = iEffectIndex - g.effectbankoffset;
-	if ( effectid > 0 ) 
-	{
-		if ( strlen(t.effectbank_s[effectid].Get()) > 0 )
-		{
-			t.effectbank_s[effectid] = "";
-			DeleteEffect ( iEffectIndex );
-		}
-	}
-	#endif
 }
 
 void filleffectparamarray ( int effectid )
 {
-	#ifdef WICKEDENGINE
 	// WickedEngine has its own shaders
-	#else
-	if (  ArrayCount(t.effectparamarray)<effectid ) 
-	{
-		Dim (  t.effectparamarray,effectid+32 );
-	}
-	t.effectparamarray[effectid].g_lights_data=GetEffectParameterIndex(effectid,"g_lights_data");
-	t.effectparamarray[effectid].g_lights_pos0=GetEffectParameterIndex(effectid,"g_lights_pos0");
-	t.effectparamarray[effectid].g_lights_atten0=GetEffectParameterIndex(effectid,"g_lights_atten0");
-	t.effectparamarray[effectid].g_lights_diffuse0=GetEffectParameterIndex(effectid,"g_lights_diffuse0");
-	t.effectparamarray[effectid].g_lights_pos1=GetEffectParameterIndex(effectid,"g_lights_pos1");
-	t.effectparamarray[effectid].g_lights_atten1=GetEffectParameterIndex(effectid,"g_lights_atten1");
-	t.effectparamarray[effectid].g_lights_diffuse1=GetEffectParameterIndex(effectid,"g_lights_diffuse1");
-	t.effectparamarray[effectid].g_lights_pos2=GetEffectParameterIndex(effectid,"g_lights_pos2");
-	t.effectparamarray[effectid].g_lights_atten2=GetEffectParameterIndex(effectid,"g_lights_atten2");
-	t.effectparamarray[effectid].g_lights_diffuse2=GetEffectParameterIndex(effectid,"g_lights_diffuse2");
-	t.effectparamarray[effectid].SpotFlashPos=GetEffectParameterIndex(effectid,"SpotFlashPos");
-	t.effectparamarray[effectid].SpotFlashColor=GetEffectParameterIndex(effectid,"SpotFlashColor");
-	#endif
 }
 
 int loadinternaleffect ( char* tfile_s )
@@ -605,9 +524,7 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 		HRESULT hr = m_pD3D->CreateTexture2D( &texDesc, NULL, &cubeTex );
 		if( FAILED( hr ) )
 		{
-			#ifdef VRTECH
 			Error1 ( "Failed to CreateTexture2D\n" );
-			#endif
 			return;
 		}
 
@@ -624,9 +541,7 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 			hr = m_pD3D->CreateRenderTargetView ( cubeTex, &rtvDesc, &_dynamicCubeMapRTV[i] );
 			if( FAILED( hr ) )
 			{
-				#ifdef VRTECH
 				Error1 ( "Failed to CreateRenderTargetView\n" );
-				#endif
 				return;
 			}
 		}
@@ -658,9 +573,7 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 		hr = m_pD3D->CreateTexture2D( &depthTexDesc, NULL, &depthTex );
 		if( FAILED( hr ) )
 		{
-			#ifdef VRTECH
 			Error1 ( "Failed to CreateTexture2D\n" );
-			#endif
 			return;
 		}
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -672,9 +585,7 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 		hr = m_pD3D->CreateDepthStencilView( depthTex, &dsvDesc, &_dynamicCubeMapDSV );
 		if( FAILED( hr ) )
 		{
-			#ifdef VRTECH
 			Error1 ( "Failed to CreateDepthStencilView\n" );
-			#endif
 			return;
 		}
 
@@ -692,10 +603,6 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 
 		// create temp camera to carry terrain perspective and clear any old terrain stack instructions
 		int iCubeRenderTempCamera = 30;
-		g_bSkipTerrainRender = true;
-		/* not used
-		BT_Intern_Render();
-		*/
 		CreateCamera ( iCubeRenderTempCamera );
 		SetCurrentCamera ( 0 );
 
@@ -744,12 +651,6 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 				AddObjectMask ( t.terrain.objectstartindex+8, 1<<iCubeRenderTempCamera );
 			}
 
-			// select all in-game entities for cube rendering
-			// NOTE: For some reason depth Z buffer sorting not working (do not need this for now)
-			//for ( int iObj = g.entityviewstartobj; iObj <= g.entityviewendobj; iObj++ )
-			//	if ( ObjectExist ( iObj ) == 1 )
-			//		AddObjectMask ( iObj, 1<<iCubeRenderTempCamera );
-
 			// draw all geometry into render target (floor and sky)
 			pCamPtr = (tagCameraData*)GetCameraInternalData ( iCubeRenderTempCamera );
 			pCamPtr->matView = cubeCameraView;
@@ -765,35 +666,11 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 			SetCameraAspect ( iCubeRenderTempCamera, 1 );
 			m_ObjectManager.UpdateInitOnce ( );
 			m_ObjectManager.Update ( );
-
-			// render the terrain (cheapest terrain render, camera 30 is temp camera)
-			if ( t.terrain.TerrainID > 0 )
-			{
-				/* not used
-				BT_SetCurrentCamera ( iCubeRenderTempCamera );
-				BT_SetTerrainLODDistance ( t.terrain.TerrainID,1,700.0 );
-				BT_SetTerrainLODDistance ( t.terrain.TerrainID,2,701.0 );
-				BT_UpdateTerrainLOD ( t.terrain.TerrainID );
-				BT_UpdateTerrainCull ( t.terrain.TerrainID );
-				BT_RenderTerrain ( t.terrain.TerrainID );
-				BT_Intern_Render();
-				*/
-			}
 		}
 
 		// delete temp camera
 		DeleteCamera ( iCubeRenderTempCamera );
 		SetCurrentCamera ( 0 );
-
-		// restore LOD to terrain render sequence
-		/* not used
-		BT_SetCurrentCamera ( 0 );
-		if ( t.terrain.TerrainID > 0 )
-		{
-			BT_SetTerrainLODDistance ( t.terrain.TerrainID,1,1401.0+t.visuals.TerrainLOD1_f );
-			BT_SetTerrainLODDistance ( t.terrain.TerrainID,2,1401.0+t.visuals.TerrainLOD2_f );
-		}
-		*/
 
 		// free resources no longer needed (rendertargetviews, depth buffer, etc)
 		for (int i = 0; i < 6; i++) 
@@ -829,11 +706,7 @@ void cubemap_buildviews ( int iImageID, int iCubeMapSize, float fX, float fY, fl
 void cubemap_generateimage ( int iImageID, float fX, float fY, float fZ, LPSTR pCacheCubeMapFile )
 {
 	// can only generate when in-game (not during init or editor modes)
-	#ifdef VRTECH
 	if ( t.game.set.ismapeditormode == 0 || t.visuals.refreshskysettingsfromlua )
-	#else
-	if ( t.game.set.ismapeditormode == 0 )
-	#endif
 	{
 		// create render target cube texture and views
 		cubemap_buildviews ( iImageID, 256, fX, fY, fZ );
@@ -850,17 +723,11 @@ void cubemap_generateimage ( int iImageID, float fX, float fY, float fZ, LPSTR p
 
 void cubemap_generateglobalenvmap ( void )
 {
-	#ifdef WICKEDENGINE
 	//PE: t.terrain.imagestartindex+31 not used in wicked.
 	WickedCall_UpdateProbes();
 	return;
-	#endif
 
-	#ifdef VRTECH
 	if ( t.game.gameisexe == 0 || t.visuals.refreshskysettingsfromlua)
-	#else
-	if ( t.game.gameisexe == 0 )
-	#endif
 	{
 		// until have dynamic cubes from light probes, use a corner of terrain to get good floor and sky simulation
 		float fSampleAtX = 2000;

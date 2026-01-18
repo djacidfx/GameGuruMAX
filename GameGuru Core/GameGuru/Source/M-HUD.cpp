@@ -102,15 +102,11 @@ void hud_scanforhudlayers ( void )
 						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_N.dds";
 						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+1 );
 
-						//PE: _S look wrong using PBR.
-						//t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_S.dds";
 						//PE: Use material 0.
 						t.strwork = "effectbank\\reloaded\\media\\materials\\0_Metalness.dds";
 						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+2 );
 						int gloosstex = loadinternaltextureex("effectbank\\reloaded\\media\\materials\\0_Gloss.dds", 1, t.tfullorhalfdivide);
 
-						//t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_cube.dds";
-						//LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+3 );
 						t.strwork = ""; t.strwork = t.strwork + "effectbank\\reloaded\\media\\white_D.dds";
 						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+3 );
 						if (g.memskipibr == 0) 
@@ -127,24 +123,6 @@ void hud_scanforhudlayers ( void )
 						TextureObject ( t.hudlayersbankoffsetindex, 5, t.hudlayersimageoffsetindex+3 );
 						int iPBRCubeImg = t.terrain.imagestartindex+31;
 						TextureObject ( t.hudlayersbankoffsetindex, 6, iPBRCubeImg );
-						/*
-						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+".x";
-						LoadObject ( t.strwork.Get() ,t.hudlayersbankoffsetindex );
-						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_D.dds";
-						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+0 );
-						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_N.dds";
-						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+1 );
-						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_S.dds";
-						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+2 );
-						t.strwork = ""; t.strwork = t.strwork + "gamecore\\hudlayers\\"+t.entityprofile[t.entid].ishudlayer_s+"_cube.dds";
-						LoadImage ( t.strwork.Get() ,t.hudlayersimageoffsetindex+3 );
-						TextureObject (  t.hudlayersbankoffsetindex,0,t.hudlayersimageoffsetindex+0 );
-						TextureObject (  t.hudlayersbankoffsetindex,1,t.hudlayersimageoffsetindex+1 );
-						TextureObject (  t.hudlayersbankoffsetindex,2,t.hudlayersimageoffsetindex+2 );
-						TextureObject (  t.hudlayersbankoffsetindex,3,t.hudlayersimageoffsetindex+3 );
-						TextureObject (  t.hudlayersbankoffsetindex,4,t.terrain.imagestartindex+2 );
-						TextureObject (  t.hudlayersbankoffsetindex,5,g.postprocessimageoffset+5 );
-						*/
 						SetObjectEffectCore (  t.hudlayersbankoffsetindex,t.playercontrol.jetpackeffect,0 );
 						YRotateObject (  t.hudlayersbankoffsetindex,180 );
 						FixObjectPivot (  t.hudlayersbankoffsetindex );
@@ -152,14 +130,6 @@ void hud_scanforhudlayers ( void )
 						//PE: Should be set so camera near dont clip hud.
 						DisableObjectZDepth(t.hudlayersbankoffsetindex);
 
-						//if (  g.globals.riftmode == 0 ) 
-						//{
-						//	DisableObjectZDepth (  t.hudlayersbankoffsetindex );
-						//}
-						//else
-						//{
-						//	//  interferes with RIFTMODE
-						//}
 						//  any any rogue marker limbs (until artist can consolidate and remove)
 						PerformCheckListForLimbs (  t.hudlayersbankoffsetindex );
 						for ( t.c = 1 ; t.c<=  ChecklistQuantity(); t.c++ )
@@ -259,11 +229,7 @@ void hud_updatehudlayerobjects ( void )
 								SetObjectFrame (  t.playercontrol.jetobjtouse,181 );
 							}
 						}
-#ifdef WICKEDENGINE
 						SetObjectSpeed (t.playercontrol.jetobjtouse, 400.0);
-#else
-						SetObjectSpeed (t.playercontrol.jetobjtouse, 400.0*g.timeelapsed_f);
-#endif
 					}
 					else
 					{
@@ -283,11 +249,7 @@ void hud_updatehudlayerobjects ( void )
 								}
 							}
 						}
-#ifdef WICKEDENGINE
 						SetObjectSpeed (t.playercontrol.jetobjtouse, 100.0);
-#else
-						SetObjectSpeed (t.playercontrol.jetobjtouse, 100.0*g.timeelapsed_f);
-#endif
 					}
 					if (  t.playercontrol.jetpackhidden == 0 ) 
 					{
@@ -498,9 +460,6 @@ void new_damage_marker ( int entity, int x, int z, int y, int tempdamage )
 	//  early exit if damage off or attacker already has marker.
 	if (t.huddamage.damageindicatoron < 1 || attackeralreadyhasmarker != 0)
 	{
-		#ifndef WICKEDENGINE
-		return;
-		#endif
 	}
 	else
 	{
@@ -525,11 +484,7 @@ void new_damage_marker ( int entity, int x, int z, int y, int tempdamage )
 				t.damagemarker[find].used = 1;
 				t.damagemarker[find].image = t.huddamage.indicator;
 				t.damagemarker[find].time = Timer();
-				#ifdef WICKEDENGINE
 				t.damagemarker[find].scale = 200;
-				#else
-				t.damagemarker[find].scale = 100;
-				#endif
 				t.damagemarker[find].entity = entity;
 				//  store damage start location
 				t.damagemarker[find].lx = x;

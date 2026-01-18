@@ -19,15 +19,6 @@ extern "C" FILE* GG_fopen( const char* filename, const char* mode );
 
 bool noDeleteCSTR = false;
 #define STRMAXSIZE 8192
-//#define STRMINSIZE 256 // some DLUA strings can easily exceed 256 characters!
-#ifdef PRODUCTCLASSIC
-//PE: We cant affort this in classic, when you add one object to a level:
-//PE: we have around 30 cstr inside entityelement , each is constructed with s="" that preallocate STRMINSIZE.
-//PE: 30*1024 = 30kb per entity.
-//PE: I have set it to 128 (default) in classic, it should be fine as it will grow if needed.
-//PE: Classic, everything above 100 has a very low realloc rate so use 100.
-#define STRMINSIZE 100
-#else
 //#define STRMINSIZE 1024
 //PE: The default STRMINSIZE use tons of mem, i think we fixed all bugs in here so we should be able to use a lower amount, it will increase if needed.
 //#define STRMINSIZE 512
@@ -35,10 +26,13 @@ bool noDeleteCSTR = false;
 //PE: 128 works fine, and have a low realloc rate. so 77.5kb per entity, in sample above (2.8gb), this with testgame backup only 0.73GB. used.
 //PE: The above is ONLY for cstr alloc per object, each object takes up more mem, need to look at that.
 #define STRMINSIZE 128
-#endif
 
 #define CONSTRUCTERSIZE 2
 #define MAXSIZEVALUE 64
+
+//PE: Some functions pass the cstr to a function, where they could add to the cstr and make heap errors, like .x -> .dbo conversion.
+//PE: Add a few bytes extra to new allocations, and also save some reallocate.
+#define BUFFERINCREASESIZE 8
 
 //PE: ZTEMP just use double mem, no need, use a ringbuffer instead. And we have very many of these in entityelements.
 #define DISABLEZTEMP
@@ -70,17 +64,10 @@ cStr::cStr(const cStr& cString)
 	//PE: Should be >= if size was exactly STRMINSIZE we would get a heap error.
 	if (m_size >= m_capacity)
 	{
-		m_capacity = m_size + 1;
+		m_capacity = m_size + BUFFERINCREASESIZE;
 		m_pString = new char[m_capacity];
 		memset(m_pString, 0, m_capacity);
 	}
-//	else
-//	{
-//		m_capacity = STRMINSIZE;
-//		m_pString = new char[m_capacity];
-//	}
-
-	//memset(m_pString, 0, m_capacity);
 	strcpy(m_pString, cString.m_pString);
 }
 
@@ -90,17 +77,10 @@ cStr::cStr(char* szString)
 
 	if (m_size >= m_capacity)
 	{
-		m_capacity = m_size + 1;
+		m_capacity = m_size + BUFFERINCREASESIZE;
 		m_pString = new char[m_capacity];
 		memset(m_pString, 0, m_capacity);
 	}
-//	else
-//	{
-//		m_capacity = STRMINSIZE;
-//		m_pString = new char[m_capacity];
-//	}
-
-	//memset(m_pString, 0, m_capacity);
 	strcpy(m_pString, szString);
 }
 
@@ -201,7 +181,7 @@ cStr& cStr::operator += (const cStr& other)
 	if (new_size >= m_capacity)
 	{
 		// Need to reallocate! Let's grow the capacity.
-		int new_capacity = new_size + 1;
+		int new_capacity = new_size + BUFFERINCREASESIZE;
 		char* newstring = new char[new_capacity];
 		strcpy(newstring, m_pString);
 		delete[] m_pString;
@@ -223,7 +203,7 @@ cStr cStr::operator = (const cStr& other)
 	if (m_size >= m_capacity)
 	{
 		// New string is too big, reallocate.
-		int new_capacity = m_size + 1;
+		int new_capacity = m_size + BUFFERINCREASESIZE;
 		char* newstring = new char[new_capacity];
 		delete[] m_pString;
 		m_pString = newstring;
@@ -250,7 +230,7 @@ cStr& cStr::operator = (const char* other)
 	if (m_size >= m_capacity)
 	{
 		// New string is too big, reallocate.
-		int new_capacity = m_size + 1;
+		int new_capacity = m_size + BUFFERINCREASESIZE;
 		char* newstring = new char[new_capacity];
 		delete[] m_pString;
 		m_pString = newstring;
@@ -841,7 +821,6 @@ void replaceAll(std::string& str, const std::string& from, const std::string& to
 	}
 }
 
-#ifdef WICKEDENGINE
 std::string target;
 std::string removeChars(std::string s, int pos, bool f(char c))
 {
@@ -908,6 +887,5 @@ std::string soundexall(std::string all)
 	}
 	return result;
 }
-#endif
 
 

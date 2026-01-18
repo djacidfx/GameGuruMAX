@@ -124,9 +124,6 @@ sImportedObjectData g_Data;
 
 extern preferences pref;
 
-// Prototypes
-void LoadFBX ( LPSTR pFilename, int iObjectNumber );
-
 void importer_init_wicked(void)
 {
 	// deactivate any modes editor may have been in
@@ -238,7 +235,6 @@ void set_temp_visuals(visualstype& currentVisuals, visualsdatastoragetype& stora
 	currentVisuals.SunAngleZ = desiredVisuals.SunAngleZ;
 	currentVisuals.iTimeOfday = desiredVisuals.iTimeOfday;
 	currentVisuals.fExposure = desiredVisuals.fExposure;
-	//currentVisuals.skyindex = desiredVisuals.skyindex;
 	currentVisuals.refreshskysettings = 0; //1 ZJ: prevent sky_skyspec_init() resetting sun rotation.
 	currentVisuals.refreshshaders = 1;
 }
@@ -276,7 +272,6 @@ void restore_visuals(visualstype& currentVisuals, visualsdatastoragetype& storag
 	currentVisuals.iTimeOfday = storage.iTimeOfday;
 	currentVisuals.fExposure = storage.fExposure;
 	currentVisuals.skyindex = storage.skyindex;
-	//currentVisuals.refreshskysettings = 1; keep custom settings
 	currentVisuals.refreshshaders = 1;
 }
 
@@ -286,7 +281,6 @@ void importer_free_wicked(void)
 	waypoint_showall ( );
 
 	// free resources (with wicked, deleting objects CAN CRASH as threads may still be using them - need a way to signal there deleting at the right time)
-	//if ( ObjectExist(t.importer.objectnumber) ) DeleteObject ( t.importer.objectnumber );
 	//PE: Imgui can still be visible with the textures , so free after import window calls.
 	if ( ObjectExist(t.importer.objectnumber) ) HideObject ( t.importer.objectnumber ); // while testing all import formats
 
@@ -734,65 +728,6 @@ void importer_applyimagelisttextures ( bool bCubeMapOnly, int iOptionalOnlyUpdat
 	// or full retexture model from imagelist
 	if ( bCubeMapOnly == false )
 	{
-		/*
-		// work out if object is single or multi-texture
-		int iTextureCount = 0;
-		char pStoreTextureNames[50][512];
-		memset ( pStoreTextureNames, 0, sizeof(pStoreTextureNames) );
-		PerformCheckListForLimbs ( t.importer.objectnumber );
-		for ( int tCount = 0 ; tCount <= ChecklistQuantity()-1; tCount++ )
-		{
-			cstr pLimbTextureName = importer_getfilenameonly ( LimbTextureName ( t.importer.objectnumber, tCount ) );
-			if ( strlen ( pLimbTextureName.Get() ) > 0 )
-			{
-				// only add/count if unique
-				bool bTexNameUnique = true;
-				for ( int iScan = 0; iScan < iTextureCount; iScan++ )
-				{
-					if ( stricmp ( pStoreTextureNames[iScan], pLimbTextureName.Get() ) == NULL )
-					{
-						bTexNameUnique = false; 
-						break;
-					}
-				}
-
-				// add to list of texture names found in object limbs
-				if ( bTexNameUnique == true )
-				{
-					if ( iTextureCount < 50 )
-					{
-						strcpy ( pStoreTextureNames[iTextureCount], pLimbTextureName.Get() );
-						iTextureCount++;
-					}
-				}
-			}
-		}
-		*/
-
-		/*
-		// single or multi texture
-		if ( iTextureCount <= 1 )
-		{
-			// SINGLE - assign texture to model from slot one 
-			TextureObject (  t.importer.objectnumber, t.importerTextures[1].imageID );
-			for ( int tCount = 0 ; tCount <= ChecklistQuantity()-1; tCount++ )
-			{
-				TextureLimb ( t.importer.objectnumber, tCount, t.importerTextures[1].imageID );
-				int iImgColor=0, iImgNormal=0, iImgSpecular=0, iImgGloss=0, iImgAO=0, iImgHeight=0;
-				importer_findimagetypesfromlist ( t.importerTextures[1].fileName, &iImgColor, &iImgNormal, &iImgSpecular, &iImgGloss, &iImgAO, &iImgHeight );
-				if ( iImgColor > 0 ) TextureLimbStage ( t.importer.objectnumber, tCount, iColorStage, iImgColor );
-				if ( iImgNormal > 0 ) TextureLimbStage ( t.importer.objectnumber, tCount, iNormalStage, iImgNormal );
-				if ( iImgSpecular > 0 ) TextureLimbStage ( t.importer.objectnumber, tCount, iSpecularStage, iImgSpecular );
-				if ( iImgGloss > 0 ) TextureLimbStage ( t.importer.objectnumber, tCount, iGlossStage, iImgGloss );
-				if ( iImgAO > 0 && iAOStage != - 1 ) TextureLimbStage ( t.importer.objectnumber, tCount, iAOStage, iImgAO );
-				if ( iImgHeight > 0 && iHeightStage != - 1 ) TextureLimbStage ( t.importer.objectnumber, tCount, iHeightStage, iImgHeight );
-				TextureLimbStage ( t.importer.objectnumber, tCount, iEnvStage, iImageIndexForCUBE );
-			}
-		}
-		else
-		{
-		*/
-
 		// texture stage specific non-base (normal, ao, etc)
 		int iOptionalStage = 0;
 		if ( iOptionalOnlyUpdateImageListIndex > 0 ) iOptionalStage = t.importerTextures[iOptionalOnlyUpdateImageListIndex].iOptionalStage;
@@ -842,121 +777,12 @@ void importer_applyimagelisttextures ( bool bCubeMapOnly, int iOptionalOnlyUpdat
 								if ( iImgHeight > 0 && iHeightStage != - 1 ) TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iHeightStage, iImgHeight );
 							}
 
-							/*
-							// work out base filename by removing known albedo extensions
-							cstr pBaseFile = Left ( pLimbTextureName.Get(), strlen(pLimbTextureName.Get())-4 );
-							if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 2, "_d", 2 ) == NULL )
-							{
-								pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-2 );
-							}
-							else if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 6, "_color", 6 ) == NULL )
-							{
-								pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-6 );
-							}
-							else if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 8, "_diffuse", 8 ) == NULL )
-							{
-								pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-8 );
-							}
-							if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 5, "_hair", 5 ) == NULL )
-							{
-								// switch off culling (leave zwrite as distant hair rendered over nearer hair)
-								SetLimbCull ( t.importer.objectnumber, tLimbIndex, false );
-							}
-
-							// detect normal
-							cstr pNormalFile = pBaseFile + cstr("normal.png");
-							int iImageIndexForNormal = importer_findtextureinlist ( pNormalFile.Get() );
-							TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iNormalStage, t.importerTextures[iImageIndexForNormal].imageID );
-
-							// detect specular or metalness
-							cstr pSpecularFile = pBaseFile + cstr("specular.png");
-							int iImageIndexForSpecular = importer_findtextureinlist ( pSpecularFile.Get() );
-							if ( iImageIndexForSpecular == 0 )
-							{
-								pSpecularFile = pBaseFile + cstr("metalness.png");
-								iImageIndexForSpecular = importer_findtextureinlist ( pSpecularFile.Get() );
-								TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iSpecularStage, t.importerTextures[iImageIndexForSpecular].imageID );
-							}
-							TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iSpecularStage, t.importerTextures[iImageIndexForSpecular].imageID );
-
-							// delect gloss
-							cstr pGlossFile = pBaseFile + cstr("gloss.png");
-							int iImageIndexForGloss = importer_findtextureinlist ( pGlossFile.Get() );
-							TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iGlossStage, t.importerTextures[iImageIndexForGloss].imageID );
-							*/
-
 							// apply environment cube map
 							TextureLimbStage ( t.importer.objectnumber, tLimbIndex, iEnvStage, iImageIndexForCUBE );
 						}
 					}
 				}
 			}
-			//}
-			/*
-			for ( int tCount = 0 ; tCount <= ChecklistQuantity()-1; tCount++ )
-			{
-				cstr pLimbTextureName = importer_getfilenameonly ( LimbTextureName ( t.importer.objectnumber, tCount ) );
-				if ( strlen ( pLimbTextureName.Get() ) > 0 )
-				{
-					for ( int iImageListIndex = 0; iImageListIndex < IMPORTERTEXTURESMAX; iImageListIndex++ )
-					{
-						if ( t.importerTextures[iImageListIndex].imageID > 0 )
-						{
-							cstr pCompareWith = importer_getfilenameonly ( t.importerTextures[iImageListIndex].fileName.Get() );
-							if ( strnicmp ( pCompareWith.Get(), pLimbTextureName.Get(), strlen(pCompareWith.Get()) ) == NULL )
-							{
-								// diffuse/albedo
-								TextureLimbStage ( t.importer.objectnumber, tCount, iColorStage, t.importerTextures[iImageListIndex].imageID );
-
-								// work out base filename by removing known albedo extensions
-								cstr pBaseFile = Left ( pLimbTextureName.Get(), strlen(pLimbTextureName.Get())-4 );
-								if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 2, "_d", 2 ) == NULL )
-								{
-									pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-2 );
-								}
-								else if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 6, "_color", 6 ) == NULL )
-								{
-									pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-6 );
-								}
-								else if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 8, "_diffuse", 8 ) == NULL )
-								{
-									pBaseFile = Left ( pBaseFile.Get(), strlen(pBaseFile.Get())-8 );
-								}
-								if ( strnicmp ( pBaseFile.Get() + strlen(pBaseFile.Get()) - 5, "_hair", 5 ) == NULL )
-								{
-									// switch off culling (leave zwrite as distant hair rendered over nearer hair)
-									SetLimbCull ( t.importer.objectnumber, tCount, false );
-								}
-
-								// detect normal
-								cstr pNormalFile = pBaseFile + cstr("normal.png");
-								int iImageIndexForNormal = importer_findtextureinlist ( pNormalFile.Get() );
-								TextureLimbStage ( t.importer.objectnumber, tCount, iNormalStage, t.importerTextures[iImageIndexForNormal].imageID );
-
-								// detect specular or metalness
-								cstr pSpecularFile = pBaseFile + cstr("specular.png");
-								int iImageIndexForSpecular = importer_findtextureinlist ( pSpecularFile.Get() );
-								if ( iImageIndexForSpecular == 0 )
-								{
-									pSpecularFile = pBaseFile + cstr("metalness.png");
-									iImageIndexForSpecular = importer_findtextureinlist ( pSpecularFile.Get() );
-									TextureLimbStage ( t.importer.objectnumber, tCount, iSpecularStage, t.importerTextures[iImageIndexForSpecular].imageID );
-								}
-								TextureLimbStage ( t.importer.objectnumber, tCount, iSpecularStage, t.importerTextures[iImageIndexForSpecular].imageID );
-
-								// delect gloss
-								cstr pGlossFile = pBaseFile + cstr("gloss.png");
-								int iImageIndexForGloss = importer_findtextureinlist ( pGlossFile.Get() );
-								TextureLimbStage ( t.importer.objectnumber, tCount, iGlossStage, t.importerTextures[iImageIndexForGloss].imageID );
-
-								// detect CUBE
-								TextureLimbStage ( t.importer.objectnumber, tCount, iEnvStage, iImageIndexForCUBE );
-							}
-						}
-					}
-				}
-			}
-			*/
 		}
 	}
 }
@@ -1011,16 +837,10 @@ void importer_changeshader ( LPSTR pNewShaderFilename )
 			int iEffectID = loadinternaleffectunique ( pRelativeEffectPath, 1 ); //PE: old effect never deleted. ?
 			DeleteObject ( t.importer.objectnumber );
 			CloneObject ( t.importer.objectnumber, t.importer.objectnumberpreeffectcopy );
-			//ReverseObjectFrames ( t.importer.objectnumber ); // hair rendered last
 			importer_applyimagelisttextures ( true, -1, false );
 			importer_recreate_texturesprites();
 			LockObjectOn ( t.importer.objectnumber );
-
-			//DisableObjectZRead ( t.importer.objectnumber ); // messes up import preview!
-			//DisableObjectZDepth ( t.importer.objectnumber );
 			SetObjectEffect ( t.importer.objectnumber, iEffectID ); 
-			//SetEffectTechnique ( iEffectID, "LowestWithCutOutDepth" ); // messes up import preview!
-			//SetObjectTransparency ( t.importer.objectnumber, 6 );
 
 			GlueObjectToLimbEx ( t.importer.objectnumber, t.importerGridObject[8], 0 , 1 );
 			giRememberLastEffectIndexInImporter = iEffectID;
@@ -1826,8 +1646,6 @@ void importer_loadmodel_wicked(void)
 
 	importer_load_scenery();
 
-	//importer_find_floor(); //PE: Not default anymore.
-
 	// Start importer loop
 	t.importer.loaded = 1;
 }
@@ -1871,7 +1689,6 @@ void importer_loadmodel ( void )
 	set_temp_visuals(t.visuals, t.visualsStorage, desiredVisuals);
 	
 	//set_temp_visuals(t.gamevisuals, t.visualsStorage, desiredVisuals);
-	//t.visuals.refreshshaders = 1;
 	visuals_loop();
 
 	// seems to be needed for VRQ too (for scaling)
@@ -1880,8 +1697,20 @@ void importer_loadmodel ( void )
 	// remove editor prompt
 	popup_text_close();
 
-	iImporterScale = 100; //Default scale.
-	t.slidersmenuvalue[t.importer.properties1Index][1].value = 100;
+	if (bRestoreData)
+	{
+		// when restoring custom settings, do NOT reset scale!
+		if (ObjectExist(t.importer.objectnumber) == 1)
+		{
+			ScaleObject(t.importer.objectnumber, iImporterScale * fImporterScaleMultiply, iImporterScale * fImporterScaleMultiply, iImporterScale * fImporterScaleMultiply);
+		}
+	}
+	else
+	{
+		iImporterScale = 100; //Default scale.
+	}
+
+	t.slidersmenuvalue[t.importer.properties1Index][1].value = iImporterScale;
 	iImporterGenerateThumb = 0;
 }
 
@@ -1995,9 +1824,7 @@ void importer_load_scenery()
 	if (!pref.iImporterDome)
 	{
 		HideObject(g.importerextraobjectoffset);
-		//HideObject(g.importerextraobjectoffset + 1);
 	}
-
 }
 
 void importer_RestoreCollisionShiftHeight ( void )
@@ -2095,11 +1922,9 @@ void animsystem_processallmannequins (void)
 						// save new DBO with replaced model
 						char pDestFilePath[MAX_PATH];
 						strcpy(pDestFilePath, pSrcFilePath);
-						//GG_SetWritablesToRoot(true);
 						GG_GetRealPath(pDestFilePath, 1);
 						if (FileExist(pDestFilePath) == 1) DeleteFileA(pDestFilePath);
 						SaveObject(pDestFilePath, g.tempobjectoffset);
-						//GG_SetWritablesToRoot(false);
 
 						// get name only
 						char pNameOnly[MAX_PATH];
@@ -2668,7 +2493,6 @@ void animsystem_animationtoolui(int objectnumber)
 								char pTXTAnimFile[MAX_PATH];
 								cstr TXTAnimFile_s = g.fpscrootdir_s + "\\Files\\charactercreatorplus\\animations\\";
 								strcpy (pTXTAnimFile, TXTAnimFile_s.Get());
-								//GG_GetRealPath(pTXTAnimFile, 0);
 								strcat(pTXTAnimFile, pDefaultFilename+1);
 								strcat(pTXTAnimFile, ".txt");
 
@@ -2690,7 +2514,6 @@ void animsystem_animationtoolui(int objectnumber)
 								cstr SaveAnimSet_s = g.fpscrootdir_s + "\\Files\\charactercreatorplus\\animations\\sets\\" + pAnimSetFile + ".dbo";
 								char pSaveAnimSetDBO[MAX_PATH];
 								strcpy (pSaveAnimSetDBO, SaveAnimSet_s.Get());
-								//GG_GetRealPath(pSaveAnimSetDBO, 1);
 								if (FileExist(pSaveAnimSetDBO) == 1) DeleteFileA(pSaveAnimSetDBO);
 								GG_SetWritablesToRoot(true);
 								SaveObject(pSaveAnimSetDBO, objectnumber);
@@ -3667,18 +3490,19 @@ void imgui_importer_refreshbatchlist (void)
 		{
 			bool bPermittedFormat = false;
 			const char* pExtension = strrchr(pFileName, '.');
-			if (stricmp(pExtension, ".x") == NULL) bPermittedFormat = true;
-			if (g_bIgnoreDBOAsAlreadyConverted == false)
+			if (pExtension)
 			{
-				// want to avoid converting the converted (most of the time) :)
-				if (stricmp(pExtension, ".dbo") == NULL) bPermittedFormat = true;
+				if (stricmp(pExtension, ".x") == NULL) bPermittedFormat = true;
+				if (g_bIgnoreDBOAsAlreadyConverted == false)
+				{
+					// want to avoid converting the converted (most of the time) :)
+					if (stricmp(pExtension, ".dbo") == NULL) bPermittedFormat = true;
+				}
+				if (stricmp(pExtension, ".obj") == NULL) bPermittedFormat = true;
+				if (stricmp(pExtension, ".fbx") == NULL) bPermittedFormat = true;
+				if (stricmp(pExtension, ".gltf") == NULL) bPermittedFormat = true;
+				if (stricmp(pExtension, ".glb") == NULL) bPermittedFormat = true;
 			}
-			if (stricmp(pExtension, ".obj") == NULL) bPermittedFormat = true;
-			if (stricmp(pExtension, ".fbx") == NULL) bPermittedFormat = true;
-			if (stricmp(pExtension, ".gltf") == NULL) bPermittedFormat = true;
-			if (stricmp(pExtension, ".glb") == NULL) bPermittedFormat = true;
-			//if (stricmp(pExtension, ".dae") == NULL) bPermittedFormat = true;
-			//if (stricmp(pExtension, ".3ds") == NULL) bPermittedFormat = true;
 			if (bPermittedFormat == true)
 			{
 				batchFileList.push_back(pFileName);
@@ -3868,24 +3692,15 @@ void imgui_importer_loop(void)
 		case 5:
 		{
 			// no longer does the preview thumb adjustment when in batch mode
-			// batch conversion process
-			//extern cstr sGotoPreviewWithFile;
-			//if (sGotoPreviewWithFile.Len() > 0)
-			//{
-			//	// wait for preview to be created in UI before proceeding to next load
-			//}
-			//else
-			//{
-				iDelayedExecute = 0;
-				importer_storeobjectdata();
-				extern char pLaunchAfterSyncPreSelectModel[MAX_PATH];
-				strcpy (pLaunchAfterSyncPreSelectModel, "");
-				extern void importer_quit_for_reload (LPSTR pOptionalCopyModelFile);
-				importer_quit_for_reload(pLaunchAfterSyncPreSelectModel);
-				extern int iLaunchAfterSync;
-				iLaunchAfterSync = 8;
-				bBatchConverting = true;
-			//}
+			iDelayedExecute = 0;
+			importer_storeobjectdata();
+			extern char pLaunchAfterSyncPreSelectModel[MAX_PATH];
+			strcpy (pLaunchAfterSyncPreSelectModel, "");
+			extern void importer_quit_for_reload (LPSTR pOptionalCopyModelFile);
+			importer_quit_for_reload(pLaunchAfterSyncPreSelectModel);
+			extern int iLaunchAfterSync;
+			iLaunchAfterSync = 8;
+			bBatchConverting = true;
 			break;
 		}
 
@@ -4041,7 +3856,6 @@ void imgui_importer_loop(void)
 					else 
 					{
 						//Failed reset slot.
-						//strcpy(pTextureFilename, ""); //update mesh texture.
 						pSelectedMaterial->textures[MaterialComponentTEXTURESLOT::DISPLACEMENTMAP].resource = nullptr;
 						pSelectedMaterial->textures[MaterialComponentTEXTURESLOT::DISPLACEMENTMAP].name = "";
 						pSelectedMaterial->SetDirty();
@@ -4135,13 +3949,6 @@ void imgui_importer_loop(void)
 			if (pSelectedMaterial)
 			{
 				strcpy (pOrigSurfaceFile, pSelectedMaterial->textures[MaterialComponentTEXTURESLOT::SURFACEMAP].name.c_str());
-				// ZJ: Delete the original texture only if the user selects a file. If they cancel, we don't want to delete their previous selection.
-				/*if (strlen(pOrigSurfaceFile) > 0) WickedCall_DeleteImage (pOrigSurfaceFile);
-				pSelectedMaterial->textures[MaterialComponentTEXTURESLOT::SURFACEMAP].resource = nullptr;
-				pSelectedMaterial->textures[MaterialComponentTEXTURESLOT::SURFACEMAP].name = "";
-				pSelectedMaterial->SetDirty();
-				wiJobSystem::context ctx;
-				wiJobSystem::Wait(ctx);*/
 			}
 
 			// if a mesh selected for changing
@@ -5219,40 +5026,6 @@ void imgui_importer_loop(void)
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cancel, Close Importer");
 		}
 
-		if (!pref.bHideTutorials)
-		{
-			#ifndef REMOVED_EARLYACCESS
-			if (ImGui::StyleCollapsingHeader("Tutorial (this feature is incomplete)", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Indent(10);
-				void SmallTutorialVideo(char *tutorial, char* combo_items[] = NULL, int combo_entries = 0, int iVideoSection = 0, bool bAutoStart = false);
-				cstr cShowTutorial = "03 - Add character and set a path";
-				char* tutorial_combo_items[] = { "01 - Getting started", "02 - Creating terrain", "03 - Add character and set a path" };
-				SmallTutorialVideo(cShowTutorial.Get(), tutorial_combo_items, ARRAYSIZE(tutorial_combo_items), SECTION_IMPORTER);
-				float but_gadget_size = ImGui::GetFontSize()*12.0;
-				float w = ImGui::GetWindowContentRegionWidth() - 10.0;
-				ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2((w*0.5) - (but_gadget_size*0.5), 0.0f));
-				#ifdef INCLUDESTEPBYSTEP
-				if (ImGui::StyleButton("View Step by Step Tutorial", ImVec2(but_gadget_size, 0)))
-				{
-					// pre-select tutorial 03
-					extern bool bHelpVideo_Window;
-					extern bool bHelp_Window;
-					extern char cForceTutorialName[1024];
-					bHelp_Window = true;
-					bHelpVideo_Window = true;
-					extern bool bSetTutorialSectionLeft;
-					bSetTutorialSectionLeft = false;
-					strcpy(cForceTutorialName, cShowTutorial.Get());
-				}
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start Step by Step Tutorial");
-				#endif
-
-				ImGui::Indent(-10);
-			}
-			#endif
-		}
-
 		void CheckMinimumDockSpaceSize(float minsize);
 		CheckMinimumDockSpaceSize(250.0f);
 
@@ -5545,7 +5318,6 @@ void importer_ShowCollisionOnly ( void )
 				ShowObject (  t.importerCollision[tCount].object );
 				SetObjectLight (  t.importerCollision[tCount].object, 1 );
 				ColorObject (  t.importerCollision[tCount].object , Rgb(255,255,100) );
-				///GhostObjectOff (  t.importerCollision[tCount].object );
 			}
 		}
 	}
@@ -6803,7 +6575,6 @@ void importer_check_for_physics_changes ( void )
 					MoveObjectDown(t.importerCollision[t.importer.selectedCollisionObject].object, t.tmoveY_f);
 					MoveObject(t.importerCollision[t.importer.selectedCollisionObject].object, t.tmoveZ_f);
 					ShowObject(t.importerCollision[t.importer.selectedCollisionObject].object);
-					///GhostObjectOn (   t.importerCollision[t.importer.selectedCollisionObject].object,2 );
 					SetObjectLight(t.importerCollision[t.importer.selectedCollisionObject].object, 1);
 					ColorObject(t.importerCollision[t.importer.selectedCollisionObject].object, Rgb(0, 0, 0));
 					SetObjectAmbience(t.importerCollision[t.importer.selectedCollisionObject].object, 0);
@@ -6844,8 +6615,6 @@ void importer_check_for_physics_changes ( void )
 				MoveObjectDown(t.importerCollision[t.importer.selectedCollisionObject].object, t.tScaleY_f * t.tMultiY_f / 2.0);
 				MoveObject(t.importerCollision[t.importer.selectedCollisionObject].object, -t.tScaleZ_f * t.tMultiZ_f / 2.0);
 				ShowObject(t.importerCollision[t.importer.selectedCollisionObject].object);
-
-				///GhostObjectOn (   t.importerCollision[t.importer.selectedCollisionObject].object,2 );
 
 				SetObjectLight(t.importerCollision[t.importer.selectedCollisionObject].object, 1);
 				ColorObject(t.importerCollision[t.importer.selectedCollisionObject].object, Rgb(0, 0, 0));
@@ -7057,124 +6826,6 @@ void importer_update_textures ( void )
 		}
 	}
 	SetDir (  t.importer.startDir.Get() );
-
-	/* old pre-180617
-	// we only use one texture slot (for single texture or shows multi-tex image FOR NOW)
-	// for ( int tCount = 1 ; tCount<=  10; tCount++ )
-	int tCount = 1;
-
-	// determine what texture is shown in UI
-	int iTexSlotImage = t.importerTextures[tCount].imageID;
-	if ( iTexSlotImage == 0  ) return;
-
-	// is this a multi textures
-	if ( t.importerTextures[2].imageID != 0 )
-		iTexSlotImage = g.importermenuimageoffset+10;
-
-	// is image valid
-	if ( ImageExist (iTexSlotImage) == 0 )  
-		return;
-
-	t.tOffsetX = 0;
-	if (  tCount > 5  )  t.tOffsetX  =  128;
-	if (  t.importer.scaleMulti  !=  1.0  )  t.tOffsetX  =  0;
-	t.tOffsetY = tCount;
-	if (  tCount > 5  )  t.tOffsetY  =  tCount-5;
-	t.tOffsetY = t.tOffsetY * 128;
-
-	if (  t.importer.scaleMulti  !=  1.0 ) 
-	{
-		Sprite (  t.importerTextures[tCount].spriteID2 , 0, (GetChildWindowHeight()/2) - 400 + t.tOffsetY-19+20 , g.importermenuimageoffset+7 );
-	}
-	else
-	{
-		Sprite (  t.importerTextures[tCount].spriteID2 , (GetChildWindowWidth()/2) - 430 - t.tOffsetX -19 -20, (GetChildWindowHeight()/2) - 400 + t.tOffsetY-19+20 , g.importermenuimageoffset+7 );
-	}
-	SizeSprite (  t.importerTextures[tCount].spriteID2 , 128 , 128 );
-
-	if (  t.importer.scaleMulti  !=  1.0 ) 
-	{
-		Sprite (  t.importerTextures[tCount].spriteID , 20 , (GetChildWindowHeight()/2) - 400 + t.tOffsetY+20 , iTexSlotImage );
-	}
-	else
-	{
-		Sprite (  t.importerTextures[tCount].spriteID , (GetChildWindowWidth()/2) - 430 - t.tOffsetX-20 , (GetChildWindowHeight()/2) - 400 + t.tOffsetY+20 , iTexSlotImage );
-	}
-	SizeSprite (  t.importerTextures[tCount].spriteID , 90 , 90 );
-	SetSpritePriority (  t.importerTextures[tCount].spriteID, 1 );
-
-	if (  t.importer.MouseX  >=  SpriteX (t.importerTextures[tCount].spriteID2) -20 && t.importer.MouseY >=  (GetChildWindowHeight()/2) - 400 + tCount * 128+20 )
-	{
-		if (  t.importer.MouseX  <=  SpriteX (t.importerTextures[tCount].spriteID2) +128+20 && t.importer.MouseY <=  90+(GetChildWindowHeight()/2) - 400 + tCount * 128+20 ) 
-		{
-			if (  t.inputsys.mclick  ==  0 ) 
-			{
-				if (  t.importer.scaleMulti  !=  1.0 ) 
-				{
-					Sprite (  t.importerTextures[tCount].spriteID2 , 0 , (GetChildWindowHeight()/2) - 400 + t.tOffsetY-19 + 20 , g.importermenuimageoffset+7 );
-				}
-				else
-				{
-					Sprite (  t.importerTextures[tCount].spriteID2 , (GetChildWindowWidth()/2) - 430 - t.tOffsetX -19 - 20, (GetChildWindowHeight()/2) - 400 + t.tOffsetY-19 + 20 , g.importermenuimageoffset+7 );
-				}
-				SizeSprite (  t.importerTextures[tCount].spriteID2 , 128 , 128 );
-				SizeSprite (  t.importerTextures[tCount].spriteID , 106 , 106 );
-				if (  t.importer.scaleMulti  ==  1.0 ) 
-				{
-					Sprite (  t.importerTextures[tCount].spriteID , (GetChildWindowWidth()/2) - 430 -8-20 , (GetChildWindowHeight()/2) - 400 + tCount * 128 - 8+20 , iTexSlotImage );
-				}
-				else
-				{
-					Sprite (  t.importerTextures[tCount].spriteID , 10 , (GetChildWindowHeight()/2) - 400 + tCount * 128 - 8+20 , iTexSlotImage );
-				}
-				SetSpritePriority (  t.importerTextures[tCount].spriteID, 1 );
-			}
-			else
-			{
-				if (  t.importer.oldMouseClick  ==  0 ) 
-				{
-					t.tFileName_s = openFileBox("PNG|*.png|DDS|*.dds|JPEG|*.jpg|BMP|*.bmp|All Files|*.*|", "", "Open Texture", ".dds", IMPORTEROPENFILE);
-					if (  t.tFileName_s  ==  "Error"  )  return;
-					if (  FileExist ( t.tFileName_s.Get() )  ==  1 )  
-					{
-						// prompt as this may take some seconds
-						LPSTR pDelayPrompt = "Loading chosen texture and associated files";
-						for ( int iSyncPass=0; iSyncPass<2; iSyncPass++ )
-						{
-							pastebitmapfont(pDelayPrompt,(GetChildWindowWidth()/2) - (getbitmapfontwidth (pDelayPrompt,1)/2),860,1,255);
-							Sync();
-						}
-
-						// clear image list of old images
-						for ( tCount = 2 ; tCount <= IMPORTERTEXTURESMAX; tCount++ )
-						{
-							t.importerTextures[tCount].fileName = "";
-							t.importerTextures[tCount].imageID = 0;
-						}
-
-						// start again at image slot one
-						tCount = 1;
-
-						// first reset sprite so new image (same ID) can take hold
-						Sprite ( t.importerTextures[tCount].spriteID, -99999, -99999, g.importermenuimageoffset+10 );
-
-						// replace image details
-						if ( ImageExist ( t.importerTextures[tCount].imageID ) ==1 ) DeleteImage ( t.importerTextures[tCount].imageID );
-						LoadImage ( t.tFileName_s.Get(), t.importerTextures[tCount].imageID );
-						t.importerTextures[tCount].fileName = t.tFileName_s;
-
-						// ensure single texture is specified in FPE
-						t.importer.objectFPE.textured = t.tFileName_s;
-
-						// reapply texture to model
-						importer_applyimagelisttextures(true);
-					}
-				}
-			}
-		}
-	}
-	SetDir (  t.importer.startDir.Get() );
-	*/
 }
 
 void importer_load_textures_finish ( int tCount, bool bCubeMapOnly )
@@ -7391,7 +7042,6 @@ void importer_load_textures ( void )
 	if ( tCount == 0 ) 
 	{
 		SetObjectEffect (  t.importer.objectnumber,0 );
-		//CloneMeshToNewFormat (  t.importer.objectnumber,530,1 ); // 220618 - for some reason importer adding second UV layer!
 		PerformCheckListForLimbs (  t.importer.objectnumber );
 		for ( t.tCount9 = 1 ; t.tCount9 <= ChecklistQuantity()-1; t.tCount9++ )
 		{
@@ -8384,7 +8034,6 @@ void importer_handleScale ( void )
 
 void importer_draw_wicked(void)
 {
-	// Wicked engine import different from Classic/VRQ
 }
 
 void importer_draw ( void )
@@ -11814,6 +11463,16 @@ void Wicked_Change_Object_Material(void* pVObject, int mode, entityeleproftype *
 											pObjectMaterial->customShaderParam4 = 0.4f; //BASE ALPHA
 										}
 
+										if (i == 5)
+										{
+											pObjectMaterial->customShaderParam1 = 0.5; //health
+											pObjectMaterial->customShaderParam2 = 1.0; //splatter scale 1-10
+											pObjectMaterial->customShaderParam3 = 0.5f; //Wetness 0-1
+											pObjectMaterial->customShaderParam4 = 0.35f; //edgeFade
+											pObjectMaterial->customShaderParam5 = 0.5f; //maxBlood
+											pObjectMaterial->customShaderParam6 = 1.0f; //Brightness
+
+										}
 										importer_set_all_material_shader_id(pObjectMaterial->customShaderID, pObjectMaterial->customShaderParam1, pObjectMaterial->customShaderParam2, pObjectMaterial->customShaderParam3, pObjectMaterial->customShaderParam4, pObjectMaterial->customShaderParam5, pObjectMaterial->customShaderParam6, pObjectMaterial->customShaderParam7);
 										bHaveMaterialUpdate = true;
 									}
@@ -11830,6 +11489,7 @@ void Wicked_Change_Object_Material(void* pVObject, int mode, entityeleproftype *
 							ImGui::TextCenter("Custom Shaders Parameters");
 							//PE: Parameters to shaders.
 							int numpar = 0;
+							float maxRange1 = 2.0f;
 							std::string param1 = "Parameter 1";
 							std::string param2 = "Parameter 2";
 							std::string param3 = "Parameter 3";
@@ -11870,13 +11530,25 @@ void Wicked_Change_Object_Material(void* pVObject, int mode, entityeleproftype *
 								param4 = "Min Alpha";
 							}
 
+							if (pObjectMaterial->customShaderID == 5)
+							{
+								numpar = 6;
+								maxRange1 = 1.0f;
+								param1 = "Health";
+								param2 = "Splat Scale";
+								param3 = "Wetness";
+								param4 = "Edge Fade";
+								param5 = "Max Blood";
+								param6 = "Brightness";
+							}
+
 							if (numpar > 0)
 							{
 								ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 3));
 								ImGui::Text(param1.c_str());
 								ImGui::SameLine();
 								ImGui::SetCursorPos(ImVec2(help_start + 20, ImGui::GetCursorPosY() - 5));
-								if (ImGui::SliderFloat("##CuShaPa1", &pObjectMaterial->customShaderParam1, 0.0, 2.0))
+								if (ImGui::SliderFloat("##CuShaPa1", &pObjectMaterial->customShaderParam1, 0.0, maxRange1))
 								{
 									importer_set_all_material_shader_id(pObjectMaterial->customShaderID, pObjectMaterial->customShaderParam1, pObjectMaterial->customShaderParam2, pObjectMaterial->customShaderParam3, pObjectMaterial->customShaderParam4, pObjectMaterial->customShaderParam5, pObjectMaterial->customShaderParam6, pObjectMaterial->customShaderParam7);
 									pObjectMaterial->SetDirty();
@@ -12134,24 +11806,6 @@ void Wicked_FindChosenMesh (sObject* pObject, sMesh** ppChosenMesh, int iUseThis
 			sMesh* pMesh = pObject->ppMeshList[iMeshIndex];
 			if (pMesh && pMesh->wickedmeshindex > 0)
 			{
-				/* makes no sense to lookup mesh index in frame array
-				sFrame* pFrame = nullptr;
-				if (iMeshIndex + 1 < pObject->iFrameCount)
-				{
-					// Sometimes objects will have a root node frame that doesn't have any meshes
-					pFrame = pObject->ppFrameList[iMeshIndex + 1];
-				}
-				else
-				{
-					pFrame = pObject->ppFrameList[iMeshIndex];
-				}
-				if (pFrame && strlen(pFrame->szName) > 0 && strcmp(pFrame->szName, "sibling frame"))
-				{
-					strcpy(meshname, pFrame->szName);
-				}
-				else
-				{
-				*/
 				LPSTR pNameFromMesh = pMesh->pTextures[0].pName;
 				Wicked_CreateShortName(iMeshIndex, meshname, pNameFromMesh);
 				//}
@@ -12170,27 +11824,8 @@ void Wicked_FindChosenMesh (sObject* pObject, sMesh** ppChosenMesh, int iUseThis
 		sMesh* pMesh = pObject->ppMeshList[iUseThisMeshIndex];
 		if (pMesh && pMesh->wickedmeshindex > 0)
 		{
-			/* makes no sense to lookup mesh index in frame array
-			sFrame* pFrame = nullptr;
-			if (iUseThisMeshIndex + 1 < pObject->iFrameCount)
-			{
-				// Sometimes objects will have a root node frame that doesn't have any meshes
-				pFrame = pObject->ppFrameList[iUseThisMeshIndex + 1];
-			}
-			else
-			{
-				pFrame = pObject->ppFrameList[iUseThisMeshIndex];
-			}
-			if (pFrame && strlen(pFrame->szName) > 0 && strcmp(pFrame->szName, "sibling frame"))
-			{
-				strcpy(meshname, pFrame->szName);
-			}
-			else
-			{
-			*/
 			LPSTR pNameFromMesh = pMesh->pTextures[0].pName;
 			Wicked_CreateShortName(iUseThisMeshIndex, meshname, pNameFromMesh);
-			//}
 			strcpy(mesh_combo_entry, meshname);
 			iSelectedMesh = iUseThisMeshIndex;
 			if (iSelectedMesh >= MAXMESHMATERIALS - 1) //PE: We can crash if we go above the MAXMESHMATERIALS.
@@ -12245,16 +11880,24 @@ void Wicked_Set_Material_From_grideleprof_ThisMesh(void* pVObject, int mode, ent
 			pObjectMaterial->baseColor.z = BaseColor[2];
 			pObjectMaterial->baseColor.w = BaseColor[3];
 
-
-			pObjectMaterial->customShaderID = edit_grideleprof->WEMaterial.customShaderID;
-			pObjectMaterial->customShaderParam1 = edit_grideleprof->WEMaterial.customShaderParam1;
-			pObjectMaterial->customShaderParam2 = edit_grideleprof->WEMaterial.customShaderParam2;
-			pObjectMaterial->customShaderParam3 = edit_grideleprof->WEMaterial.customShaderParam3;
-			pObjectMaterial->customShaderParam4 = edit_grideleprof->WEMaterial.customShaderParam4;
-			pObjectMaterial->customShaderParam5 = edit_grideleprof->WEMaterial.customShaderParam5;
-			pObjectMaterial->customShaderParam6 = edit_grideleprof->WEMaterial.customShaderParam6;
-			pObjectMaterial->customShaderParam7 = edit_grideleprof->WEMaterial.customShaderParam7;
-
+			bool bValid = true;
+			if (pObjectMaterial->customShaderID == 5 && (mesh->IsDoubleSided() || pestrcasestr(edit_grideleprof->WEMaterial.baseColorMapName[0].Get(), "eyeglasses") ) ) //|| pObjectMaterial->GetBlendMode() == BLENDMODE_ALPHA
+			{
+				pObjectMaterial->customShaderID = -1;
+				edit_grideleprof->WEMaterial.customShaderID = -1;
+				bValid = false;
+			}
+			if (bValid)
+			{
+				pObjectMaterial->customShaderID = edit_grideleprof->WEMaterial.customShaderID;
+				pObjectMaterial->customShaderParam1 = edit_grideleprof->WEMaterial.customShaderParam1;
+				pObjectMaterial->customShaderParam2 = edit_grideleprof->WEMaterial.customShaderParam2;
+				pObjectMaterial->customShaderParam3 = edit_grideleprof->WEMaterial.customShaderParam3;
+				pObjectMaterial->customShaderParam4 = edit_grideleprof->WEMaterial.customShaderParam4;
+				pObjectMaterial->customShaderParam5 = edit_grideleprof->WEMaterial.customShaderParam5;
+				pObjectMaterial->customShaderParam6 = edit_grideleprof->WEMaterial.customShaderParam6;
+				pObjectMaterial->customShaderParam7 = edit_grideleprof->WEMaterial.customShaderParam7;
+			}
 			// emissive color
 			if (edit_grideleprof->WEMaterial.dwEmmisiveColor[iSelectedMesh] == -1)
 			{
@@ -12454,7 +12097,6 @@ void Wicked_Set_Material_Defaults(void* pVObject, int mode)
 
 void Wicked_Update_All_Materials(void* pVObject, int mode)
 {
-	// if not EBE, do not paint all meshes with single material choice!
 }
 
 void Wicked_Copy_Material_To_Grideleprof(void* pVObject, int mode, entityeleproftype *edit_grideleprof)
@@ -12467,6 +12109,7 @@ void Wicked_Copy_Material_To_Grideleprof(void* pVObject, int mode, entityeleprof
 		edit_grideleprof = &t.grideleprof;
 	}
 
+	int orgShaderID = -1;
 	// go through all meshes and update eleprof
 	for (int iMeshIndex = 0; iMeshIndex < pObject->iMeshCount; iMeshIndex++)
 	{
@@ -12480,7 +12123,10 @@ void Wicked_Copy_Material_To_Grideleprof(void* pVObject, int mode, entityeleprof
 				// get material from mesh
 				uint64_t materialEntity = mesh->subsets[0].materialID;
 				wiScene::MaterialComponent* pObjectMaterial = wiScene::GetScene().materials.GetComponent(materialEntity);
-
+				if (orgShaderID == -1 && pObjectMaterial->customShaderID >= 0)
+				{
+					orgShaderID = pObjectMaterial->customShaderID;
+				}
 				// for each mesh texture set
 				if (iMeshIndex < MAXMESHMATERIALS)
 				{
@@ -12511,15 +12157,24 @@ void Wicked_Copy_Material_To_Grideleprof(void* pVObject, int mode, entityeleprof
 					edit_grideleprof->WEMaterial.bCastShadows[iMeshIndex] = pObjectMaterial->IsCastingShadow();
 					edit_grideleprof->WEMaterial.bDoubleSided[iMeshIndex] = mesh->IsDoubleSided();
 					edit_grideleprof->WEMaterial.fRenderOrderBias[iMeshIndex] = 0.0f;
-					edit_grideleprof->WEMaterial.customShaderID = pObjectMaterial->customShaderID;
-					edit_grideleprof->WEMaterial.customShaderParam1 = pObjectMaterial->customShaderParam1;
-					edit_grideleprof->WEMaterial.customShaderParam2 = pObjectMaterial->customShaderParam2;
-					edit_grideleprof->WEMaterial.customShaderParam3 = pObjectMaterial->customShaderParam3;
-					edit_grideleprof->WEMaterial.customShaderParam4 = pObjectMaterial->customShaderParam4;
-					edit_grideleprof->WEMaterial.customShaderParam5 = pObjectMaterial->customShaderParam5;
-					edit_grideleprof->WEMaterial.customShaderParam6 = pObjectMaterial->customShaderParam6;
-					edit_grideleprof->WEMaterial.customShaderParam7 = pObjectMaterial->customShaderParam7;
-
+					bool bValid = true;
+					
+					//pObjectMaterial->customShaderID == 5
+					if (orgShaderID == 5 && (mesh->IsDoubleSided() || pestrcasestr(edit_grideleprof->WEMaterial.baseColorMapName[iMeshIndex].Get(),"eyeglasses")) ) //|| pObjectMaterial->GetBlendMode() == BLENDMODE_ALPHA)
+					{
+						bValid = false;
+					}
+					if (bValid)
+					{
+						edit_grideleprof->WEMaterial.customShaderID = pObjectMaterial->customShaderID;
+						edit_grideleprof->WEMaterial.customShaderParam1 = pObjectMaterial->customShaderParam1;
+						edit_grideleprof->WEMaterial.customShaderParam2 = pObjectMaterial->customShaderParam2;
+						edit_grideleprof->WEMaterial.customShaderParam3 = pObjectMaterial->customShaderParam3;
+						edit_grideleprof->WEMaterial.customShaderParam4 = pObjectMaterial->customShaderParam4;
+						edit_grideleprof->WEMaterial.customShaderParam5 = pObjectMaterial->customShaderParam5;
+						edit_grideleprof->WEMaterial.customShaderParam6 = pObjectMaterial->customShaderParam6;
+						edit_grideleprof->WEMaterial.customShaderParam7 = pObjectMaterial->customShaderParam7;
+					}
 					sFrame* pFrame = pMesh->pFrameAttachedTo;
 					if (pFrame)
 					{
@@ -12901,12 +12556,6 @@ void importer_set_all_material_planar_reflection(bool planarReflection)
 
 void importer_set_all_material_shader_id(int shaderID,float p1, float p2, float p3, float p4, float p5, float p6, float p7)
 {
-	//PE: Chaned per object , so always change all materials.
-	//if (!t.importer.bEditAllMesh)
-	//{
-	//	return;
-	//}
-
 	sObject* pObject = nullptr;// = GetObjectData(t.importer.objectnumber);
 	if (t.importer.importerActive == 1)
 	{
@@ -12942,16 +12591,24 @@ void importer_set_all_material_shader_id(int shaderID,float p1, float p2, float 
 				// get material settings from mesh material or WEMaterial
 				uint64_t materialEntity = meshComponent->subsets[0].materialID;
 				wiScene::MaterialComponent* pMeshMaterial = wiScene::GetScene().materials.GetComponent(materialEntity);
-				pMeshMaterial->customShaderID = shaderID;
-				pMeshMaterial->customShaderParam1 = p1;
-				pMeshMaterial->customShaderParam2 = p2;
-				pMeshMaterial->customShaderParam3 = p3;
-				pMeshMaterial->customShaderParam4 = p4;
-				pMeshMaterial->customShaderParam5 = p5;
-				pMeshMaterial->customShaderParam6 = p6;
-				pMeshMaterial->customShaderParam7 = p7;
-
-				pMeshMaterial->SetDirty();
+				bool bValid = true;
+				if (shaderID == 5 && meshComponent->IsDoubleSided())
+				{
+					pMeshMaterial->customShaderID = -1;
+					bValid = false;
+				}
+				if (bValid)
+				{
+					pMeshMaterial->customShaderID = shaderID;
+					pMeshMaterial->customShaderParam1 = p1;
+					pMeshMaterial->customShaderParam2 = p2;
+					pMeshMaterial->customShaderParam3 = p3;
+					pMeshMaterial->customShaderParam4 = p4;
+					pMeshMaterial->customShaderParam5 = p5;
+					pMeshMaterial->customShaderParam6 = p6;
+					pMeshMaterial->customShaderParam7 = p7;
+					pMeshMaterial->SetDirty();
+				}
 			}
 		}
 	}

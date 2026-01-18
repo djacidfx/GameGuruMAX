@@ -13,14 +13,11 @@
 #include <iterator>
 #include "master.h"
 
-#ifdef ENABLEIMGUI
 //PE: GameGuru IMGUI.
 #include "..\Imgui\imgui.h"
 #include "..\Imgui\imgui_impl_win32.h"
 #include "..\Imgui\imgui_gg_dx11.h"
-#endif
 
-#ifdef WICKEDENGINE
 #include ".\\..\..\\Guru-WickedMAX\\GPUParticles.h"
 using namespace GPUParticles;
 #include "GGTerrain\GGTerrain.h"
@@ -31,13 +28,11 @@ using namespace GGTrees;
 GGRecastDetour g_RecastDetour;
 bool g_bShowRecastDetourDebugVisuals = false;
 int old_render_params2 = 0;
-#endif
 
 #ifdef OPTICK_ENABLE
 #include "optick.h"
 #endif
 
-#ifdef STORYBOARD
 extern int g_Storyboard_First_Level_Node;
 extern int g_Storyboard_Current_Level;
 extern bool g_Storyboard_Starting_New_Level;
@@ -46,14 +41,11 @@ extern char g_Storyboard_Current_fpm[256];
 extern char g_Storyboard_Current_lua[256];
 extern char g_Storyboard_Current_Loading_Page[256];
 extern StoryboardStruct Storyboard;
-#endif
 // Externs
 extern bool g_occluderOn;
 extern bool	g_occluderf9Mode;
 
-#ifdef VRTECH
 extern bool g_bInTutorialMode;
-#endif
 
 // Globals
 bool g_bInEditor = true;
@@ -67,16 +59,13 @@ bool g_bResetHasForLevelGeneration = false;
 //  Game Module to manage all game flow
 // 
 
-#ifndef PRODUCTCLASSIC
 extern int iLaunchAfterSync;
-#endif
 extern bool commonexecutable_loop_for_game(void);
 
 void gameexecutable_init(void)
 {
 	// start game init code
 	int iEXEGameIsVR = 0;
-	//if (g.vrglobals.GGVREnabled > 0) iEXEGameIsVR = 1; do later only when START pressed
 
 	//PE: Load in any imgui media used in standalone, special mode tabtab...
 	SetMipmapNum(1); //PE: mipmaps not needed.
@@ -96,9 +85,7 @@ void gameexecutable_init(void)
 	{
 		editor_previewmap_initcode(iEXEGameIsVR);
 	}
-	#ifndef PRODUCTCLASSIC
 	iLaunchAfterSync = 201;
-	#endif
 }
 
 void gameexecutable_loop(void)
@@ -109,60 +96,6 @@ void gameexecutable_loop(void)
 
 void gameexecutable_finish(void)
 {
-	#ifdef WICKEDENGINE
-	// no longer need fragmentation handler for 64bit engine
-	#else
-	// Only if not quitting standalone
-	bool bUseFragmentationMainloop = false;
-	if (t.game.allowfragmentation == 0 || t.game.allowfragmentation == 2)
-	{
-		if(t.game.allowfragmentation_mainloop != 0)
-			bUseFragmentationMainloop = true;
-	}
-	if ( t.game.masterloop != 0 || bUseFragmentationMainloop )
-	{
-		// 250619 - very large levels can fragment 32 bit memory after a few levels
-		// so this mode will restart the executable, and launch the new level
-		// crude solution until 64 bit allows greater memory referencing
-		if ( t.game.allowfragmentation == 2 )
-		{
-			// next level load or back to main menu (both require relaunch)
-			if ( strlen(t.game.jumplevel_s.Get()) > 0 )
-			{
-				// next level
-				//timestampactivity(0, "Next level...");
-				SoundDestructor();
-				SetDir("..");
-				LPSTR pEXEName = Appname();
-				cstr pCommandLineString = cstr("-reloadstandalonelevel") + t.game.jumplevel_s + ":" + Str(t.luaglobal.gamestatechange);
-				ExecuteFile ( pEXEName, pCommandLineString.Get(), "", 0 );
-				Sleep(8000);
-				return;
-			}
-			else
-			{
-				// new main menu (except if t.game.masterloop == 0 in which case we are quitting)
-				t.game.allowfragmentation = 0;
-			}
-		}
-
-		// 131115 - standalone game sessions fragment memory over time, so launch new instance
-		// of the game executable (with silencing command line) and then quit this 'fragmented'
-		// session after a few seconds to allow for a decent transition
-		if ( t.game.allowfragmentation == 0 )
-		{
-			// replaced master loop with EXE relaunch
-			//timestampactivity(0, "Relaunch...");
-			SoundDestructor();
-			SetDir("..");
-			LPSTR pEXEName = Appname();
-			ExecuteFile ( pEXEName, "-reloadstandalone", "", 0 );
-			Sleep(8000);
-			return;
-		}
-	}
-	#endif
-
 	// Free before exit app
 	mp_free ( );
 }
@@ -174,7 +107,6 @@ float				g_fOccluderCamVelZ = 0.0f;
 float				g_fOccluderLastCamX = 0.0f;
 float				g_fOccluderLastCamZ = 0.0f;
 
-#ifdef VRTECH
 void game_scanfornewavatars ( bool bDynamicallyRecreateCharacters )
 {
 	// add any character creator player avatars in
@@ -222,13 +154,11 @@ void game_scanfornewavatars ( bool bDynamicallyRecreateCharacters )
 		t.visuals.refreshshaders = 1;
 	}
 }
-#endif
 
 #ifdef WIP_PROLOADLEVELTEXTURES
 std::vector<std::string> preload_setup;
 #endif
 
-#ifdef WICKEDENGINE
 
 uint32_t GetObjectNavMeshVertexCount( int iID )
 {
@@ -481,7 +411,7 @@ void game_createnavmeshfromlevel ( bool bForceGeneration )
 		// generate polygons for required area
 		int iFirstLOD = 2;
 		GGVECTOR3* pvecVerts = NULL;
-		int iTerrainFloorVertexCount = GGTerrain_GetTriangleList(&pvecVerts, vecMinArea.x, vecMinArea.z, vecMaxArea.x, vecMaxArea.z, iFirstLOD);
+		int iTerrainFloorVertexCount = GGTerrain_GetTriangleListHighQuality(&pvecVerts, vecMinArea.x, vecMinArea.z, vecMaxArea.x, vecMaxArea.z, iFirstLOD);
 		if (iTerrainFloorVertexCount > 0 )
 		{
 			// divide up into 16-bit size meshes
@@ -680,14 +610,6 @@ void game_createnavmeshfromlevel ( bool bForceGeneration )
 								RotateObject(iObjToUseForNavMesh, ObjectAngleX(iObj), ObjectAngleY(iObj), ObjectAngleZ(iObj));
 								ScaleObject(iObjToUseForNavMesh, ObjectScaleX(iObj), ObjectScaleY(iObj), ObjectScaleZ(iObj));
 							}
-							else
-							{
-								if (t.entityprofile[iBankindex].collisionmode == 1)
-								{
-									//PE: TODO NEWLOD - Use lowest LOD available for all polygon collision objects.
-									//PE: Perhaps add a CloneObjectToLowestLOD()
-								}
-							}
 						}
 						// regular mesh from object
 						MakeMeshFromObject(iBuildAllLevelMesh, iObjToUseForNavMesh);
@@ -863,7 +785,6 @@ void game_updatenavmeshsystem(void)
 	else
 		g_RecastDetour.cleanupDebugRender();
 }
-#endif
 
 void game_masterroot_gameloop_initcode(int iUseVRTest)
 {
@@ -883,7 +804,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		
 		//PE: When getting here everything was faded out.
 		t.postprocessings.fadeinvalue_f = 1.0f;
-		//g.globals.hidelowfpswarning = 0; // this overrides the SETUP.INI setting
 		HideOrShowLUASprites(false);
 		EnableAllSprites(); // the disable is called in DarkLUA by ResetFade() black out command when load game position
 
@@ -896,8 +816,19 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		sky_show();
 		titleslua_main_loopcode();
 		extern bool g_bNoSwapchainPresent;
-		g_bNoSwapchainPresent = true;
-		t.game.levelloadprogress=0  ; titles_loadingpageupdate ( );
+		//PE: Why was we doing this, this will make a 10 sec blackscreen delay until loading screen is displayed ?????
+		//PE: Removed for now TODO check why it was added.
+		
+		//PE: This was to prevent old loadingscreen is displayed.
+		//g_Storyboard_Current_Loading_Page
+		extern char g_Storyboard_Current_Loading_Page[256];
+		void FindLoadingScreen(void);
+		FindLoadingScreen();
+		//PE: If using cuatom loading screen delay rendering, TODO: find another way to speed up the 10 sec delay before the screen. (mapfile_loadproject_fpm)
+		if( stricmp(g_Storyboard_Current_Loading_Page , "loading.lua") != NULL)
+			g_bNoSwapchainPresent = true;
+		t.game.levelloadprogress=0  ;
+		titles_loadingpageupdate ( );
 		g_bNoSwapchainPresent = false;
 
 	}
@@ -984,12 +915,10 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	gun_tagmpgunstolist ( );
 
 	// help keep progress bar instant and moving
-	#ifdef WICKEDENGINE
 	char pProgressStr[256];
 	sprintf_s(pProgressStr, 256, "PREPARING TEST LEVEL - %d\\100 Complete", 1);
 	void printscreenprompt(char*);
 	printscreenprompt(pProgressStr);
-	#endif
 
 	// just load the entity data for now (rest in _game_loadinleveldata)
 	timestampactivity(0,"_game_loadinentitiesdatainlevel");
@@ -999,7 +928,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		if ( t.game.runasmultiplayer == 1 ) 
 		{
 			entity_delete ( );
-			lm_removeold ( );
 		}
 		#ifdef WIP_PROLOADLEVELTEXTURES
 		//PE: Record preload informations here.
@@ -1056,74 +984,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 			t.entid=t.entityelement[t.e].bankindex;
 			if ( t.entid>0 ) 
 			{
-				#ifdef VRTECH
-				#else
-				if ( t.entityprofile[t.entid].ismarker == 7 && t.plrindex <= MP_MAX_NUMBER_OF_PLAYERS ) 
-				{
-					// to ensure mp game script always runs from any distance
-					t.entityelement[t.e].eleprof.phyalways = 1;
-					if ( t.entityelement[t.e].eleprof.aimain_s == "" ) 
-					{
-						t.entityelement[t.e].eleprof.aimain_s = "multiplayer_firstto10.lua";
-					}
-					if ( t.entityelement[t.e].eleprof.teamfield  !=  0 ) 
-					{
-						g.mp.team = 1;
-					}
-	
-					//  only let one marker end up with a script otherwise we end up running the same script 8 times
-					if ( t.tfoundAMultiplayerScript == 0 ) 
-					{
-						t.tfoundAMultiplayerScript = 1;
-						// 12032015 0XX - Team Multiplayer - check for team mode
-						if ( FileOpen(3)  ==  1  )  CloseFile (  3 );
-						t.strwork = "" ; t.strwork = t.strwork + "scriptbank\\"+t.entityelement[t.e].eleprof.aimain_s;
-						OpenToRead (  3, t.strwork.Get() );
-						g.mp.friendlyfireoff = 0;
-						while ( FileEnd(3) == 0 ) 
-						{
-							t.tScriptLine_s = ReadString (  3 );
-							t.tScriptLine_s = Lower(t.tScriptLine_s.Get());
-							if (  FindSubString(t.tScriptLine_s.Get(),"setmultiplayergamefriendlyfireoff") > 0 && FindSubString(t.tScriptLine_s.Get(),"--SetMultiplayerGameFriendlyFireOff")  <=  0 && FindSubString(t.tScriptLine_s.Get(),"-- SetMultiplayerGameFriendlyFireOff") <=  0 ) 
-							{
-								g.mp.friendlyfireoff = 1;
-							}
-						}
-						CloseFile (  3 );
-					}
-					else
-					{
-						t.entityelement[t.e].eleprof.aimain_s = "";
-					}
-					++t.plrindex;
-				}
-				else
-				{
-					if (  t.entityprofile[t.entid].ischaracter  ==  0 ) 
-					{
-						if (  FileOpen(3)  ==  1  )  CloseFile (  3 );
-						if (  t.entityelement[t.e].eleprof.aimain_s  !=  "" ) 
-						{
-							if (  FileExist(t.entityelement[t.e].eleprof.aimain_s.Get())  ==  1 ) 
-							{
-								t.strwork = ""; t.strwork = t.strwork + "scriptbank\\"+t.entityelement[t.e].eleprof.aimain_s;
-								OpenToRead (  3, t.strwork.Get() );
-								while (  FileEnd(3)  ==  0 ) 
-								{
-									t.tScriptLine_s = ReadString (  3 );
-									t.tScriptLine_s = Lower(t.tScriptLine_s.Get());
-									//  are the using ai?
-									if (  FindSubString(t.tScriptLine_s.Get(),"AIEntityGoToPosition") > 0 ) 
-									{
-										t.entityelement[t.e].mp_isLuaChar = 1;
-									}
-								}
-								CloseFile (  3 );
-							}
-						}
-					}
-				}
-				#endif
 			}
 		}
 
@@ -1139,72 +999,26 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 				if ( t.entityprofile[t.entid].ismarker == 7 && t.tmpstartindex <= MP_MAX_NUMBER_OF_PLAYERS ) 
 				{
 					// add start markers for free for all or team a
-					if ( 1 ) //t.entityelement[t.e].eleprof.teamfield < 2 ) 
-					{
-						// a spawn GetPoint ( for the multiplayer )
-						t.mpmultiplayerstart[t.tmpstartindex].active=1;
-						t.mpmultiplayerstart[t.tmpstartindex].x=t.entityelement[t.e].x;
-						// added 10 onto the y otherwise the players fall through the ground
-						t.mpmultiplayerstart[t.tmpstartindex].y=t.entityelement[t.e].y+50;
-						t.mpmultiplayerstart[t.tmpstartindex].z=t.entityelement[t.e].z;
-						t.mpmultiplayerstart[t.tmpstartindex].angle=t.entityelement[t.e].ry;
-						t.thaveTeamAMarkers = 1;
-						++t.tnumberofstartmarkers;
-						++t.tmpstartindex;
-					}
+					// a spawn GetPoint ( for the multiplayer )
+					t.mpmultiplayerstart[t.tmpstartindex].active=1;
+					t.mpmultiplayerstart[t.tmpstartindex].x=t.entityelement[t.e].x;
+					// added 10 onto the y otherwise the players fall through the ground
+					t.mpmultiplayerstart[t.tmpstartindex].y=t.entityelement[t.e].y+50;
+					t.mpmultiplayerstart[t.tmpstartindex].z=t.entityelement[t.e].z;
+					t.mpmultiplayerstart[t.tmpstartindex].angle=t.entityelement[t.e].ry;
+					t.thaveTeamAMarkers = 1;
+					++t.tnumberofstartmarkers;
+					++t.tmpstartindex;
 				}
 			}
 		}
 		// add team b markers if in team mode
-		#ifdef VRTECH
-		#else
-		if ( g.mp.team == 1 ) 
-		{
-			for ( t.e = 1 ; t.e <= g.entityelementlist; t.e++ )
-			{
-				t.entid=t.entityelement[t.e].bankindex;
-				if ( t.entid>0 ) 
-				{
-					if ( t.entityprofile[t.entid].ismarker == 7 && t.tmpstartindex <= MP_MAX_NUMBER_OF_PLAYERS ) 
-					{
-						// add start markers for team b
-						if ( t.entityelement[t.e].eleprof.teamfield == 2 ) 
-						{
-							// a spawn GetPoint (  for the multiplayer )
-							t.mpmultiplayerstart[t.tmpstartindex].active=1;
-							t.mpmultiplayerstart[t.tmpstartindex].x=t.entityelement[t.e].x;
-							// added 10 onto the y otherwise the players fall through the ground
-							t.mpmultiplayerstart[t.tmpstartindex].y=t.entityelement[t.e].y+50;
-							t.mpmultiplayerstart[t.tmpstartindex].z=t.entityelement[t.e].z;
-							t.mpmultiplayerstart[t.tmpstartindex].angle=t.entityelement[t.e].ry;
-							t.thaveTeamBMarkers = 1;
-							++t.tnumberofstartmarkers;
-							++t.tmpstartindex;
-						}
-					}
-				}
-			}
-		}
-		#endif
 
 		// check for coop mode
 		g.mp.coop = 0;
-		#ifdef VRTECH
-		#else
-		if ( g.mp.team == 1 ) 
-		{
-			if ( (t.thaveTeamAMarkers  ==  1 && t.thaveTeamBMarkers  ==  0) || (t.thaveTeamAMarkers  ==  0 && t.thaveTeamBMarkers  ==  1) || (t.thaveTeamAMarkers  ==  0 && t.thaveTeamBMarkers  ==  0) ) 
-			{
-				g.mp.coop = 1;
-				mp_setupCoopTeam ( );
-			}
-		}
-		#endif
 
 		// perhaps it is a solo game with a start maker only
-		#ifdef VRTECH
 		bool bHaveRegularStartMarker = false;
-		#endif
 		if ( g.mp.coop == 0 && t.tnumberofstartmarkers == 0 ) 
 		{
 			for ( t.e = 1 ; t.e <= g.entityelementlist; t.e++ )
@@ -1215,9 +1029,7 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 					if ( t.entityprofile[t.entid].ismarker == 1 ) 
 					{
 						// a spawn GetPoint ( for the multiplayer )
-						#ifdef VRTECH
 						bHaveRegularStartMarker = true;
-						#endif
 						t.mpmultiplayerstart[1].active=1;
 						t.mpmultiplayerstart[1].x=t.entityelement[t.e].x;
 						// added 10 onto the y otherwise the players fall through the ground
@@ -1226,81 +1038,18 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 						t.mpmultiplayerstart[1].angle=t.entityelement[t.e].ry;
 						t.entityelement[t.e].eleprof.phyalways = 1;
 
-						#ifdef VRTECH
-						#else
-						// switch it to multiplayer script
-						t.entityelement[t.e].eleprof.aimain_s = "multiplayer_firstto10.lua";
-						t.tnumberofstartmarkers = 1;
-						g.mp.coop = 1;
-						g.mp.team = 1;
-						mp_setupCoopTeam ( );
-
-						// Check for friendly fire off
-						if ( FileOpen(3) == 1 )  CloseFile ( 3 );
-						t.strwork ="" ; t.strwork = t.strwork + "scriptbank\\"+t.entityelement[t.e].eleprof.aimain_s;
-						OpenToRead (  3, t.strwork.Get() );
-						g.mp.friendlyfireoff = 0;
-						while (  FileEnd(3)  ==  0 ) 
-						{
-							t.tScriptLine_s = ReadString (  3 );
-							t.tScriptLine_s = Lower(t.tScriptLine_s.Get());
-							if (  FindSubString(t.tScriptLine_s.Get(),"setmultiplayergamefriendlyfireoff") > 0 && FindSubString(t.tScriptLine_s.Get(),"--SetMultiplayerGameFriendlyFireOff")  <=  0 && FindSubString(t.tScriptLine_s.Get(),"-- SetMultiplayerGameFriendlyFireOff") <=  0 ) 
-							{
-								g.mp.friendlyfireoff = 1;
-							}
-						}
-						CloseFile (  3 );
-						#endif
 					}
 				}
 			}
 		}
 
 		//  if multiplayer and not coop, disable ai characters
-		#ifdef PHOTONMP
 			// Photon retains all characters in map
-		#else
-			if ( t.game.runasmultiplayer == 1 && g.mp.coop == 0 ) 
-			{
-			for ( t.e = 1 ; t.e <= g.entityelementlist; t.e++ )
-			{
-				t.entid=t.entityelement[t.e].bankindex;
-				if ( t.entid>0 ) 
-				{
-					if ( t.entityprofile[t.entid].ischaracter  ==  1 ) 
-					{
-						t.entityelement[t.e].destroyme=1;
-					}
-				}
-			}
-			}
-		#endif
 
 		// if multiplayer and coop, setup ai for switching who control them, depending on gameplay circumstances
-		#ifdef VRTECH
-		#else
-		if ( t.game.runasmultiplayer == 1 && g.mp.coop == 1 ) 
-		{
-			for ( t.e = 1 ; t.e <= g.entityelementlist; t.e++ )
-			{
-				t.entid=t.entityelement[t.e].bankindex;
-				if ( t.entid>0 ) 
-				{
-					if ( t.entityprofile[t.entid].ischaracter  ==  1 || t.entityelement[t.e].mp_isLuaChar ) 
-					{
-						t.entityelement[t.e].mp_coopControlledByPlayer = -1;
-					}
-				}
-			}
-		}
-		#endif
 
 		// if no multiplayer markers, put some at the default height
-		#ifdef VRTECH
 		if ( t.tnumberofstartmarkers == 0 && bHaveRegularStartMarker == false ) 
-		#else
-		if ( t.tnumberofstartmarkers == 0 ) 
-		#endif
 		{
 			for ( t.tloop = 1; t.tloop <= MP_MAX_NUMBER_OF_PLAYERS; t.tloop++ )
 			{
@@ -1312,80 +1061,18 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 				t.mpmultiplayerstart[t.tloop].angle=0;
 			}
 		}
-		#ifdef VRTECH
-		#else
-		// if coop and only 1 marker, make some more
-		if ( g.mp.coop == 1 && t.tnumberofstartmarkers == 1 ) 
-		{
-			for ( t.tloop = 2 ; t.tloop <= MP_MAX_NUMBER_OF_PLAYERS; t.tloop++ )
-			{
-				t.mpmultiplayerstart[t.tloop].active=1;
-				t.mpmultiplayerstart[t.tloop].x=t.mpmultiplayerstart[1].x;
-				//  added 10 onto the y otherwise the players fall through the ground
-				t.mpmultiplayerstart[t.tloop].y=t.mpmultiplayerstart[1].y;
-				t.mpmultiplayerstart[t.tloop].z=t.mpmultiplayerstart[1].z;
-				t.mpmultiplayerstart[t.tloop].angle=t.mpmultiplayerstart[1].angle;
-			}
-		}
-		#endif
 
 		// reserve max multiplayer characters (all weapon animations included)
 		Dim ( t.tubindex,2+MP_MAX_NUMBER_OF_PLAYERS  );
-		#ifdef WICKEDENGINE
 		t.ent_s=g.rootdir_s+"charactercreatorplus\\Uber Character.fpe";
-		#else
-		#ifdef PHOTONMP
-			t.ent_s=g.rootdir_s+"entitybank\\characters\\Uber Character.fpe";
-		#else
-			t.ent_s=g.rootdir_s+"entitybank\\characters\\Uber Soldier.fpe";
-		#endif
-		#endif
 		entity_addtoselection_core ( );
 		t.tubindex[0]=t.entid;
 		t.entityprofile[t.tubindex[0]].ischaracter=0;
 		t.entityprofile[t.tubindex[0]].collisionmode=12;
 		t.entityprofile[t.tubindex[0]].aimain_s = "";
 
-		#ifdef PHOTONMP
 			// No teams - no combat!
-		#else
-			if ( g.mp.team == 1 && g.mp.coop == 0 ) 
-			{
-			t.ent_s=g.rootdir_s+"entitybank\\characters\\Uber Soldier Red.fpe";
-			entity_addtoselection_core ( );
-			t.tubindex[1]=t.entid;
-			t.entityprofile[t.tubindex[1]].ischaracter=0;
-			t.entityprofile[t.tubindex[1]].collisionmode=12;
-			// No lua script for player chars
-			t.entityprofile[t.tubindex[1]].aimain_s = "";
-			t.tti = 1;
-			}
-			#ifdef VRTECH
-			#else
-			// add any character creator player avatars in
-			for ( t.tcustomAvatarCount = 0 ; t.tcustomAvatarCount<=  MP_MAX_NUMBER_OF_PLAYERS-1; t.tcustomAvatarCount++ )
-			{
-			//  check if there is a custom avatar
-			if (  t.mp_playerAvatars_s[t.tcustomAvatarCount]  !=  "" ) 
-			{
-				//  there is so lets built a temp fpe file from it
-				t.ent_s=g.rootdir_s+"entitybank\\user\\charactercreator\\customAvatar_"+Str(t.tcustomAvatarCount)+".fpe";
-				t.avatarFile_s = t.ent_s;
-				t.avatarString_s = t.mp_playerAvatars_s[t.tcustomAvatarCount];
-				characterkit_makeMultiplayerCharacterCreatorAvatar ( );
-				entity_addtoselection_core ( );
-				characterkit_removeMultiplayerCharacterCreatorAvatar ( );
-				t.tubindex[t.tcustomAvatarCount+2]=t.entid;
-				t.entityprofile[t.tubindex[t.tcustomAvatarCount+2]].ischaracter=0;
-				t.entityprofile[t.tubindex[t.tcustomAvatarCount+2]].collisionmode=12;
-				// No lua script for player chars
-				t.entityprofile[t.tubindex[t.tcustomAvatarCount+2]].aimain_s = "";
-			}
-			}
-			#endif
-		#endif
 
-		#ifdef VRTECH
 		// add any character creator player avatars in
 		for ( t.tcustomAvatarCount = 0 ; t.tcustomAvatarCount <= MP_MAX_NUMBER_OF_PLAYERS-1; t.tcustomAvatarCount++ )
 		{
@@ -1393,7 +1080,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		}
 		t.bTriggerAvatarRescanAndLoad = true;
 		game_scanfornewavatars ( false );
-		#endif
 
 		// store ttiswitch for tti as multiplayer avatars can upset the 0->1 switching!
 		t.ttiswitch = 1;
@@ -1474,13 +1160,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 			t.entityprofile[t.ubercharacterindex].hasweapon=0;
 			t.entityprofile[t.ubercharacterindex].aimain_s = "";
 		}
-
-		#ifdef VRTECH
-		//need this later in game for dynamic avatar loading
-		//UnDim ( t.tubindex );
-		#else
-		UnDim ( t.tubindex );
-		#endif
 	}
 
 	// in standalone, no IDE feeding test level, so load it in
@@ -1492,16 +1171,12 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 
 	//  Prepare this level
 	t.game.levelplrstatsetup = 1; //PE: Make sure to setup new "player start marker" settings.
-	#ifdef WICKEDENGINE
 	if (t.game.gameisexe == 1) loadingpageprogress(5);
-	#endif
 
 	// help keep progress bar instant and moving
-	#ifdef WICKEDENGINE
 	sprintf_s(pProgressStr, 256, "LOADING LEVEL RESOURCES - %d\\100 Complete", 2);
 	void printscreenprompt(char*);
 	printscreenprompt(pProgressStr);
-	#endif
 	game_preparelevel ( );
 	game_preparelevel_forplayer ( );
 
@@ -1523,10 +1198,35 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	printscreenprompt(pProgressStr);
 	game_preparelevel_finally ( );
 
-	// Load any light map objects if available
-	timestampactivity(0,"load lightmapped objects");
-	lm_loadscene ( );
-			
+	//PE: Disable collision.
+	for (t.e = 1; t.e <= g.entityelementlist; t.e++)
+	{
+		int tentid = t.entityelement[t.e].bankindex;
+		int tobj = t.entityelement[t.e].obj;
+		if (tentid > 0 && tobj > 0)
+		{
+			if (t.entityprofile[tentid].ischaracter == 0)
+			{
+				int iShape = t.entityprofile[tentid].collisionmode;
+				if (t.entityelement[t.e].eleprof.iOverrideCollisionMode != -1)
+						iShape = t.entityelement[t.e].eleprof.iOverrideCollisionMode;
+				//PE: no max fpe is using canseethrough. else if (t.entityprofile[tentid].canseethrough == 1) iShape = 11;
+				if (iShape == 11)
+				{
+					sObject* pObject = g_ObjectList[tobj];
+					if (pObject)
+					{
+						// LB: Exception are objects that have is collectable set (need to detect these, even if no collision mode set)
+						if (t.entityelement[t.e].eleprof.iscollectable==0)
+						{
+							WickedCall_SetDisableCollision(pObject, true);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	g.merged_new_objects = 0;
 	if ( t.tlmloadsuccess == 0  ) 
 	{ 
@@ -1648,10 +1348,8 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 						validshader = false;
 					if (strcmp(Lower(t.entityprofile[t.entid].effect_s.Get()), "effectbank\\reloaded\\apbr_anim.fx") == 0)
 						validshader = false;
-					#ifdef VRTECH
 					if (strcmp(Lower(t.entityprofile[t.entid].effect_s.Get()), "effectbank\\reloaded\\apbr_animwithtran.fx") == 0)
 						validshader = false;
-					#endif
 					if (strcmp(Lower(t.entityprofile[t.entid].effect_s.Get()), "effectbank\\reloaded\\apbr_treea.fx") == 0)
 						validshader = false;
 					if (strcmp(Lower(t.entityprofile[t.entid].effect_s.Get()), "effectbank\\reloaded\\apbr_anim8bone.fx") == 0)
@@ -2277,7 +1975,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 						EnableObjectZDepth(t.tobj);
 					}
 
-					#ifdef WICKEDENGINE
 					//PE: Make sure we reset all animations. mainly for lua controlled objects like doors
 					if (t.entityprofile[t.entid].animmax > 0)
 					{
@@ -2286,7 +1983,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 						SetObjectFrame(t.tobj, 0);
 						StopObject(t.tobj);
 					}
-					#endif
 
 					if (t.entityprofile[t.entid].startanimingame > 0) {
 						if (t.entityprofile[t.entid].animmax > 0) {
@@ -2333,13 +2029,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 		}
 	}
 
-	#ifdef VRTECH
-	//  check for character creator characters just before game starts
-	///characterkit_checkForCharacters ( );
-	#else
-	characterkit_checkForCharacters ( );
-	#endif
-
 	//  Clear screen of any artifacts
 	titles_loadingpagefree();
 	CLS (  Rgb(0,0,0) );
@@ -2349,6 +2038,18 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 
 	// resort texture list to ignore objects set to be ignored
 	DoTextureListSort ( );
+
+	//PE: Make sure we do not display hud used in last level.
+	t.game.activeStoryboardScreen = -1;
+	for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+	{
+		if (Storyboard.Nodes[i].showAtStart)
+		{
+			t.game.activeStoryboardScreen = i;
+			break;
+		}
+	}
+
 
 	// if reloading standalone level, need to restore basic stats from LUA save file
 	// must now reload preserved state of level when enter it (g_LevelFilename)
@@ -2378,26 +2079,14 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	t.game.gameloop=1;
 	g.timeelapsed_f=0;
 
-	/*
-	// reset prompt at VERY start so restoregame script can output debug prompts in standalone - moved to lua_init
-	t.luaglobal.scriptprompttype = 0;
-	t.luaglobal.scriptprompt_s="";
-	t.luaglobal.scriptprompttime=0;
-	t.luaglobal.scriptprompttextsize=0;
-	t.luaglobal.scriptprompt3dtime=0;
-	strcpy ( t.luaglobal.scriptprompt3dtext, "" );
-	*/
-
 	// 260220 - for some reason, Social VR sets view 0,0,1,1, and does not set it back!
 	// so we do so here to ensure we see the game
 	SetCameraView(0, 0, 0, GetDisplayWidth(), GetDisplayHeight());
 
-	#ifdef WICKEDENGINE
 	// no more prompts, reset system so next time we can have a 2 seconds grace before any prompts (see printscreenprompt)
 	t.screenprompt_s = "";
 	printscreenprompt(t.screenprompt_s.Get());
 	t.postprocessings.fadeinvalue_f = 0.0; //PE: Fade in level.
-	#endif
 
 	// prompt
 	if ( g.gproducelogfiles == 2 )
@@ -2405,7 +2094,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	else
 		timestampactivity(0,"main game loop begins");
 
-	#ifdef WICKEDENGINE
 	extern int iTriggerGrassTreeUpdate;
 	iTriggerGrassTreeUpdate = 5; //PE: Make sure trees and grass height is set after terrain has finish.
 
@@ -2465,7 +2153,6 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 	// The map bounds can optionally be shown in testgame.
 	extern void TestLevel_ToggleBoundary(bool, bool);
 	TestLevel_ToggleBoundary(t.showtestgame2dbounds, t.showtestgame3dbounds);
-	#endif
 
 	// if this was called from standalone, need to update graphics settings to match visuals just loaded
 	if (t.game.gameisexe == 1)
@@ -2486,7 +2173,6 @@ void game_masterroot_gameloop_afterexitgamemenu(void)
 		if (strcmp(t.game.pAdvanceWarningOfLevelFilename, "") != NULL)
 		{
 			t.game.jumplevel_s = t.game.pAdvanceWarningOfLevelFilename;
-			#ifdef STORYBOARD
 			if (strlen(Storyboard.gamename) > 0)
 			{
 				//PE: We use t.game.pAdvanceWarningOfLevelFilename later.
@@ -2495,9 +2181,6 @@ void game_masterroot_gameloop_afterexitgamemenu(void)
 			{
 				strcpy(t.game.pAdvanceWarningOfLevelFilename, "");
 			}
-			#else
-			strcpy(t.game.pAdvanceWarningOfLevelFilename, "");
-			#endif
 		}
 	}
 	if (t.game.jumplevel_s != "")
@@ -2526,7 +2209,6 @@ void game_masterroot_gameloop_afterescapepressed(void)
 	// Wipe out mouse deltas
 	t.tMousemove_f = MouseMoveX() + MouseMoveY() + MouseZ(); t.tMousemove_f  = 0;
 
-	#ifdef WICKEDENGINE
 	//PE: Restart any ambient music tracks.
 	if (t.gamevisuals.bEndableAmbientMusicTrack)
 	{
@@ -2557,7 +2239,6 @@ void game_masterroot_gameloop_afterescapepressed(void)
 			}
 		}
 	}
-	#endif
 
 	// at the point we leave the in-game menu, resume VR mode while if required
 	if (t.game.gameisexe == 1 && g.vrglobals.GGVREnabled == 2) g_iActivelyUsingVRNow = 1;
@@ -2635,7 +2316,6 @@ bool game_masterroot_gameloop_loopcode(int iUseVRTest)
 		t.tremembertimer=Timer();
 		game_main_snapshotsound ( );
 		while ( EscapeKey() != 0 ) {}
-		darkai_character_freezeall ( );
 		physics_pausephysics ( );
 		entity_pauseanimations ( );
 		extern void gun_SetObjectSpeed(int, float);
@@ -2660,7 +2340,7 @@ bool game_masterroot_gameloop_loopcode(int iUseVRTest)
 			}
 			if ( t.conkit.editmodeactive == 1 ) 
 			{
-				conkitedit_switchoff ( );
+				//conkitedit_switchoff ( );
 			}
 		}
 		else
@@ -2810,6 +2490,32 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 	// Rest any internal game variables
 	game_main_stop ( );
 
+	//PE: Enable collision.
+	for (t.e = 1; t.e <= g.entityelementlist; t.e++)
+	{
+		int tentid = t.entityelement[t.e].bankindex;
+		int tobj = t.entityelement[t.e].obj;
+		if (tentid > 0 && tobj > 0)
+		{
+			if (t.entityprofile[tentid].ischaracter == 0)
+			{
+				int iShape = t.entityprofile[tentid].collisionmode;
+				if (t.entityelement[t.e].eleprof.iOverrideCollisionMode != -1)
+					iShape = t.entityelement[t.e].eleprof.iOverrideCollisionMode;
+				//PE: no max fpe is using canseethrough. else if (t.entityprofile[tentid].canseethrough == 1) iShape = 11;
+				if (iShape == 11)
+				{
+					sObject* pObject = g_ObjectList[tobj];
+					if (pObject)
+					{
+						WickedCall_SetDisableCollision(pObject, false);
+					}
+				}
+			}
+		}
+	}
+
+
 	//PE: Draw call optimizer
 //	if (!g.disable_drawcall_optimizer)
 	{
@@ -2861,9 +2567,28 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 		}
 	}
 
+	bool bFreeLevelAfterLuaScreen = true;
+
 	//PE: Moved here as standalone will delete all objects, so we could not free DCO objects.
 	//  Free any level resources
-	game_freelevel();
+	if (!bFreeLevelAfterLuaScreen)
+	{
+		timestampactivity(0, "game_freelevel"); //PE: Additional debug to remove
+		game_freelevel();
+	}
+	else
+	{
+		bulletholes_free();
+		// free any HUD screen objects
+		if (ObjectExist(g.hudscreen3dobjectoffset) == 1) DeleteObject(g.hudscreen3dobjectoffset);
+		hud_free();
+		game_stopallsounds();
+		lua_freeprompt3d();
+		lua_freeallperentity3d();
+		lighting_free();
+		darkai_free();
+		BPhys_ClearDebugDrawData();
+	}
 
 	// must reset LUA here for clean end-game-screens
 	// ensure LUA is completely reset before loading new ones in
@@ -2883,11 +2608,9 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 
 	delete_notused_decal_particles();
 
-#ifdef WICKEDPARTICLESYSTEM
 	//PE: Clear all wicked particle effects created by lua.
 	void CleanUpEmitterEffects(void);
 	CleanUpEmitterEffects();
-#endif
 
 	//PE: restore sun position for editor.
 	t.terrain.sundirectionx_f = t.terrain.skysundirectionx_f;
@@ -2980,6 +2703,9 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							timestampactivity(0, tmp);
 							if (script != "title")
 							{
+								//PE: Block for one frame so we do not see old screens.
+								extern bool bBlockImGuiUntilNewFrame;
+								bBlockImGuiUntilNewFrame = true;
 								sky_hide();
 								titleslua_init();
 								titleslua_main((char *)script.c_str());
@@ -3004,6 +2730,10 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 							sprintf(tmp, "Project t.game.jumplevel_s : %s", nextlevel.c_str());
 							timestampactivity(0, tmp);
 							t.game.jumplevel_s = nextlevel.c_str();
+							//PE: Make sure we do not run GameLoopLoadStats when not loading a game but linking directly.
+							extern bool g_Storyboard_Starting_New_Level;
+							g_Storyboard_Starting_New_Level = true; //PE: Always start fresh when linking directly to a level.
+
 						}
 					}
 				}
@@ -3050,7 +2780,6 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 						}
 						else
 						{
-							//titles_completepage ( );
 							timestampactivity(0, "LUA script : nextlevel");
 							sky_hide();
 							titleslua_init();
@@ -3064,6 +2793,18 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 			}
 		}
 	}
+
+	if (bFreeLevelAfterLuaScreen)
+	{
+		game_freelevel();
+		//PE: Try to avoid the screen between win/loose... and next screen (show blank map).
+		extern int iBlockRenderingForFrames;
+		extern bool g_bNoSwapchainPresent;
+		iBlockRenderingForFrames = 5;
+		g_bNoSwapchainPresent = true;
+	}
+
+
 	t.game.quitflag=0;
 
 	//  If was in multiplayer session, no level loop currently
@@ -3079,10 +2820,8 @@ void game_masterroot_gameloop_afterloopcode(int iUseVRTest)
 		DumpImageList(); 
 	}
 
-	#ifdef WICKEDENGINE
 	g_RecastDetour.cleanupDebugRender();
 	g_bShowRecastDetourDebugVisuals = false;
-	#endif
 
 	// 250619 - very large levels can fragment 32 bit memory after a few levels
 	// so this mode will restart the executable, and launch the new level
@@ -3163,7 +2902,6 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 		}
 		t.game.jumplevel_s=Left(t.tapp_s.Get(),Len(t.tapp_s.Get())-4);
 
-#ifdef STORYBOARD
 
 		//PE: Check if we are using a storyboard project
 		strcpy(Storyboard.gamename, "");
@@ -3181,7 +2919,6 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 			replaceAll(sLevelTitle, "mapbank\\", "");
 			t.game.jumplevel_s = sLevelTitle.c_str();
 		}
-#endif
 	}
 
 	//  Title init - If this is just a test game, we only need to set default volumes
@@ -3205,10 +2942,8 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 		titleslua_init();
 
 		// this is a special flag set when quit from game (avoids rogue IMGUI renders that have been deleted in the restart)
-		#ifndef PRODUCTCLASSIC
 		extern bool bBlockImGuiUntilFurtherNotice;
 		bBlockImGuiUntilFurtherNotice = false;
-		#endif
 
 		// 250619 - for straight-through level loading, still need to handle title resources
 		// (which include sound loading/playing - fixes 3D sound delay issue?!?)
@@ -3218,8 +2953,68 @@ bool game_masterroot_levelloop_initcode(int iUseVRTest)
 		}
 		else
 		{
-			// start title system loop
-			titleslua_main("title");
+			bool bValid = false;
+			int FindFirstSplashNode(void);
+			int nodeid = FindFirstSplashNode();
+			if (nodeid >= 0)
+			{
+				int index = 1;
+
+				int iLinkTo = Storyboard.Nodes[nodeid].output_linkto[0];
+				int iLinkScreen = -1;
+				for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+				{
+					if (Storyboard.Nodes[i].used)
+					{
+						for (int l = 0; l < STORYBOARD_MAXOUTPUTS; l++)
+						{
+							if (iLinkTo > 0 && iLinkTo == Storyboard.Nodes[i].input_id[l])
+							{
+								iLinkScreen = i;
+								break;
+							}
+						}
+					}
+				}
+				if (iLinkScreen >= 0)
+				{
+					//PE: Check if we got a video outlink.
+					for (int ll = 0; ll < STORYBOARD_MAXWIDGETS; ll++)
+					{
+						if (Storyboard.Nodes[iLinkScreen].widget_used[ll])
+						{
+							if (Storyboard.Nodes[iLinkScreen].widget_type[ll] == STORYBOARD_WIDGET_VIDEO)
+							{
+								if (Storyboard.Nodes[iLinkScreen].widget_action[ll] == STORYBOARD_ACTIONS_GOTOSCREEN)
+								{
+									bValid = true;
+									break;
+								}
+							}
+						}
+					}
+					if (bValid)
+					{
+						// screens can have same name (old corruption issue), so new method to identify screen by node
+						std::string node_ident_name = ":node:";
+						node_ident_name += std::to_string(iLinkScreen);
+						t.s_s = node_ident_name.c_str();
+						lua_switchpage();
+						//bLuaPageClosing = true; //always stop music.
+						//iRet = STORYBOARD_ACTIONS_GOTOSCREEN;
+					}
+				}
+			}
+			if (bValid)
+			{
+				titleslua_main(t.s_s.Get());
+				strcpy(t.game.pSwitchToLastPage, "title");
+			}
+			else
+			{
+				// start title system loop
+				titleslua_main("title");
+			}
 			return true;
 		}
 	}
@@ -3234,7 +3029,7 @@ void game_masterroot_levelloop_initcode_aftertitleloop(void)
 	// if game executable and not ignoring title system
 	if (t.game.gameisexe == 1 && t.game.ignoretitle == 0)
 	{
-		titleslua_free ( );
+		titleslua_free();
 		sky_show();
 	}
 
@@ -3251,9 +3046,7 @@ void game_masterroot_levelloop_initcode_aftertitleloop(void)
 	if ( t.game.runasmultiplayer == 1 ) 
 	{
 		// Multiplayer init
-		#ifdef VRTECH
 		mp_fullinit();
-		#endif
 		g.mp.mode = MP_MODE_MAIN_MENU;
 		timestampactivity(0,"_titles_steampage");
 		t.game.cancelmultiplayer=0;
@@ -3262,9 +3055,7 @@ void game_masterroot_levelloop_initcode_aftertitleloop(void)
 		if ( t.game.cancelmultiplayer == 1 ) 
 		{
 			// user selected BACK (cancel multiplayer)
-			#ifdef VRTECH
 			mp_fullclose();
-			#endif
 			t.game.levelloop=0;
 		}
 		else
@@ -3307,9 +3098,7 @@ void game_masterroot_levelloop_afterloopcode(int iUseVRTest)
 	// get rid of debris and particles that may be lingering
 	explosion_cleanup ( );
 
-	#ifdef WICKEDENGINE
 	ravey_particles_hide_all_particles();
-	#endif // WICKEDENGINE
 
 	// if ignored title, exit now
 	if (  t.game.ignoretitle == 1 && t.game.runasmultiplayer == 0  )  t.game.masterloop = 0;
@@ -3438,18 +3227,14 @@ void game_masterroot_afterloopcode(int iUseVRTest)
 		t.game.set.endsplash=0;
 	}
 
-	#ifdef VRTECH
 	// restore VR activity (vrtest flag has done its job) 
 	g.vrglobals.GGVRUsingVRSystem = 1;
-	#ifdef WICKEDENGINE
 	g_iActivelyUsingVRNow = 0;
 	master.StopVR();
-	#endif
 	// restore normal rendering activity when finish game run
 	SyncMaskOverride ( 0xFFFFFFFF );
 	// cannot rely on postprocess to restore, so do so here when return
 	SetCameraView ( 0, 0, 0, GetDisplayWidth(), GetDisplayHeight() );
-	#endif
 }
 
 void game_masterroot(int iUseVRTest)
@@ -3500,11 +3285,26 @@ void game_loadinentitiesdatainlevel ( void )
 	timestampactivity(0,"Load player config");
 	mapfile_loadplayerconfig ( );
 
-	// Load entity bank
-	t.screenprompt_s="LOADING ENTITY BANK";
-	if ( t.game.gameisexe == 0 ) printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
-	timestampactivity(0,t.screenprompt_s.Get());
-	entity_loadbank ( );
+	//PE: Free master on load.
+	bool bRetainMasterObjects = false;
+	if (t.game.gameisexe == 1)
+	{
+		static cstr old_level_name = "";
+		if (g.projectfilename_s == old_level_name)
+		{
+			bRetainMasterObjects = true;
+		}
+		old_level_name = g.projectfilename_s;
+	}
+
+	if (!bRetainMasterObjects)
+	{
+		// Load entity bank
+		t.screenprompt_s = "LOADING ENTITY BANK";
+		if (t.game.gameisexe == 0) printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
+		timestampactivity(0, t.screenprompt_s.Get());
+		entity_loadbank();
+	}
 
 	// Load entity elements
 	t.screenprompt_s="LOADING ENTITY ELEMENTS";
@@ -3513,6 +3313,17 @@ void game_loadinentitiesdatainlevel ( void )
 	timestampactivity(0, "s2:entity_loadelementsdata()");
 	entity_loadelementsdata ( );
 	timestampactivity(0, "e2:entity_loadelementsdata()");
+
+	// LB: quick sanity check to screen out corrupt entityparent ID references
+	for (t.e = 1; t.e <= g.entityelementlist; t.e++)
+	{
+		t.entid = t.entityelement[t.e].bankindex;
+		if (t.entid > 0 && t.entid >= t.entityprofile.size())
+		{
+			// ensures can never reference an out of bounds entityparent ID
+			t.entityelement[t.e].bankindex = 0;
+		}
+	}
 }
 
 void game_loadinleveldata ( void )
@@ -3596,23 +3407,13 @@ void game_loadinleveldata ( void )
 	waypoint_hideall ( );
 }
 
-#ifdef VRTECH
 float GetWAVtoLIPProgress(void);
-#endif
 
 void game_preparelevel ( void )
 {
 	// need the latest refreshed gunlist for each new level
 	extern bool g_bGunListNeedsRefreshing;
 	g_bGunListNeedsRefreshing = true;
-
-	//Dave Performance - ensure sound volume is 0
-	// 271115 - Dave, you just wiped out all dynamic music volume!
-	//g.musicsystem.percentageVolume = 0;
-	//t.audioVolume.music = 0;
-	//t.audioVolume.sound = 0;
-	//t.audioVolume.musicFloat = 0.0;
-	//t.audioVolume.soundFloat = 0.0;
 
 	//  Init music system first to make sure nothing is playing during the load sequence
 	// 271115 - has to be here as LUA triggers Play Music during its INIT but if MUSIC_INIT was
@@ -3636,23 +3437,16 @@ void game_preparelevel ( void )
 
 	//  particles
 	ravey_particles_init ( );
-	#ifdef VRTECH
 	reset_env_particles ( );
-	#endif
 
-	#ifdef WICKEDENGINE
 	// bulletholes return at last
 	bulletholes_init();
-	#endif
 
 	//  Allow Steam to refresh (so does not stall)
 	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
 
 	//  HUD graphics
 	t.screenprompt_s = "LOADING HUD GRAPHICS";
-	#ifndef WICKEDENGINE
-	if (  t.game.gameisexe == 0  )  printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
-	#endif
 	timestampactivity(0,t.screenprompt_s.Get());
 	hud_init ( );
 
@@ -3669,7 +3463,6 @@ void game_preparelevel ( void )
 
 	sky_skyspec_init( false );
 
-	#ifdef WICKEDENGINE
 	//PE: In wicked we want to restore the sun angle from the map and not use skyspec.ini settings. (only when loading a old level).
 	if (t.visuals.skyindex == 0 || t.visuals.bDisableSkybox)
 	{
@@ -3678,7 +3471,6 @@ void game_preparelevel ( void )
 		t.terrain.sunrotationy_f = t.visuals.SunAngleY = oSy;
 		t.terrain.sunrotationz_f = t.visuals.SunAngleZ = oSz;
 	}
-	#endif
 
 	//  Load in HUD Layer assets
 	t.screenprompt_s = "LOADING HUD LAYERS";
@@ -3704,15 +3496,11 @@ void game_preparelevel ( void )
 	t.screenprompt_s="PREPARING A.I SYSTEM";
 	if (  t.game.gameisexe == 0  )  printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
 	timestampactivity(0,t.screenprompt_s.Get());
-	darkai_preparedata ( );
 
 	//  Reset waypoint for game activity
 	if (t.showtestgameelements == 0)
 	{
 		t.screenprompt_s = "RESETTING WAYPOINTS A.I";
-		#ifndef WICKEDENGINE
-		if (t.game.gameisexe == 0)  printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
-		#endif
 		timestampactivity(0, t.screenprompt_s.Get());
 		waypoint_reset();
 	}
@@ -3745,9 +3533,6 @@ void game_preparelevel ( void )
 		t.screenprompt_s="CREATING A.I OBSTACLES";
 		timestampactivity(0,t.screenprompt_s.Get());
 	}
-	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
-	darkai_completeobstacles ( );
-	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
 
 	//  setup infinilights
 	t.screenprompt_s="PREPARING DYNAMIC LIGHTS";
@@ -3811,71 +3596,6 @@ void game_preparelevel_forplayer ( void )
 //Dave Performance - setup character entities for shader switching
 void game_setup_character_shader_entities ( bool bMode )
 {
-	#ifdef WICKEDENGINE
-	// No need of this
-	#else
-	//store the ID's of entity and character shaders
-	t.entityBasicShaderID=loadinternaleffectunique("effectbank\\reloaded\\character_static.fx", 1); //PE: old effect never deleted. why ?
-	//t.entityBasicShaderID = loadinternaleffect("effectbank\\reloaded\\character_static.fx"); //PE: Need to test this more. why would it need to be unique ?.
-	t.characterBasicShaderID=loadinternaleffect("effectbank\\reloaded\\character_basic.fx");
-
-	//PE: Bug. reset effect clip , so visible.
-	t.tnothing = MakeVector4(g.characterkitvector);
-	SetVector4(g.characterkitvector, 500000, 1, 0, 0);
-	SetEffectConstantV(t.entityBasicShaderID, "EntityEffectControl", g.characterkitvector);
-	SetEffectConstantV(t.characterBasicShaderID, "EntityEffectControl", g.characterkitvector);
-	t.tnothing = DeleteVector4(g.characterkitvector);
-
-	t.characterBasicEntityList.clear();
-	t.characterBasicEntityListIsSetToCharacter.clear();
-
-	// build up a list of entities that use the character shader
-	for ( t.e = 1 ; t.e<=  g.entityelementlist; t.e++ )
-	{
-		t.entid=t.entityelement[t.e].bankindex;
-		t.entobj = g.entitybankoffset + t.entid;
-		if ( t.entid > 0 )
-		{
-			// Dont add CPUANIMS=1 characters
-			if ( t.entityprofile[t.entid].cpuanims==0 )
-			{
-				// Dont add cc characters to this
-
-				//PE: need apbr_basic.fx , apbr_anim.fx
-				//PE: pbr restored later so...
-				if (strcmp(Lower(Right(t.entityprofile[t.entid].effect_s.Get(), 13)), "apbr_basic.fx") == 0 && t.entityprofile[t.entid].ischaracter == 1 && t.entityprofile[t.entid].ischaractercreator == 0)
-				{
-					t.characterBasicEntityList.push_back(t.e);
-					if (t.entityelement[t.e].active == 1)
-						t.characterBasicEntityListIsSetToCharacter.push_back(true);
-					else
-						t.characterBasicEntityListIsSetToCharacter.push_back(false);
-
-					// set the bank object to freeze also for when they switch to instances
-					if (bMode)
-						SetObjectEffect(g.entitybankoffset + t.entityelement[t.e].bankindex, t.entityBasicShaderID);
-					else
-						SetObjectEffect(g.entitybankoffset + t.entityelement[t.e].bankindex, t.characterBasicShaderID);
-					SetObjectEffect(t.entityelement[t.e].obj, t.characterBasicShaderID);
-				}
-				if ( strcmp ( Lower(Right(t.entityprofile[t.entid].effect_s.Get(),18)) , "character_basic.fx" ) == 0 && t.entityprofile[t.entid].ischaracter == 1 && t.entityprofile[t.entid].ischaractercreator == 0 )
-				{
-					t.characterBasicEntityList.push_back(t.e);
-					if ( t.entityelement[t.e].active == 1 )
-						t.characterBasicEntityListIsSetToCharacter.push_back(true);
-					else
-						t.characterBasicEntityListIsSetToCharacter.push_back(false);
-					// set the bank object to freeze also for when they switch to instances
-					if ( bMode )
-						SetObjectEffect( g.entitybankoffset+t.entityelement[t.e].bankindex , t.entityBasicShaderID );
-					else
-						SetObjectEffect( g.entitybankoffset+t.entityelement[t.e].bankindex , t.characterBasicShaderID );
-					SetObjectEffect( t.entityelement[t.e].obj , t.characterBasicShaderID );
-				}
-			}
-		}
-	}
-	#endif
 }
 
 extern int howManyMarkers;
@@ -3887,9 +3607,7 @@ void game_preparelevel_finally ( void )
 	t.performanceCameraDrawDistance = 0;
 	t.haveSetupShaderSwitching = false;
 
-	#ifdef WICKEDENGINE
 	g.isGameBeingPlayed = true;
-	#endif // WICKEDENGINE
 
 	// This is used to record when we have switched lighting modes so we don't do it constantly
 	g.inGameLightingMode = 0;
@@ -3905,29 +3623,16 @@ void game_preparelevel_finally ( void )
 	g.noPlayerGuns = false;
 	g.remembergunid = 0;
 
-	//Enable flash light key
-	//g.flashLightKeyEnabled = true; this has been moved to the player start marker setup which now controls this
-
 	//  Generate mega texture of terrain paint for VERY LOW shaders
 	if (  t.terrain.generatedsupertexture == 0 ) 
 	{
 		t.screenprompt_s="GENERATING TERRAIN SUPER TEXTURE";
-		#ifndef WICKEDENGINE
-		if (  t.game.gameisexe == 0  )  printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
-		#endif
 		timestampactivity(0,t.screenprompt_s.Get());
-		terrain_generatesupertexture ( false );
 		t.terrain.generatedsupertexture = 1;
 	}
 
-	//  Trigger the technique to switch to DISTANT shader is far away
-	BT_ForceTerrainTechnique (  0 );
-
 	//  Initiate post process system (or reactivate it)
 	t.screenprompt_s="INITIALIZING POSTPROCESS";
-	#ifndef WICKEDENGINE
-	if (  t.game.gameisexe == 0  )  printscreenprompt(t.screenprompt_s.Get()); else loadingpageprogress(5);
-	#endif
 	timestampactivity(0,t.screenprompt_s.Get());
 	postprocess_init ( );
 	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
@@ -3939,7 +3644,7 @@ void game_preparelevel_finally ( void )
 	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
 
 	//  Initialise Construction Kit
-	conkit_init ( );
+	//conkit_init ( );
 
 	//  Init physics
 	t.screenprompt_s="INITIALIZING PHYSICS";
@@ -3948,9 +3653,6 @@ void game_preparelevel_finally ( void )
 	physics_init ( );
 
 	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
-
-	//  initialise physics for conkit objects
-	//conkit_setupphysics ( );
 
 	//  Activate Occlusion System
 	timestampactivity(0,"Activate Occlusion System");
@@ -3962,15 +3664,6 @@ void game_preparelevel_finally ( void )
 		CPU3DSetCameraIndex (  0 );
 		//  Occlusion poly list can have a variable size to help performance
 		CPU3DSetPolyCount ( t.visuals.occlusionvalue );
-		//  Add terrain LOD1s as occluders
-		//for ( t.obj = t.terrain.TerrainLODOBJStart ; t.obj<=  t.terrain.TerrainLODOBJFinish; t.obj++ )
-		//{
-		//	if (  t.obj>0 ) 
-		//	{
-		//		if ( ObjectExist(t.obj) == 1  )  CPU3DAddOccluder (  t.obj );
-		//		if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
-		//	}
-		//}
 		//  Set occludees for all entities in level
 		t.toccobj=g.occlusionboxobjectoffset;
 		for ( t.e = 1 ; t.e<=  g.entityelementlist; t.e++ )
@@ -4043,23 +3736,6 @@ void game_preparelevel_finally ( void )
 					{
 						// Also add character creator parts, if this is a cc character
 						CPU3DAddOccludee ( t.obj , true );
-
-						/* 100517 - bug fix until figure out why occluder does not restore head bits!
-						if ( t.entityprofile[t.entid].ischaractercreator == 1 )
-						{
-							// Head
-							t.tccobj = g.charactercreatorrmodelsoffset+((t.tcce*3)-t.characterkitcontrol.offset);
-							if (  ObjectExist(t.tccobj)  ==  1 ) CPU3DAddOccludee (  t.tccobj , false ); // 100517 - fix bug true );
-
-							// Beard
-							t.tccobjbeard = g.charactercreatorrmodelsoffset+((t.tcce*3)-t.characterkitcontrol.offset)+1;
-							if (  ObjectExist(t.tccobjbeard)  ==  1 ) CPU3DAddOccludee (  t.tccobjbeard , false ); // 100517 - fix bug true );
-
-							// Hat
-							t.tccobjhat = g.charactercreatorrmodelsoffset+((t.tcce*3)-t.characterkitcontrol.offset)+2;
-							if (  ObjectExist(t.tccobjhat)  ==  1 ) CPU3DAddOccludee (  t.tccobjhat , false ); // 100517 - fix bug true );
-						}
-						*/
 					}
 					else
 					{
@@ -4102,7 +3778,6 @@ void game_preparelevel_finally ( void )
 	//  Once player start known, fill veg area instantly
 	timestampactivity(0,"Fill Veg Areas");
 	t.completelyfillvegarea=1;
-	grass_loop ( );
 	if ( t.game.runasmultiplayer == 1 ) mp_refresh ( );
 
 	//  Force a shader update to ensure correct shadows are used at start
@@ -4113,20 +3788,6 @@ void game_preparelevel_finally ( void )
 	{
 		g.mp.finishedLoadingMap = 1;
 	}
-
-	// One final prompt, ask user to wait for key press so can read instructions
-	#ifdef VRTECH
-	 if ( t.game.gameisexe == 0 )
-	 {
-		#ifndef WICKEDENGINE
-		t.screenprompt_s="STARTING LEVEL";
-		printscreenprompt(t.screenprompt_s.Get());
-		timestampactivity(0,t.screenprompt_s.Get());
-		#endif
-	 }
-	#else
-	 // No such wait press for regular GG
-	#endif
 
 	// The start marker may have given the play an initial gun, so lets call physics_player_refreshcount just incase it has
 	physics_player_refreshcount();
@@ -4184,10 +3845,6 @@ void game_freelevel ( void )
 		if ( g_hOccluderEnd ) WaitForSingleObject ( g_hOccluderEnd, INFINITE );
 	}
 	
-	//  free any character AI related stuff
-	darkai_release_characters ( );
-	darkai_destroy_all_characterdata ( );
-
 	// remove bits created by LUA scripts
 	lua_freeprompt3d();
 	lua_freeallperentity3d();
@@ -4221,11 +3878,8 @@ void game_freelevel ( void )
 	//  restore terrain from in-game
 	terrain_stop_play ( );
 
-	//  free vegetation
-	grass_free ( );
-
 	//  free Construction Kit
-	conkit_free ( );
+	//conkit_free ( );
 
 	//  free any visual leftovers
 	visuals_free ( );
@@ -4246,13 +3900,11 @@ void game_freelevel ( void )
 		gpup_deleteAllEffects();
 
 		// only for standalone as test game needs entities for editor :)
-		entity_delete ( );
-		//PE: Free any lightmaps, next level might not use lightmaps.
-		lm_deleteall();
+		entity_delete();
 		ClearAnyLightMapInternalTextures();
 
 		//PE: Delete all entitybank textures used.
-		if( g.standalonefreememorybetweenlevels == 1 )
+		if (g.standalonefreememorybetweenlevels == 1)
 			ClearAnyEntitybankInternalTextures();
 	}
 }
@@ -4273,9 +3925,6 @@ void game_init ( void )
 
 	//  Last thing before main game loop
 	physics_beginsimulation ( );
-
-	//  Just before start, stagger AI processing timers
-	darkai_staggerAIprocessing ( );
 
 	//  Reset game checkpoint
 	t.playercheckpoint.stored=1;
@@ -4382,7 +4031,6 @@ void game_freegame ( void )
 	DoTextureListSort ( );
 }
 
-#ifdef ENABLEIMGUI
 
 void game_hidemouse(void)
 {
@@ -4405,84 +4053,6 @@ void game_showmouse(void)
 	}
 }
 
-#else
-
-void game_hidemouse ( void )
-{
-	if (  g.mouseishidden == 0 ) 
-	{
-		g.mouseishidden=1;
-		if (  t.game.gameisexe == 1 ) 
-		{
-			t.tgamemousex_f=MouseX();
-			t.tgamemousey_f=MouseY();
-			HideMouse (  );
-		}
-		else
-		{
-			OpenFileMap (  1, "FPSEXCHANGE" );
-			SetEventAndWait (  1 );
-			SetFileMapDWORD (  1,974,1 );
-			SetEventAndWait (  1 );
-			t.tgamemousex_f=GetFileMapDWORD( 1, 0 );
-			t.tgamemousey_f=GetFileMapDWORD( 1, 4 );
-			t.tgamemousex_f=t.tgamemousex_f/800.0;
-			t.tgamemousey_f=t.tgamemousey_f/600.0;
-			t.tgamemousex_f=t.tgamemousex_f*(GetDisplayWidth()+0.0);
-			t.tgamemousey_f=t.tgamemousey_f*(GetDisplayHeight()+0.0);
-		}
-		t.null=MouseMoveX()+MouseMoveY();
-	}
-}
-
-void game_showmouse ( void )
-{
-	if (  g.mouseishidden == 1 ) 
-	{
-		g.mouseishidden=0;
-		if (  t.game.gameisexe == 1 ) 
-		{
-			ShowMouse (  );
-		}
-		else
-		{
-			OpenFileMap (  1, "FPSEXCHANGE" );
-			SetEventAndWait (  1 );
-			t.tgamemousex_f=t.inputsys.xmouse+0.0;
-			t.tgamemousey_f=t.inputsys.ymouse+0.0;
-			SetFileMapDWORD (  1,982,t.tgamemousex_f );
-			SetFileMapDWORD (  1,986,t.tgamemousey_f );
-			SetFileMapDWORD (  1,974,2 );
-			SetEventAndWait (  1 );
-		}
-		t.null=MouseMoveX()+MouseMoveY();
-	}
-}
-void game_showmouse_restore_mouse(void)
-{
-	if (g.mouseishidden == 1)
-	{
-		g.mouseishidden = 0;
-		if (t.game.gameisexe == 1)
-		{
-			ShowMouse();
-		}
-		else
-		{
-			OpenFileMap(1, "FPSEXCHANGE");
-			SetEventAndWait(1);
-			t.tgamemousex_f = t.inputsys.xmouse + 0.0;
-			t.tgamemousey_f = t.inputsys.ymouse + 0.0;
-			SetFileMapDWORD(1, 982, t.tgamemousex_f);
-			SetFileMapDWORD(1, 986, t.tgamemousey_f);
-			SetFileMapDWORD(1, 974, 3);
-			SetEventAndWait(1);
-		}
-		t.null = MouseMoveX() + MouseMoveY();
-	}
-}
-
-#endif
 
 void game_timeelapsed_init ( void )
 {
@@ -4506,10 +4076,8 @@ void game_timeelapsed ( void )
 	if (  g.timeelapsed_f>0.75f  )  g.timeelapsed_f = 0.75f;
 	if (  g.timeelapsed_f<0.00833f  )  g.timeelapsed_f = 0.00833f;
 
-	#ifdef WICKEDENGINE
 	void update_per_frame_effects(void);
 	update_per_frame_effects();
-	#endif
 }
 
 void game_main_snapshotsoundloopcheckpoint ( bool bPauseAndResumeFromGameMenu )
@@ -4753,7 +4321,6 @@ void game_main_loop ( void )
 		if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling sliders_loop");
 		sliders_loop ( );
 
-		#ifdef WICKEDENGINE
 		// CTRL+H to hide the hud when testing levels. For reason some the key results don't match what they should be from keymap?
 		if (t.game.gameisexe == 0)
 		{
@@ -4767,7 +4334,6 @@ void game_main_loop ( void )
 				iKeyRepeatCounter = 0;
 			}
 		}
-		#endif
 
 		//  update all projectiles
 		if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling weapon_projectile_loop");
@@ -4853,7 +4419,7 @@ void game_main_loop ( void )
 
 			//  Construction Kit control
 			if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling conkit_loop");
-			conkit_loop ( );
+			//conkit_loop ( );
 		}
 		t.game.perf.physics += PerformanceTimer()-g.gameperftimestamp ; g.gameperftimestamp=PerformanceTimer();
 
@@ -4993,10 +4559,8 @@ void game_main_loop ( void )
 		// run multiplayer logic
 		mp_gameLoop ( );
 
-		#ifdef VRTECH
 		// mp logic can trigger a new avatar to be loaded and created dynamically
 		game_scanfornewavatars ( true );
-		#endif
 	}
 
 	// If the camera is spun round quick, redraw shadows immediately
@@ -5008,15 +4572,7 @@ void game_main_loop ( void )
 		//Grass every other frame
 		//Gets me 10fps increase on my machine		
 		static bool terrainvegdelay = true;
-		if ( terrainvegdelay = !terrainvegdelay )
-		{
-			if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling grass_loop");
-			grass_loop ( );
-			t.game.perf.terrain1 += PerformanceTimer()-g.gameperftimestamp ; g.gameperftimestamp=PerformanceTimer();
-		}
-		else
-			t.game.perf.terrain1 += PerformanceTimer()-g.gameperftimestamp ; g.gameperftimestamp=PerformanceTimer();
-
+		t.game.perf.terrain1 += PerformanceTimer()-g.gameperftimestamp ; g.gameperftimestamp=PerformanceTimer();
 		t.game.perf.terrain2 += PerformanceTimer()-g.gameperftimestamp ; g.gameperftimestamp=PerformanceTimer();
 	}
 	if (  t.hardwareinfoglobals.nosky == 0 ) 
@@ -5115,8 +4671,6 @@ void game_main_loop ( void )
 	}
 
 	//  Post process and visual settings system
-	//if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling postprocess_apply");
-	//postprocess_apply ( );
 	if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling visuals_loop");
 	visuals_loop ( );
 	if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling lighting_loop");
@@ -5237,7 +4791,6 @@ void game_sync ( void )
 	///realsense_loop ( );
 
 	//  Update screen
-	//g.gameperftimestamp=PerformanceTimer();
 	if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling sync");
 	Sync (  );
 	if ( g.gproducelogfiles == 2 ) timestampactivity(0,"calling game_dynamicRes");
@@ -5277,7 +4830,7 @@ void game_main_stop ( void )
 	// Rest any ingame variables
 	if ( t.conkit.entityeditmode != 0 || t.conkit.editmodeactive == 1 ) 
 	{
-		conkitedit_switchoff ( );
+		//conkitedit_switchoff ( );
 	}
 }
 
@@ -5309,11 +4862,7 @@ void game_finish_level_from_lua ( void )
 	}
 	else
 	{
-		#ifdef VRTECH
-			t.s_s="Game Completed"  ; lua_prompt ( );
-		#else
-			t.s_s="Level Complete Triggered"  ; lua_prompt ( );
-		#endif
+		t.s_s="Game Completed"  ; lua_prompt ( );
 	}
 }
 
@@ -5327,6 +4876,11 @@ void game_end_of_level_check ( void )
 		t.game.gameloop=0;
 		t.game.levelendingcycle = 0;
 		t.postprocessings.fadeinenabled = 1;
+		//PE: Delay screen update , some frames so we only see the "Game Over Screen".
+		extern int iBlockRenderingForFrames;
+		iBlockRenderingForFrames = 10;
+		extern bool g_bNoSwapchainPresent;
+		g_bNoSwapchainPresent = true; 
 	}
 
 	// control fade out of screen
@@ -5410,9 +4964,6 @@ void GodCameraControl(float &x, float &y, float &z, float& ax, float& ay, float&
 			if (modifier < 2) modifier = 2;
 			t.tffcspeed_f *= modifier;
 		}
-
-		// speed up wheel movement
-		//if (usingWheel) t.tffcspeed_f *= 4;
 
 		if (t.inputsys.k_s == "e" || ImGui::IsKeyDown(69))  t.traise_f = -90;
 		if (t.inputsys.k_s == "q" || ImGui::IsKeyDown(81))  t.traise_f = 90;

@@ -6,10 +6,8 @@
 #include "stdafx.h"
 #include "gameguru.h"
 
-#ifdef WICKEDENGINE
 #include "GGTerrain/GGTerrain.h"
 #include "GGTerrain/GGGrass.h"
-#endif
 
 #ifdef OPTICK_ENABLE
 #include "optick.h"
@@ -28,20 +26,10 @@ namespace GGGrass
 void visuals_init ( void )
 {
 	//  Default visual settings
-	//if ( GetMaxPixelShaderValue() >= 3.0 ) // Yikes - that was old :)
-	//{
 	t.visuals.shaderlevels.terrain=1;
 	t.visuals.shaderlevels.entities=1;
 	t.visuals.shaderlevels.vegetation=1;
 	t.visuals.shaderlevels.lighting=2;
-	//}
-	//else
-	//{
-	//	t.visuals.shaderlevels.terrain=3;
-	//	t.visuals.shaderlevels.entities=2;
-	//	t.visuals.shaderlevels.vegetation=3;
-	//	t.visuals.shaderlevels.lighting=2;
-	//}
 
 	//  Global settings
 	t.visuals.mode=1;
@@ -174,7 +162,6 @@ void visuals_resetvalues (bool bNewLevel)
 
 	//  World Settings (reset to default selections)
 	terrain_initstyles_reset ( );
-	grass_initstyles_reset();
 	t.visuals.sky_s="";
 	t.visuals.terrain_s=g.terrainstyle_s;
 	t.visuals.vegetation_s=g.vegstyle_s;
@@ -235,7 +222,7 @@ void visuals_resetvalues (bool bNewLevel)
 	t.visuals.bThreadedPhysics = false;
 	t.visuals.bReflectionsLowestLOD = false;
 
-	t.visuals.g_bDelayedShadows = false;
+	t.visuals.g_bDelayedShadows = true;
 	t.visuals.g_bDelayedShadowsLaptop = false;
 	t.visuals.fEnvProbeBrightness = 1.0f;
 
@@ -272,7 +259,7 @@ void visuals_resetvalues (bool bNewLevel)
 	t.visuals.iMSAO = 1;
 	t.visuals.fMSAOPower = 1.0;
 
-	t.visuals.iShadowSpotCascadeResolution = 2048;
+	t.visuals.iShadowSpotCascadeResolution = 1024;
 	t.visuals.iShadowSpotResolution = 512;
 	t.visuals.iShadowPointResolution = 512;
 	t.visuals.iShadowPointMax = 16;
@@ -473,8 +460,6 @@ void visuals_newlevel ( void )
 {
 	// 310117 - Game gets its visuals from the visuals.ini file
 	visuals_load ( );
-	// 090517 - leaves leftover things like old FOG setting on a !!NEW LEVEL!!
-	//t.gamevisuals = t.visuals;
 
 	//  New level resets these values
 	visuals_resetvalues ( );
@@ -487,18 +472,11 @@ void visuals_newlevel ( void )
 	t.visuals.refreshvegtexture=0;
 	t.editorvisuals=t.visuals;
 
-	// 310117 - do not wipe out game visuals (see above)
-	//t.gamevisuals=t.visuals;
-
 	// 090517 - actually we WANT to reset some of the game visual settings (reset fog/terrain/etc) for NEW LEVEL!
 	t.gamevisuals=t.visuals;
 
 	//  Apply editor defaults
 	visuals_editordefaults ( );
-
-	// also ensure new terrain starts with no PBR terrain
-	//t.terrain.iTerrainPBRMode = 0;
-	//t.terrain.iForceTerrainVegShaderUpdate = 1;
 
 	// force a fade in of the gamma (hides construction artefacts and looks nice)
 	extern float g_fGlobalGammaFadeIn;
@@ -515,9 +493,6 @@ void visuals_free ( void )
 
 	//  reset underwater effects when session ends
 	physics_player_reset_underwaterstate ( );
-
-return;
-
 }
 
 void visuals_updateskyterrainvegindex ( void )
@@ -528,13 +503,9 @@ void visuals_updateskyterrainvegindex ( void )
 	{
 		if (  t.skybank_s[t.s] == "clear"  )  g.skyindex = t.s;
 	}
-	#ifdef WICKEDENGINE
 	//PE: Support "None"
 	g.skyindex = 0;// for MAX, Non is the default (Dynamic Sky!)
 	for (t.s = 0; t.s <= g.skymax; t.s++)
-	#else
-	for ( t.s = 1 ; t.s<=  g.skymax; t.s++ )
-	#endif
 	{
 		if (  t.skybank_s[t.s] == t.visuals.sky_s ) 
 		{
@@ -570,12 +541,10 @@ void visuals_save ( void )
 {
 	// save all visual settings
 	t.visfile_s=g.fpscrootdir_s+"\\visuals.ini";
-	#ifdef WICKEDENGINE
 	char pRealVisFile[MAX_PATH] = "";
 	strcpy(pRealVisFile, t.visfile_s.Get());
 	GG_GetRealPath(pRealVisFile, 1);
 	t.visfile_s = pRealVisFile;
-	#endif
 	if ( FileExist(t.visfile_s.Get()) == 1 ) DeleteAFile ( t.visfile_s.Get() );
 	OpenToWrite (  1,t.visfile_s.Get() );
 	t.strwork = ""; t.strwork = t.strwork +"visuals.shaderlevels.terrain="+Str(t.visuals.shaderlevels.terrain);
@@ -704,10 +673,8 @@ void visuals_save ( void )
 	WriteString (  1, t.strwork.Get() );
 	t.strwork = ""; t.strwork = t.strwork + "visuals.LensFlare=" + Str(t.visuals.LensFlare_f);
 	WriteString (1, t.strwork.Get());
-	#ifdef WICKEDENGINE
 	t.strwork = ""; t.strwork = t.strwork + "visuals.Exposure=" + Str(t.visuals.fExposure);
 	WriteString (1, t.strwork.Get());
-	#endif
 	//New Water Settings
 	t.strwork = ""; t.strwork = t.strwork + "visuals.Waterheight=" + Str(g.gdefaultwaterheight);
 	WriteString(1, t.strwork.Get());
@@ -1148,7 +1115,7 @@ void visuals_load ( void )
 	t.visuals.bThreadedPhysics = false;
 	t.visuals.bReflectionsLowestLOD = false;
 
-	t.visuals.g_bDelayedShadows = false;
+	t.visuals.g_bDelayedShadows = true;
 	t.visuals.g_bDelayedShadowsLaptop = false;
 
 	t.visuals.fEnvProbeBrightness = 1.0f;
@@ -1188,7 +1155,7 @@ void visuals_load ( void )
 	t.visuals.SkyCloudThickness = 98000.0f;
 	t.visuals.SkyCloudSpeed = 3.0f;
 
-	t.visuals.iShadowSpotCascadeResolution = 2048;
+	t.visuals.iShadowSpotCascadeResolution = 1024;
 	t.visuals.iShadowSpotResolution = 512;
 	t.visuals.iShadowPointResolution = 512;
 	t.visuals.iShadowPointMax = 16;
@@ -1289,7 +1256,6 @@ void visuals_load ( void )
 	}
 	else
 	{
-		#ifdef WICKEDENGINE
 		char cFullWritePath[MAX_PATH] = "";
 		GG_GetRealPath(cFullWritePath, 0);
 		t.visfile_s = cstr(cFullWritePath) + "visuals.ini";
@@ -1298,9 +1264,6 @@ void visuals_load ( void )
 			//PE: No file yet in write folder , take the original.
 			t.visfile_s = g.fpscrootdir_s + "\\visuals.ini";
 		}
-		#else
-		t.visfile_s=g.fpscrootdir_s+"\\visuals.ini";
-		#endif
 	}
 	if ( FileExist(t.visfile_s.Get()) == 1 ) 
 	{
@@ -1331,7 +1294,6 @@ void visuals_load ( void )
 				//PE: @Paul we need this so users can change the settings.
 				//PE: You can change the defaults in "visual.ini" this is what the editor use :)
 				//PE: Removed t.visuals.FogNearest_f = 360000 , t.visuals.FogDistance_f = 1000000.0f.
-
 				t.visuals.FogNearest_f = ValF(t.tvalue_s.Get());
 			}
 			t.try_s = "visuals.FogDistance#" ; if (  t.tfield_s == t.try_s  )  t.visuals.FogDistance_f = ValF(t.tvalue_s.Get()); //PE: Needed ?
@@ -1342,10 +1304,8 @@ void visuals_load ( void )
 			if (t.tfield_s == t.try_s)
 			{
 				t.visuals.FogA_f = ValF(t.tvalue_s.Get());
-				#ifdef WICKEDENGINE
 				if (t.visuals.FogA_f > 2.0) //PE: Wicked used for height.
 					t.visuals.FogA_f = 0;
-				#endif
 			}
 			t.try_s = "visuals.AmbienceIntensity#" ; if (  t.tfield_s == t.try_s  )  t.visuals.AmbienceIntensity_f = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.AmbienceRed#" ; if (  t.tfield_s == t.try_s  )
@@ -1362,7 +1322,7 @@ void visuals_load ( void )
 			t.try_s = "visuals.Specular#" ; if (  t.tfield_s == t.try_s  )  t.visuals.Specular_f = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.DistanceTransitionStart#" ; if (  t.tfield_s == t.try_s  )  t.visuals.DistanceTransitionStart_f = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.DistanceTransitionRange#" ; if (  t.tfield_s == t.try_s  )  t.visuals.DistanceTransitionRange_f = ValF(t.tvalue_s.Get());
-			//t.try_s = "visuals.CameraNEAR#" ; if (  t.tfield_s == t.try_s  )  t.visuals.CameraNEAR_f = ValF(t.tvalue_s.Get());
+
 			t.try_s = "visuals.CameraFAR#" ; if (  t.tfield_s == t.try_s  )  t.visuals.CameraFAR_f = ValF(t.tvalue_s.Get());
 			//  20032015 = 021 - Don't use FOV for multiplayer
 			if (  t.game.runasmultiplayer  ==  0 ) 
@@ -1406,11 +1366,9 @@ void visuals_load ( void )
 			t.try_s = "visuals.SAOIntensity" ; if (  t.tfield_s == t.try_s  )  t.visuals.SAOIntensity_f = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.SAOQuality" ; if (  t.tfield_s == t.try_s  )  t.visuals.SAOQuality_f = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.LensFlare"; if (t.tfield_s == t.try_s)  t.visuals.LensFlare_f = ValF(t.tvalue_s.Get());
-			#ifdef WICKEDENGINE
 			t.try_s = "visuals.Exposure"; if (t.tfield_s == t.try_s)  t.visuals.fExposure = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.fAutoExposureRate"; if (t.tfield_s == t.try_s)  t.visuals.fAutoExposureRate = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.fAutoExposureKey"; if (t.tfield_s == t.try_s)  t.visuals.fAutoExposureKey = ValF(t.tvalue_s.Get());
-			#endif
 			//new water settings
 			t.try_s = "visuals.Waterheight"; if (t.tfield_s == t.try_s)  g.gdefaultwaterheight = ValF(t.tvalue_s.Get());
 			t.try_s = "visuals.Waterred"; if (t.tfield_s == t.try_s)  t.visuals.WaterRed_f = ValF(t.tvalue_s.Get());
@@ -1663,9 +1621,6 @@ void visuals_load ( void )
 			t.terrain.waterliney_f = g.gdefaultwaterheight = -10000.0f;
 		}
 
-		// reset grass type choices to paint with
-		grass_resetchoices();
-
 		// if older visuals file and loaded into new performance aware engine, add best defaults for PERFORMANCE! No-one remarks on QUALITY in Steam Reviews, so favor PERFORMANCE.
 		if (bVisualFileFromLevel == true)
 		{
@@ -1677,11 +1632,6 @@ void visuals_load ( void )
 			}
 		}
 	}
-
-	// Yikes, remove this stuff!!
-	//  Right away we cap 'VERTICAL' CameraFOV# for legacy levels which could set it VERY high
-	//if (  t.visuals.CameraFOV_f>62.14f  )  t.visuals.CameraFOV_f = 62.14f;
-	//if (  t.visuals.WeaponFOV_f>62.14f  )  t.visuals.WeaponFOV_f = 62.14f;
 
 	//  Restore any settings we want when IDE first starts (that might have been changed by load/save code)
 	if (  t.tresetforstartofeditor == 1 ) 
@@ -1716,294 +1666,6 @@ void visuals_load ( void )
 
 void visuals_justshaderupdate ( void )
 {
-	#ifdef WICKEDENGINE
-	// Wicked has its own shaders
-	#else
-	//  Post Process Shaders
-	if ( GetEffectExist(g.postprocesseffectoffset+0) == 1 ) 
-	{
-		// Regular BLOOM or SAO shader (ie send values to SAO shader now in charge of post processing)
-		int iPPS = 0; if ( t.visuals.SAOIntensity_f > 0.0f ) iPPS = 4;
-
-		//  Bloom constants
-		if (  t.visuals.bloommode>0 ) 
-		{
-			if (  g.gfinalrendercameraid>0 ) 
-			{
-				SetEffectConstantF (  g.postprocesseffectoffset+iPPS,"BloomThreshold",1.0-((t.visuals.bloommode+0.0)/100.0) );
-				SetEffectConstantF (  g.postprocesseffectoffset+iPPS,"PostContrast",t.visuals.PostContrast_f );
-				SetEffectConstantF (  g.postprocesseffectoffset+iPPS,"PostBrightness",t.visuals.PostBrightness_f );
-				SetVector4 (  g.generalvectorindex+1,t.visuals.VignetteRadius_f,t.visuals.VignetteIntensity_f,0,0 );
-				SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"Vignette",g.generalvectorindex+1 );
-				SetVector4 (  g.generalvectorindex+1,t.visuals.MotionDistance_f,t.visuals.MotionIntensity_f,0,0 );
-				SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"Motion",g.generalvectorindex+1 );
-				SetVector4 (  g.generalvectorindex+1,t.visuals.DepthOfFieldDistance_f,t.visuals.DepthOfFieldIntensity_f,0,0 );
-				SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"DepthOfField",g.generalvectorindex+1 );
-			}
-			if (  g.globals.riftmode == 0 ) 
-			{
-				if ( g.postprocessobjectoffset0laststate != g.postprocesseffectoffset+iPPS )
-				{
-					SetVector4 ( g.terrainvectorindex,0,0,0,0 );
-					SetEffectConstantV ( g.postprocesseffectoffset+iPPS,"[hook-depth-data]", g.terrainvectorindex );
-					SetObjectEffect (  g.postprocessobjectoffset+0,g.postprocesseffectoffset+iPPS );
-					g.postprocessobjectoffset0laststate = g.postprocesseffectoffset+iPPS;
-				}
-			}
-			else
-			{
-				if ( g.postprocessobjectoffset0laststate != g.postprocesseffectoffset+3 )
-				{
-					SetVector4 ( g.terrainvectorindex,0,0,0,0 );
-					SetEffectConstantV ( g.postprocesseffectoffset+3,"[hook-depth-data]", g.terrainvectorindex );
-					SetObjectEffect ( g.postprocessobjectoffset+0,g.postprocesseffectoffset+3 );
-					g.postprocessobjectoffset0laststate = g.postprocesseffectoffset+3;
-				}
-			}
-		}
-		else
-		{
-			if (  g.gfinalrendercameraid>0 ) 
-			{
-				SetEffectConstantF (  g.postprocesseffectoffset+2,"PostContrast",t.visuals.PostContrast_f );
-				SetEffectConstantF (  g.postprocesseffectoffset+2,"PostBrightness",t.visuals.PostBrightness_f );
-			}
-			if (  g.globals.riftmode == 0 ) 
-			{
-				if ( g.postprocessobjectoffset0laststate != g.postprocesseffectoffset+2 )
-				{
-					SetVector4 ( g.terrainvectorindex,0,0,0,0 );
-					SetEffectConstantV ( g.postprocesseffectoffset+2,"[hook-depth-data]", g.terrainvectorindex );
-					SetObjectEffect (  g.postprocessobjectoffset+0,g.postprocesseffectoffset+2 );
-					g.postprocessobjectoffset0laststate = g.postprocesseffectoffset+2;
-				}
-			}
-			else
-			{
-				if ( g.postprocessobjectoffset0laststate != g.postprocesseffectoffset+3 )
-				{
-					SetVector4 ( g.terrainvectorindex,0,0,0,0 );
-					SetEffectConstantV ( g.postprocesseffectoffset+3,"[hook-depth-data]", g.terrainvectorindex );
-					SetObjectEffect (  g.postprocessobjectoffset+0,g.postprocesseffectoffset+3 );
-					g.postprocessobjectoffset0laststate = g.postprocesseffectoffset+3;
-				}
-			}
-		}
-
-		//  Rift constants
-		if (  g.globals.riftmode>0 ) 
-		{
-			//  Lees tweaked values
-			SetVector4 (  g.generalvectorindex+1, 2.0f, 1.66f, 0, 0    );// ScaleIn;
-			SetVector4 (  g.generalvectorindex+2, 0.32f, 0.45f, 0, 0   );// Scale;
-			SetVector4 (  g.generalvectorindex+3, 1, 0.22f, 0.24f, 0   );// HmdWarpParam;
-			SetVector4 (  g.generalvectorindex+4, 0.5f, 0.5f, 0, 0     );// ScreenCenter;
-			SetVector4 (  g.generalvectorindex+5, 0.5f, 0.5f, 0, 0     );// Len ( sCenter );
-
-			SetEffectConstantV (  g.postprocesseffectoffset+3, "ScaleIn", g.generalvectorindex+1 );
-			SetEffectConstantV (  g.postprocesseffectoffset+3, "Scale", g.generalvectorindex+2 );
-			SetEffectConstantV (  g.postprocesseffectoffset+3, "HmdWarpParam", g.generalvectorindex+3 );
-			SetEffectConstantV (  g.postprocesseffectoffset+3, "ScreenCenter", g.generalvectorindex+4 );
-			SetEffectConstantV (  g.postprocesseffectoffset+3, "LensCenter", g.generalvectorindex+5 );
-		}
-	}
-
-	if (  GetEffectExist(g.postprocesseffectoffset+1) == 1 ) 
-	{
-		if (  t.glightraycameraid>0 ) 
-		{
-			if (  t.visuals.lightraymode>0 ) 
-			{
-				LPSTR pScatterTechnique = "ScatterLOW";
-				if ( t.visuals.LightrayQuality_f > 25 )
-				{
-					pScatterTechnique = "ScatterMEDIUM";
-					if ( t.visuals.LightrayQuality_f > 50 )
-					{
-						pScatterTechnique = "ScatterHIGH";
-						if ( t.visuals.LightrayQuality_f > 75 )
-						{
-							pScatterTechnique = "ScatterHIGHEST";
-						}
-					}
-				}
-				SetEffectTechnique (  g.postprocesseffectoffset+1, pScatterTechnique );
-				SetEffectConstantF (  g.postprocesseffectoffset+1,"LightRayFactor",((t.visuals.lightraymode+0.0)/100.0) );
-			}
-			else
-			{
-				SetEffectTechnique (  g.postprocesseffectoffset+1,"NoScatter" );
-			}
-		}
-	}
-
-	//  In-Game Shaders
-	if (  t.terrain.terrainshaderindex>0 ) 
-	{
-		if (  GetEffectExist(t.terrain.terrainshaderindex) == 1 ) 
-		{
-			SetEffectConstantF (  t.terrain.terrainshaderindex,"ShadowStrength",t.visuals.shadowmode/100.0 );
-			SetVector4 (  g.terrainvectorindex,t.visuals.FogNearest_f,t.visuals.FogDistance_f,0,0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"HudFogDist",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.FogR_f/255.0,t.visuals.FogG_f/255.0,t.visuals.FogB_f/255.0,t.visuals.FogA_f/255.0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"HudFogColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"AmbiColorOverride",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.AmbienceRed_f/255.0,t.visuals.AmbienceGreen_f/255.0,t.visuals.AmbienceBlue_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"AmbiColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.SurfaceRed_f/255.0,t.visuals.SurfaceGreen_f/255.0,t.visuals.SurfaceBlue_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"SurfColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.suncolorr_f/255.0,t.terrain.suncolorg_f/255.0,t.terrain.suncolorb_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"SkyColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.floorcolorr_f/255.0,t.terrain.floorcolorg_f/255.0,t.terrain.floorcolorb_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"FloorColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.sundirectionx_f,t.terrain.sundirectiony_f,t.terrain.sundirectionz_f,0.0 );
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"LightSource",g.terrainvectorindex );
-			if (  t.game.set.ismapeditormode == 1 ) 
-			{
-				SetVector4 (  g.terrainvectorindex,9999999.0,9999999.0,0.0,0.0 );
-			}
-			else
-			{
-				t.tactualstart_f=t.visuals.DistanceTransitionStart_f*t.visuals.DistanceTransitionMultiplier_f;
-				SetVector4 (  g.terrainvectorindex,t.tactualstart_f,t.tactualstart_f+t.visuals.DistanceTransitionRange_f,t.visuals.DistanceTransitionRange_f,0.0 );
-			}
-			SetEffectConstantV (  t.terrain.terrainshaderindex,"DistanceTransition",g.terrainvectorindex );
-			SetEffectConstantF (  t.terrain.terrainshaderindex,"SurfaceSunFactor",t.visuals.SurfaceSunFactor_f );
-			SetEffectConstantF (  t.terrain.terrainshaderindex,"GlobalSpecular",t.visuals.Specular_f );
-			SetEffectConstantF (  t.terrain.terrainshaderindex,"GlobalSurfaceIntensity",t.visuals.SurfaceIntensity_f );
-		}
-	}
-	if (  t.terrain.vegetationshaderindex>0 ) 
-	{
-		if (  GetEffectExist(t.terrain.vegetationshaderindex) == 1 ) 
-		{
-			SetEffectConstantF (  t.terrain.vegetationshaderindex,"ShadowStrength",t.visuals.shadowmode/100.0 );
-			SetVector4 (  g.vegetationvectorindex,t.visuals.FogNearest_f,t.visuals.FogDistance_f,0,0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"HudFogDist",g.vegetationvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.visuals.FogR_f/255.0,t.visuals.FogG_f/255.0,t.visuals.FogB_f/255.0,t.visuals.FogA_f/255.0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"HudFogColor",g.vegetationvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"AmbiColorOverride",g.vegetationvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.visuals.AmbienceRed_f/255.0,t.visuals.AmbienceGreen_f/255.0,t.visuals.AmbienceBlue_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"AmbiColor",g.vegetationvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.visuals.SurfaceRed_f/255.0,t.visuals.SurfaceGreen_f/255.0,t.visuals.SurfaceBlue_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"SurfColor",g.vegetationvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.terrain.suncolorr_f/255.0,t.terrain.suncolorg_f/255.0,t.terrain.suncolorb_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"SkyColor",g.terrainvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.terrain.floorcolorr_f/255.0,t.terrain.floorcolorg_f/255.0,t.terrain.floorcolorb_f/255.0,0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"FloorColor",g.terrainvectorindex );
-			SetVector4 (  g.vegetationvectorindex,t.terrain.sundirectionx_f,t.terrain.sundirectiony_f,t.terrain.sundirectionz_f,0.0 );
-			SetEffectConstantV (  t.terrain.vegetationshaderindex,"LightSource",g.vegetationvectorindex );
-			grass_setgrassgridandfade ( );
-			SetEffectConstantF (  t.terrain.vegetationshaderindex,"GrassFadeDistance", (float)t.tGrassFadeDistance );
-			SetEffectConstantF (  t.terrain.vegetationshaderindex,"SurfaceSunFactor",t.visuals.SurfaceSunFactor_f );
-			SetEffectConstantF (  t.terrain.vegetationshaderindex,"GlobalSpecular",t.visuals.Specular_f );
-			SetEffectConstantF (  t.terrain.vegetationshaderindex,"GlobalSurfaceIntensity",t.visuals.SurfaceIntensity_f );
-		}
-	}
-	//update water shader
-	if (GetEffectExist(t.terrain.effectstartindex + 1))
-	{
-		SetVector4(g.terrainvectorindex, t.visuals.WaterRed_f / 256, t.visuals.WaterGreen_f / 256, t.visuals.WaterBlue_f / 256, 0);
-		SetEffectConstantV(t.terrain.effectstartindex + 1, "WaterCol", g.terrainvectorindex);
-		//nWaterscale 0 let strange lightning artifacts appear
-		SetVector4(g.terrainvectorindex, t.visuals.WaterWaveIntensity_f+1, t.visuals.WaterWaveIntensity_f+1, 0, 0);
-		SetEffectConstantV(t.terrain.effectstartindex + 1, "nWaterScale", g.terrainvectorindex);
-		SetEffectConstantF(t.terrain.effectstartindex + 1, "WaterTransparancy", t.visuals.WaterTransparancy_f);
-		SetEffectConstantF(t.terrain.effectstartindex + 1, "WaterReflection", t.visuals.WaterReflection_f);
-		SetEffectConstantF(t.terrain.effectstartindex + 1, "reflectionSparkleIntensity", t.visuals.WaterReflectionSparkleIntensity);
-		SetVector4(g.terrainvectorindex, t.visuals.WaterFlowDirectionX * t.visuals.WaterFlowSpeed, t.visuals.WaterFlowDirectionY * t.visuals.WaterFlowSpeed, 0, 0);
-		SetEffectConstantV(t.terrain.effectstartindex + 1, "flowdirection", g.terrainvectorindex);
-		SetEffectConstantF(t.terrain.effectstartindex + 1, "WaterSpeed1", t.visuals.WaterSpeed1);
-		SetEffectConstantF(t.terrain.effectstartindex + 1, "distortion2", t.visuals.WaterDistortionWaves);
-	}
-
-	//  update fog shader
-	t.tFogNear_f=t.visuals.FogNearest_f ; t.tFogFar_f=t.visuals.FogDistance_f;
-	t.tFogR_f=t.visuals.FogR_f ; t.tFogG_f=t.visuals.FogG_f ; t.tFogB_f=t.visuals.FogB_f ; ; t.tFogA_f=t.visuals.FogA_f;
-	terrain_water_setfog ( );
-	for ( t.t = -6 ; t.t<=  g.effectbankmax; t.t++ )
-	{
-		if (  t.t == -6  )  t.effectid = g.lightmappbreffectillum;
-		#ifdef VRTECH
-		if (  t.t == -5  )  t.effectid = g.controllerpbreffect;
-		#else
-		if (t.t == -5)  continue;
-		#endif
-		if (  t.t == -4  )  t.effectid = g.lightmappbreffect;
-		if (  t.t == -3  )  t.effectid = g.thirdpersonentityeffect;
-		if (  t.t == -2  )  t.effectid = g.thirdpersoncharactereffect;
-		if (  t.t == -1  )  t.effectid = g.staticlightmapeffectoffset;
-		if (  t.t == 0  )  t.effectid = g.staticshadowlightmapeffectoffset;
-		if (  t.t>0  )  t.effectid = g.effectbankoffset+t.t;
-		if (  GetEffectExist(t.effectid) == 1 ) 
-		{
-			SetEffectConstantF (  t.effectid,"ShadowStrength",t.visuals.shadowmode/100.0 );
-			SetVector4 (  g.terrainvectorindex,t.visuals.FogNearest_f,t.visuals.FogDistance_f,0,0 );
-			SetEffectConstantV (  t.effectid,"HudFogDist",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.FogR_f/255.0,t.visuals.FogG_f/255.0,t.visuals.FogB_f/255.0,t.visuals.FogA_f/255.0 );
-			SetEffectConstantV (  t.effectid,"HudFogColor",g.terrainvectorindex );
-
-			SetVector4 (  g.terrainvectorindex,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0,t.visuals.AmbienceIntensity_f/255.0 );
-			SetEffectConstantV (  t.effectid,"AmbiColorOverride",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.visuals.AmbienceRed_f/255.0,t.visuals.AmbienceGreen_f/255.0,t.visuals.AmbienceBlue_f/255.0,0 );
-			SetEffectConstantV (  t.effectid,"AmbiColor",g.terrainvectorindex );
-
-			SetVector4 (  g.terrainvectorindex,t.visuals.SurfaceRed_f/255.0,t.visuals.SurfaceGreen_f/255.0,t.visuals.SurfaceBlue_f/255.0, 0.0f );
-			SetEffectConstantV (  t.effectid,"SurfColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.suncolorr_f/255.0,t.terrain.suncolorg_f/255.0,t.terrain.suncolorb_f/255.0,0 );
-			SetEffectConstantV (  t.effectid,"SkyColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.floorcolorr_f/255.0,t.terrain.floorcolorg_f/255.0,t.terrain.floorcolorb_f/255.0,0 );
-			SetEffectConstantV (  t.effectid,"FloorColor",g.terrainvectorindex );
-			SetVector4 (  g.terrainvectorindex,t.terrain.sundirectionx_f,t.terrain.sundirectiony_f,t.terrain.sundirectionz_f,0.0 );
-			SetEffectConstantV (  t.effectid,"LightSource",g.terrainvectorindex );
-			SetVector4 ( g.terrainvectorindex, 500000, 1, 0, 0 );
-			SetEffectConstantV (  t.effectid,"EntityEffectControl",g.terrainvectorindex );
-			SetEffectConstantF (  t.effectid,"SurfaceSunFactor",t.visuals.SurfaceSunFactor_f );
-			SetEffectConstantF (  t.effectid,"GlobalSpecular",t.visuals.Specular_f );
-			SetEffectConstantF (  t.effectid,"GlobalSurfaceIntensity",t.visuals.SurfaceIntensity_f );
-		}
-	}
-
-	//PE: HUD. did not get any visuals, shader variables.
-	if(GetEffectExist(g.jetpackeffectoffset) )  {
-		t.effectid = g.jetpackeffectoffset;
-		SetEffectConstantF(t.effectid, "ShadowStrength", t.visuals.shadowmode / 100.0);
-		SetVector4(g.terrainvectorindex, t.visuals.FogNearest_f, t.visuals.FogDistance_f, 0, 0);
-		SetEffectConstantV(t.effectid, "HudFogDist", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, t.visuals.FogR_f / 255.0, t.visuals.FogG_f / 255.0, t.visuals.FogB_f / 255.0, t.visuals.FogA_f / 255.0);
-		SetEffectConstantV(t.effectid, "HudFogColor", g.terrainvectorindex);
-
-		SetVector4(g.terrainvectorindex, t.visuals.AmbienceIntensity_f / 255.0, t.visuals.AmbienceIntensity_f / 255.0, t.visuals.AmbienceIntensity_f / 255.0, t.visuals.AmbienceIntensity_f / 255.0);
-		SetEffectConstantV(t.effectid, "AmbiColorOverride", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, t.visuals.AmbienceRed_f / 255.0, t.visuals.AmbienceGreen_f / 255.0, t.visuals.AmbienceBlue_f / 255.0, 0);
-		SetEffectConstantV(t.effectid, "AmbiColor", g.terrainvectorindex);
-
-		SetVector4(g.terrainvectorindex, t.visuals.SurfaceRed_f / 255.0, t.visuals.SurfaceGreen_f / 255.0, t.visuals.SurfaceBlue_f / 255.0, 0.0f);
-		SetEffectConstantV(t.effectid, "SurfColor", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, t.terrain.suncolorr_f / 255.0, t.terrain.suncolorg_f / 255.0, t.terrain.suncolorb_f / 255.0, 0);
-		SetEffectConstantV(t.effectid, "SkyColor", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, t.terrain.floorcolorr_f / 255.0, t.terrain.floorcolorg_f / 255.0, t.terrain.floorcolorb_f / 255.0, 0);
-		SetEffectConstantV(t.effectid, "FloorColor", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, t.terrain.sundirectionx_f, t.terrain.sundirectiony_f, t.terrain.sundirectionz_f, 0.0);
-		SetEffectConstantV(t.effectid, "LightSource", g.terrainvectorindex);
-		SetVector4(g.terrainvectorindex, 500000, 1, 0, 0);
-		SetEffectConstantV(t.effectid, "EntityEffectControl", g.terrainvectorindex);
-		SetEffectConstantF(t.effectid, "SurfaceSunFactor", t.visuals.SurfaceSunFactor_f);
-		SetEffectConstantF(t.effectid, "GlobalSpecular", t.visuals.Specular_f);
-		SetEffectConstantF(t.effectid, "GlobalSurfaceIntensity", t.visuals.SurfaceIntensity_f);
-	}
-
-
-	//  update lightray shader
-	if (  GetEffectExist(g.postprocesseffectoffset+1) == 1 ) 
-	{
-		SetVector4 (  g.terrainvectorindex,t.terrain.suncolorr_f/255.0,t.terrain.suncolorg_f/255.0,t.terrain.suncolorb_f/255.0,t.terrain.sunstrength_f/100.0 );
-		SetEffectConstantV (  g.postprocesseffectoffset+1,"SkyColor",g.terrainvectorindex );
-	}
-	
-	#endif
 }
 
 void visuals_restoreterrainshaderforeditor ( void )
@@ -2037,7 +1699,6 @@ void visuals_updatespecificobjectmasks ( int e, int obj )
 					if (  t.entityprofile[entid].castshadow == -1 ) 
 					{
 						SetObjectMask ( obj,t.tmaskforcamerasraw,0,0,0 );
-#ifdef WICKEDENGINE
 						//PE: This removes per mesh cast shadow in test game.
 						sObject* pObject = g_ObjectList[obj];
 						if (pObject)
@@ -2086,7 +1747,6 @@ void visuals_updatespecificobjectmasks ( int e, int obj )
 							WickedSetElementId(0);
 						}
 
-#endif
 					}
 					else
 					{
@@ -2139,15 +1799,12 @@ void visuals_updateobjectmasks ( void )
 {
 	// actually used relfection value
 	int iUseThisReflectionValue = t.visuals.reflectionmode;
-	#ifdef VRTECH
 	if ( g.gvrmode != 0 && iUseThisReflectionValue > 10 ) 
 		iUseThisReflectionValue = 10;
-	#endif
 
 	// can be called from _loop and also from terrain (reflection update when not looking at water pixels)
 	if ( 1 ) 
 	{
-		#ifdef VRTECH
 		if (g.globals.riftmode > 0 || (g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1))
 		{
 			if (g.vrglobals.GGVREnabled > 0)
@@ -2162,13 +1819,6 @@ void visuals_updateobjectmasks ( void )
 				t.tmaskforcamerasraw = 00000 + (1 << t.glefteyecameraid) + (1 << t.grighteyecameraid);
 			}
 		}
-		#else
-		if ( g.globals.riftmode>0  ) 
-		{
-			// left and right eye cameras too (but not camera zero)
-			t.tmaskforcamerasraw=00000+(1<<t.glefteyecameraid)+(1<<t.grighteyecameraid);
-		}
-		#endif
 		else
 		{
 			t.tmaskforcamerasraw=00001;
@@ -2450,9 +2100,6 @@ void visuals_loop ( void )
 		// One refresh per request
 		t.visuals.refreshshaders=0;
 
-		// If change in debug objects flag should update relevant modules
-		darkai_updatedebugobjects ( );
-
 		// 091115 - new system to SKIP the depth render of all qualifying shader (using a pass called "RenderDepthPixelsPass")
 		visuals_CheckSetGlobalDepthSkipSystem();
 
@@ -2496,7 +2143,6 @@ void visuals_loop ( void )
 						SetObjectMask ( t.o,0,0,0,0 );
 
 			// Update in-game objects that only appear in main camera
-			#ifdef VRTECH
 			if ( g.globals.riftmode>0 || (g.vrglobals.GGVREnabled > 0 && g.vrglobals.GGVRUsingVRSystem == 1) )  
 			{
 				if ( g.vrglobals.GGVREnabled > 0 )
@@ -2504,12 +2150,6 @@ void visuals_loop ( void )
 				else
 					t.tmaskmaincamera=0+(1<<t.glefteyecameraid)+(1<<t.grighteyecameraid);
 			}
-			#else
-			if ( g.globals.riftmode>0 )  
-			{
-				t.tmaskmaincamera=0+(1<<t.glefteyecameraid)+(1<<t.grighteyecameraid);
-			}
-			#endif
 			else
 			{
 				t.tmaskmaincamera=1;
@@ -2531,12 +2171,12 @@ void visuals_loop ( void )
 				SetObjectMask ( t.terrain.objectstartindex+5, t.tmaskmaincamera );//1 ); need to see water in VR renders
 			}
 
-			#ifdef VRTECH
 			// go through all entities to ensure they render to VR scenes
 			for ( t.e = 1; t.e <= g.entityelementlist; t.e++ )
 			{
+				// LB: visuals_loop can be called when project FPM loads, but strangely BEFORE the entity parents and elements are loaded, so this might be an issue (resolved for now with t.entid < t.entityprofile.size())
 				t.entid = t.entityelement[t.e].bankindex;
-				if ( t.entid > 0 ) 
+				if ( t.entid > 0 && t.entid < t.entityprofile.size())
 				{
 					if ( t.entityprofile[t.entid].ischaractercreator == 1 ) 
 					{
@@ -2551,7 +2191,6 @@ void visuals_loop ( void )
 					}
 				}
 			}
-			#endif
 		}
 
 		// Shader updates
@@ -2610,14 +2249,6 @@ void visuals_loop ( void )
 			}
 		}
 
-		// Set terrain LOD distances (700 is slightly larger than width of terrain segment piece)
-		if ( t.terrain.TerrainID>0 ) 
-		{
-			BT_SetTerrainLODDistance ( t.terrain.TerrainID,1,1401.0+t.visuals.TerrainLOD1_f );
-			BT_SetTerrainLODDistance ( t.terrain.TerrainID,2,1401.0+t.visuals.TerrainLOD2_f );
-			SetTerrainRenderLevel ( t.visuals.TerrainSize_f );
-		}
-
 		// Ensures LOW FPS detector not fooled by setting changes
 		g.lowfpstarttimer=Timer();
 
@@ -2655,8 +2286,6 @@ void visuals_loop ( void )
 	{
 		if (  MouseClick() == 0 ) 
 		{
-			// Set grass grid and fade
-			grass_setgrassgridandfade ( );
 			// Only update the vegetation grid if the view distance is far enough, otherwise just clear it
 			if ( t.terrain.vegetationgridsize>1 ) 
 			{
@@ -2666,7 +2295,6 @@ void visuals_loop ( void )
 					if ( GetEffectExist(t.terrain.vegetationshaderindex) == 1 ) 
 					{
 						SetEffectConstantF (  t.terrain.vegetationshaderindex,"GrassFadeDistance",t.tGrassFadeDistance );
-						grass_init ( );
 					}
 				}
 			}
@@ -2689,7 +2317,6 @@ void visuals_loop ( void )
 		if ( t.visuals.refreshterrainsupertexture == 2 ) 
 		{
 			//  generate super texture from above textures
-			terrain_generatesupertexture ( false );
 			t.visuals.refreshterrainsupertexture=0;
 		}
 		else
@@ -2725,7 +2352,6 @@ void visuals_loop ( void )
 		if ( t.visuals.refreshterraintexture == 2 ) 
 		{
 			// first check if CUSTOM available (texture_d.dds present)
-			#ifdef VRTECH
 			bool bCustomTextureExists = false;
 			if ( FileExist ( cstr(g.mysystem.levelBankTestMapAbs_s+"Texture_D.dds").Get() ) == 1 ) bCustomTextureExists = true;
 			if ( FileExist ( cstr(g.mysystem.levelBankTestMapAbs_s+"Texture_D.jpg").Get() ) == 1 ) bCustomTextureExists = true;
@@ -2733,9 +2359,6 @@ void visuals_loop ( void )
 			if ( t.visuals.terrainindex > 1 || (t.visuals.terrainindex==1 && bCustomTextureExists == true) )
 			#else
 			if ( t.visuals.terrainindex >= 1 )
-			#endif
-			#else
-			if ( t.visuals.terrainindex > 1 || (t.visuals.terrainindex==1 && FileExist ( cstr(g.mysystem.levelBankTestMapAbs_s+"Texture_D.dds").Get() ) == 1) )
 			#endif
 			{
 				// change terrain textures
@@ -2770,45 +2393,9 @@ void visuals_loop ( void )
 		g.vegstyleindex=t.visuals.vegetationindex;
 		if (  g.vegstyleindex>g.vegstylemax  )  g.vegstyleindex = g.vegstylemax;
 		t.visuals.vegetation_s=t.vegstylebank_s[g.vegstyleindex];
-		grass_changevegstyle ( );
 		t.visuals.refreshvegtexture=0;
 		g.lowfpstarttimer=Timer();
 	}
-
-	// Depth Of Field can be overridden any time by weapon
-	#ifdef WICKEDENGINE
-	#else
-	if ( GetEffectExist(g.postprocesseffectoffset+0) == 1 ) 
-	{
-		t.tMotionIntensity_f=t.visuals.MotionIntensity_f;
-		t.tDepthOfFieldDistance_f=t.visuals.DepthOfFieldDistance_f;
-		t.tDepthOfFieldIntensity_f=t.visuals.DepthOfFieldIntensity_f;
-		if ( t.gunid>0 && g.firemodes[t.gunid][g.firemode].settings.dofintensity>0 ) 
-		{
-			if ( t.gunzoommode>1 ) 
-			{
-				t.tMotionIntensity_f=0.0;
-				t.tDepthOfFieldDistance_f=(g.firemodes[t.gunid][g.firemode].settings.dofdistance+0.0)/100.0;
-				t.tpercfadein_f=(t.gunzoommode+0.0)/10.0;
-				if ( t.tpercfadein_f<0.0  )  t.tpercfadein_f = 0.0;
-				if ( t.tpercfadein_f>1.0  )  t.tpercfadein_f = 1.0;
-				t.tnewDOFIntensity_f=(g.firemodes[t.gunid][g.firemode].settings.dofintensity+0.0)/100.0;
-				t.tDepthOfFieldIntensity_f=(t.tnewDOFIntensity_f*t.tpercfadein_f)+(t.tDepthOfFieldIntensity_f*(1.0-t.tpercfadein_f));
-			}
-		}
-		// Regular BLOOM or SAO shader (ie send values to SAO shader now in charge of post processing)
-		int iPPS = 0; if ( t.visuals.SAOIntensity_f > 0.0f ) iPPS = 4;
-		// More values to the post processing shader
-		SetVector4 ( g.generalvectorindex+1,t.visuals.MotionDistance_f,t.tMotionIntensity_f,0,0 );
-		SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"Motion",g.generalvectorindex+1 );
-		SetVector4 ( g.generalvectorindex+1,t.tDepthOfFieldDistance_f,t.tDepthOfFieldIntensity_f,0,0 );
-		SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"DepthOfField",g.generalvectorindex+1 );
-		SetVector4 ( g.generalvectorindex+1,t.tFogNear_f,t.tFogFar_f,0,t.tFogA_f/255.0 );
-		SetEffectConstantV ( g.postprocesseffectoffset+iPPS,"HudFogDistAndAlpha",g.generalvectorindex+1 );
-		SetVector4 ( g.generalvectorindex+1, t.visuals.SAORadius_f, t.visuals.SAOIntensity_f, t.visuals.SAOQuality_f, t.visuals.LensFlare_f );
-		SetEffectConstantV (  g.postprocesseffectoffset+iPPS,"SAOSettings",g.generalvectorindex+1 );
-	}
-	#endif
 }
 
 void visuals_shaderlevels_update_core (bool bUpdateEngine)
@@ -2870,8 +2457,12 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			//PE: Only change if user has not selected a custom skybox and use bDisableSkybox
 			if (t.visuals.skyindex == 0)
 			{
-				t.visuals.bDisableSkybox = false;
-				iChangeSkyType = 0;
+				//PE: Dont change if user have selected "none"
+				if (!t.visuals.bDisableSkybox)
+				{
+					t.visuals.bDisableSkybox = false;
+					iChangeSkyType = 0;
+				}
 			}
 			fLODMultiplier = 3.0f;
 		}
@@ -2894,8 +2485,12 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			//PE: Only change if user has not selected a custom skybox and use bDisableSkybox
 			if (t.visuals.skyindex == 0)
 			{
-				t.visuals.bDisableSkybox = true;
-				iChangeSkyType = 1;
+				//PE: Dont change if user have selected "none"
+				if (!t.visuals.bDisableSkybox)
+				{
+					t.visuals.bDisableSkybox = true;
+					iChangeSkyType = 1;
+				}
 			}
 			fLODMultiplier = 1.0f;
 
@@ -3025,13 +2620,6 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 		if (t.visuals.shaderlevels.vegetation >= 2) GGGrass::gggrass_global_params.lod_dist = fInitialGrassDrawDistanceValue * 2;
 		if (t.visuals.shaderlevels.vegetation == 4) GGGrass::gggrass_global_params.lod_dist = fInitialGrassDrawDistanceValue * 3;
 
-		// "terrain" controls camera distance (does not alter t.visuals.CameraFAR_f)
-		/* maybe ocne upon a time, now this can be set manually and users do NOT want it messed with!!
-		float fUseCameraFar = fInitialCameraFar;
-		if (t.visuals.shaderlevels.terrain >= 2) fUseCameraFar = fUseCameraFar / 2;
-		if (t.visuals.shaderlevels.terrain == 4) fUseCameraFar = fUseCameraFar / 4;
-		wiScene::GetCamera().zFarP = fUseCameraFar;
-		*/
 		extern CCameraManager m_CameraManager;
 		tagCameraData* m_ptr = m_CameraManager.GetData(0);
 		WickedCall_SetCameraFOV(m_ptr->fFOV);

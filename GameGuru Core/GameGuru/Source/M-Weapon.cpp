@@ -10,30 +10,10 @@
 #include "optick.h"
 #endif
 
-#ifdef VRTECH
 void weapon_preloadfiles ( void )
 {
 	//PE: Not used in wicked.
-	#ifndef WICKEDENGINE
-
-	timestampactivity(0,"preload textures early");
-	image_preload_files_start();
-	image_preload_files_add("gamecore\\projectiletypes\\fantasy\\fireball\\fireball_D.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\fantasy\\magicbolt\\magicbolt_D.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\fantasy\\magicbolt\\explode.dds");
-	//image_preload_files_add("gamecore\\projectiletypes\\fantasy\\magicbolt\\smoke.dds"); //PE: This one use DirectX::CreateDDSTextureFromFile so...
-	image_preload_files_add("gamecore\\projectiletypes\\fantasy\\magicbolt\\trail.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\handgrenade\\handgrenade_D.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\handgrenade\\handgrenade_N.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\handgrenade\\handgrenade_S.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\rpggrenade\\rpggrenade_D.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\rpggrenade\\rpggrenade_N.dds");
-	image_preload_files_add("gamecore\\projectiletypes\\modern\\rpggrenade\\rpggrenade_S.dds");
-	image_preload_files_finish();
-
-	#endif
 }
-#endif
 
 void weapon_getfreeobject ( void )
 {
@@ -98,13 +78,9 @@ void weapon_loadobject ( void )
 	else
 	{
 		LoadObject ( pFileToLoad.Get(), t.tObjID );
-		#ifdef WICKEDENGINE
 		// we rely on directly loading DBOs for the weapon system
 		if (ObjectExist(t.tObjID))
 			SetObjectDiffuseEx(t.tObjID, 0xFFFFFFFF, 0);
-		#else
-		EnsureObjectDBOIsFVF ( t.tObjID, pFileToLoad.Get(), 274 );
-		#endif
 	}
 	if (ObjectExist(t.tObjID) == 0)
 	{
@@ -234,47 +210,7 @@ void weapon_processanimation ( void )
 
 void weapon_projectile_init ( void )
 {
-	#ifndef WICKEDENGINE
-	// no projectiles for some builds
-	if (FileExist("gamecore\\projectiletypes\\TracerParticle.x") == 0) 
-	{
-		//PE: Must be completely missing to ignore projectile.
-		if (FileExist("gamecore\\projectiletypes\\_e_tracerparticle.dbo") == 0) 
-		{
-			if (FileExist("gamecore\\projectiletypes\\_e_tracerparticle.x") == 0) 
-			{
-				if (FileExist("gamecore\\projectiletypes\\TracerParticle.dbo") == 0) 
-				{
-					return;
-				}
-			}
-		}
-	}
-	// load and setup our tracer particle. All projectiles instance this particle and can display it if they are a tracer round
-	t.tFileName_s = "gamecore\\projectiletypes\\TracerParticle.x"; weapon_loadobject ();
-	if (t.tObjID > 0)
-	{
-		g.weaponSystem.objTracer = t.tObjID;
-		ExcludeOn (t.tObjID);
-	}
-	#else
-	/* no more tracer object for now
-	// always need projectiles for MAX
-	t.tFileName_s = "gamecore\\projectiletypes\\TracerParticle.dbo"; 
-	weapon_loadobject ();
-	if (t.tObjID > 0)
-	{
-		g.weaponSystem.objTracer = t.tObjID;
-		ExcludeOn (t.tObjID);
-		PositionObject(t.tObjID, 0, -19000, 0);
-		SetObjectCollisionOff(t.tObjID);
-		HideObject(t.tObjID);
-	}
-	*/
-	#endif
 
-	//PE: Also need to read from docwrite.
-	
 	// scan all projectiles in 'projectiletypes' folder
 	timestampactivity (0, "Preparing ProjectileTypes");
 	SetDir ( "gamecore" );
@@ -644,11 +580,7 @@ void weapon_projectile_loop ( void )
 							decal_triggerwatersplash ( );
 							//  trigger sound
 							t.tmatindex=17; 
-							#ifdef WICKEDENGINE
 							t.tsoundtrigger=t.material[t.tmatindex].matsound_id[matSound_LandHard][0];
-							#else
-							t.tsoundtrigger = t.material[t.tmatindex].impactid;
-							#endif
 							t.tspd_f=(t.material[t.tmatindex].freq*1.0f)+Rnd(t.material[t.tmatindex].freq)*0.5f;
 							t.tsx_f=t.tXNewPos_f ; t.tsy_f=t.terrain.waterliney_f ; t.tsz_f=t.tZNewPos_f;
 							t.tvol_f = 100.0f ; material_triggersound ( 0 );
@@ -1211,11 +1143,9 @@ void weapon_projectile_load ( void )
 		DisableObjectZWrite ( t.tObjID );
 	}
 	SetObjectTransparency ( t.tObjID, 6 );
-#ifdef WICKEDENGINE
 	PositionObject(t.tObjID, 0, -19000, 0);
 	SetObjectCollisionOff(t.tObjID);
 	HideObject(t.tObjID);
-#endif
 	// load sounds
 	t.tInField_s = "sound" ; weapon_readfield(); t.sound_s = t.value_s;
 	if (  t.value_s  !=  "" ) 
@@ -1238,11 +1168,6 @@ void weapon_projectile_load ( void )
 	t.WeaponProjectileBase[t.tNewProjBase].cacheProjectile = t.tcount;
 	t.WeaponProjectileBase[t.tNewProjBase].cacheLoaded = false;
 	weapon_projectile_setup ( &iSndForBaseSound, &iSndForBaseDestroy ); //Add one so we get the basetype mapping.
-
-//	for ( t.tP = 1 ; t.tP <= t.tcount; t.tP++ )
-//	{
-//		weapon_projectile_setup ( &iSndForBaseSound, &iSndForBaseDestroy );
-//	}
 
 	UnDim (  t.fileData_s );
 
@@ -1276,11 +1201,9 @@ void weapon_projectile_setup ( int* piSndForBaseSound, int* piSndForBaseDestroy 
 				}
 				t.WeaponProjectile[t.tNew].obj = t.tObjID;
 				CloneObject ( t.tObjID,t.WeaponProjectileBase[t.tNewProjBase].baseObj );
-				#ifdef WICKEDENGINE
 				//LB: strangely projectiles have no textures, needed to call it here
 				sObject* pObject = GetObjectData(t.tObjID);
 				WickedCall_TextureObject(pObject, NULL);
-				#endif
 				SetObjectTransparency ( t.tObjID,6 );
 				SetObjectMask ( t.tObjID,1 );
 				HideObject ( t.tObjID );
@@ -1297,12 +1220,8 @@ void weapon_projectile_setup ( int* piSndForBaseSound, int* piSndForBaseDestroy 
 			// make the tracer object
 			weapon_getfreeobject ( );
 			if ( t.tObjID  ==  0  )  break;
-			#ifdef WICKEDENGINE
 			// no tracer object for MAX for now
 			MakeObjectCube (t.tObjID, 0);
-			#else
-			CloneObject (t.tObjID, g.weaponSystem.objTracer);
-			#endif
 			SetObjectMask ( t.tObjID,1 );
 			t.WeaponProjectile[t.tNew].tracerObj = t.tObjID;
 			HideObject ( t.tObjID );
@@ -1328,31 +1247,6 @@ void weapon_projectile_setup ( int* piSndForBaseSound, int* piSndForBaseDestroy 
 			}
 			t.WeaponProjectile[t.tNew].sound = *piSndForBaseSound;
 			t.WeaponProjectile[t.tNew].soundDeath = *piSndForBaseDestroy;
-
-			// old way cloned sounds for each instance of projectile, but took time to clone (loading wait)
-			/*
-			//  make the sound effect
-			if (  t.WeaponProjectileBase[t.tNewProjBase].sound > 0 ) 
-			{
-				weapon_getfreesound ( );
-				if (  t.tSndID > 0 ) 
-				{
-					CloneSound (  t.tSndID,t.WeaponProjectileBase[t.tNewProjBase].sound );
-					t.WeaponProjectile[t.tNew].sound = t.tSndID;
-				}
-			}
-
-			//  make the onDeath sound effect
-			if (  t.WeaponProjectileBase[t.tNewProjBase].soundDeath > 0 ) 
-			{
-				weapon_getfreesound ( );
-				if (  t.tSndID > 0 ) 
-				{
-					CloneSound (  t.tSndID,t.WeaponProjectileBase[t.tNewProjBase].soundDeath );
-					t.WeaponProjectile[t.tNew].soundDeath = t.tSndID;
-				}
-			}
-			*/
 
 			// done creating instance,can leave
 			t.tResult = t.tNew; return;
@@ -1648,11 +1542,6 @@ void weapon_projectile_make ( bool bUsingVRForAngle, bool bDoNotAdvanceToAvoidPe
 	}
 
 	// setup particle emitters for this projectile
-	/*
-	// but only if entities not set to LOWEST as particle trails are expensive!
-	t.tokay = 1 ; if (  t.visuals.shader levels.entities == 3  )  t.tokay = 0;
-	if (  t.WeaponProjectileBase[t.tProjectileType].particleType>0 && t.tokay == 1 )
-	*/
 	if ( t.WeaponProjectileBase[t.tProjectileType].particleType > 0 ) 
 	{
 		ravey_particles_get_free_emitter ( );
@@ -1799,11 +1688,8 @@ void weapon_projectile_destroy ( void )
 		//PE: Add a pauseemitter , so no one is added but the rest can just stay and emitter will stop.
 		bool WickedCall_ParticleEffectPosition(uint32_t root, float fX, float fY, float fZ);
 		uint32_t root = t.WeaponProjectile[t.tProj].WPE_Root;
-		//WickedCall_ParticleEffectPosition(root, t.tStartX_f, t.tStartY_f, t.tStartZ_f);
 		//iAction = 1 Burst all. 2 = Pause. - 3 = Resume. - 4 = Restart - 5 - visible - 6 = not visible.
 		void WickedCall_PerformEmitterAction(int iAction, uint32_t emitter_root);
-		//WickedCall_PerformEmitterAction(2, root);
-		//WickedCall_PerformEmitterAction(6, root);
 		WickedCall_PerformEmitterAction(7, root); //PE: Stop emit new particles. but keep simulation active.
 
 	}
@@ -1874,7 +1760,6 @@ void weapon_projectileresult_make (int customdecal )
 				float fSize = (float)t.tProjectileResultSize / 100.0f;
 				float fSmokeSize = (float)t.tProjectileResultSmokeSize / 100.0f;
 				float fSparksSize = (float)t.tProjectileResultSparksSize / 100.0f;
-#ifdef WICKEDPARTICLESYSTEM
 
 				//PE: Scan for custom explosion.
 				if (t.tSourceEntity > 0 && t.tSourceEntity < t.entityelement.size())
@@ -1917,7 +1802,6 @@ void weapon_projectileresult_make (int customdecal )
 					g.decalrange = olddecalrange;
 				}
 				else
-#endif
 				{
 					explosion_custom(t.tProjectileResultExplosionImageID, iLightFlag, iSmokeImageID, iSparksCount, fSize, fSmokeSize, fSparksSize, (int)t.tXPos_f, (int)t.tYPos_f, (int)t.tZPos_f);
 				}

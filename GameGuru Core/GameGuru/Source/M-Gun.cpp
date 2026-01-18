@@ -339,10 +339,6 @@ void gun_loaddata ( void )
 
 					cmpStrConst(t_field_s, "clipcapacity");
 					if (matched)  g.firemodes[t.gunid][0].settings.clipcapacity = t.value1;
-					//cmpStrConst(t_field_s, "weaponpropres1");
-					//if (matched)  g.firemodes[t.gunid][0].settings.weaponpropres1 = t.value1;
-					//cmpStrConst(t_field_s, "weaponpropres2");
-					//if (matched)  g.firemodes[t.gunid][0].settings.weaponpropres2 = t.value1;
 
 					cmpStrConst( t_field_s, "muzzleflash" );
 					if( matched )  g.firemodes[t.gunid][0].settings.muzzleflash = t.value1;
@@ -402,11 +398,9 @@ void gun_loaddata ( void )
 					if( matched )  g.firemodes[t.gunid][0].settings.zoomhidecrosshair = t.value1;
 					cmpStrConst( t_field_s, "doesnotuseammo" );
 					if( matched )  g.firemodes[t.gunid][0].settings.doesnotuseammo = t.value1;
-#ifdef WICKEDENGINE
 					cmpStrConst( t_field_s, "usemeleedamageonly" );
 					if( matched )  
 						g.firemodes[t.gunid][0].settings.usemeleedamageonly = t.value1;
-#endif
 
 					//  Brass details
 					cmpStrConst( t_field_s, "brass" );
@@ -555,6 +549,18 @@ void gun_loaddata ( void )
 					cmpStrConst( t_field_s, "lockcamera" );
 					if( matched )  g.firemodes[t.gunid][0].settings.lockcamera = t.value1;
 
+					// LB: for weapons like bow and arrow, fire anim starts and then arrow released some time later (in ms)
+					cmpStrConst(t_field_s, "delayedshot");
+					if (matched)  g.firemodes[t.gunid][0].settings.delayedshot = t.value1;
+					cmpStrConst(t_field_s, "alt delayedshot");
+					if (matched)  g.firemodes[t.gunid][1].settings.delayedshot = t.value1;
+
+					// animchoicemode; 0 = default random as above, 1 = pure random allowing repeat anims to be chosen, 2 = sequential not random
+					cmpStrConst(t_field_s, "animchoicemode");
+					if (matched)  g.firemodes[t.gunid][0].settings.animchoicemode = t.value1;
+					cmpStrConst(t_field_s, "alt animchoicemode");
+					if (matched)  g.firemodes[t.gunid][1].settings.animchoicemode = t.value1;
+
 					//  Gun model animation keyframe setting
 					cmpStrConst( t_field_s, "keyframe ratio" );
 					if( matched ) 
@@ -562,7 +568,6 @@ void gun_loaddata ( void )
 						t.keyframeratio = t.value1;
 					}
 
-					#ifdef WICKEDENGINE
 					//PE: This fails when called from entity_load , and t.currentgunobj == 0. We can use t.gun[t.gunid].obj instead.
 					// if no comma and anim field, look up start and finish frames from object directly
 					if (bFoundComma == false && iCurrentGunObj != 0)
@@ -701,7 +706,6 @@ void gun_loaddata ( void )
 									if (iModifyTheLastFinishFrameWhenKnowPerc == 69) g.firemodes[t.gunid][iAltIndex].zoomaction.start2.e = t.value1 - 1; // pFieldName = "zoom start fire 2";
 									if (iModifyTheLastFinishFrameWhenKnowPerc == 70) g.firemodes[t.gunid][iAltIndex].zoomaction.start3.e = t.value1 - 1; // pFieldName = "zoom start fire 3";
 									if (iModifyTheLastFinishFrameWhenKnowPerc == 75) g.firemodes[t.gunid][iAltIndex].zoomaction.laststart.e = t.value1 - 1; // pFieldName = "zoom last start fire";
-									//if (iModifyTheLastFinishFrameWhenKnowPerc == 81) g.firemodes[t.gunid][iAltIndex].blockaction.start.e = t.value1 - 1; // pFieldName = "block start";
 									iModifyTheLastFinishFrameWhenKnowPerc = 0;
 								}
 								fLastFinishFrameFromAnimName = -1;
@@ -734,7 +738,6 @@ void gun_loaddata ( void )
 									if (animfields == 69) bPartOfStartEndSet = true; // pFieldName = "zoom start fire 2";
 									if (animfields == 70) bPartOfStartEndSet = true; // pFieldName = "zoom start fire 3";
 									if (animfields == 75) bPartOfStartEndSet = true; // pFieldName = "zoom last start fire";
-									//if (animfields == 81) bPartOfStartEndSet = true; // pFieldName = "block start";
 									if (bPartOfStartEndSet == true)
 									{
 										fLastStartFrameFromAnimName = t.value1;
@@ -750,7 +753,6 @@ void gun_loaddata ( void )
 							}
 						}
 					}
-					#endif
 
 					//  Classic animations
 					cmpStrConst( t_field_s, "select" );
@@ -1055,10 +1057,6 @@ void gun_loaddata ( void )
 
 					cmpStrConst(t_field_s, "altclipcapacity");
 					if (matched)  g.firemodes[t.gunid][1].settings.clipcapacity = t.value1;
-					//cmpStrConst(t_field_s, "altweaponpropres1");
-					//if (matched)  g.firemodes[t.gunid][1].settings.weaponpropres1 = t.value1;
-					//cmpStrConst(t_field_s, "altweaponpropres2");
-					//if (matched)  g.firemodes[t.gunid][1].settings.weaponpropres2 = t.value1;
 
 					cmpStrConst( t_field_s, "altmuzzleflash" );
 					if( matched )  g.firemodes[t.gunid][1].settings.muzzleflash = t.value1;
@@ -1588,7 +1586,6 @@ void gun_loaddata ( void )
 
 					if (  t.gun[t.gunid].sound.soundframes > 0 ) 
 					{
-						#ifdef WICKEDENGINE
 						cmpNStrConst(t_field_s, "sframeanim");
 						if (matched)
 						{
@@ -1600,7 +1597,6 @@ void gun_loaddata ( void )
 								}
 							}
 						}
-						#endif
 						cmpNStrConst( t_field_s, "sframe" );
 						if ( matched )
 						{
@@ -1683,10 +1679,6 @@ void gun_loaddata ( void )
 					if (matched) t.gun[t.gunid].settings.tracer_colorG = t.value1 / 255.0f;
 					cmpStrConst(t_field_s, "tracercolorb");
 					if (matched) t.gun[t.gunid].settings.tracer_colorB = t.value1 / 255.0f;
-
-					//t.gun[t.gunid].settings.tracer_imagefile = "tracer.dds";
-					//t.gun[t.gunid].settings.tracer_WPEId = 0;
-					
 				}
 			}
 		}
@@ -2094,10 +2086,8 @@ void gun_sortintoorder ( void )
 	}
 
 	// once have correct order, populate weapon slots for player
-	#ifdef WICKEDENGINE
 	void gun_gatherslotorder_load (void);
 	gun_gatherslotorder_load();
-	#endif
 }
 
 void gun_findweaponindexbyname_core ( void )
@@ -2107,7 +2097,6 @@ void gun_findweaponindexbyname_core ( void )
 	{
 		for ( t.tid = 1 ; t.tid<=g.gunmax; t.tid++ )
 		{
-			//timestampactivity(0, cstr(cstr("FindWeaponMatch: ")+t.findgun_s+cstr(" vs ")+t.gun[t.tid].name_s).Get());
 			if (  cstr(Lower(t.findgun_s.Get())) == cstr(Lower(t.gun[t.tid].name_s.Get())) ) 
 			{
 				t.foundgunid=t.tid;
