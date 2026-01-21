@@ -100,17 +100,20 @@ jobs:
           $store = "D:\DEV\DEV\BUILDS\GameGuru Wicked MAX PDBs"
           $ts = "${{ steps.parse.outputs.ts }}"
 
-          $exe = Join-Path $store "GameGuruMAX_$ts.exe"
-          $pdb = Join-Path $store "GameGuruMAX_$ts.pdb"
+          $exeName = "GameGuruMAX_$ts.exe"
+          $pdbName = "GameGuruMAX_$ts.pdb"
 
-          if (-not (Test-Path $exe)) { throw "EXE not found: $exe" }
-          if (-not (Test-Path $pdb)) { throw "PDB not found: $pdb" }
+          $exeItem = Get-ChildItem -Path $store -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
+          $pdbItem = Get-ChildItem -Path $store -Recurse -File -Filter $pdbName -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          if (-not $exeItem) { throw "EXE not found anywhere under: $store (wanted $exeName)" }
+          if (-not $pdbItem) { throw "PDB not found anywhere under: $store (wanted $pdbName)" }
 
           $work = Join-Path $env:CRASHTRIAGE_ROOT "work"
           New-Item -ItemType Directory -Force -Path $work | Out-Null
 
-          Copy-Item $exe (Join-Path $work "GameGuruMAX.exe") -Force
-          Copy-Item $pdb (Join-Path $work "GameGuruMAX.pdb") -Force
+          Copy-Item $exeItem.FullName (Join-Path $work "GameGuruMAX.exe") -Force
+          Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
 
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
 
