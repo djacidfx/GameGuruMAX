@@ -10,9 +10,12 @@ permissions:
 
 jobs:
   triage:
-    if: |
-  (github.event.action == 'labeled' && github.event.label.name == 'crash-triage') ||
-  (github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'crash-triage'))
+    if: >
+      (github.event.action == 'labeled' && github.event.label.name == 'crash-triage') ||
+      (github.event.action == 'opened' && contains(
+        join(github.event.issue.labels.*.name, ','),
+        'crash-triage'
+      ))
     runs-on: [self-hosted, windows, crashtriage]
 
     steps:
