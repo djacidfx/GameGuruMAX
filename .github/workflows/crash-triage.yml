@@ -168,6 +168,14 @@ jobs:
 
           "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
 
+      - name: Upload triage output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-triage-output
+          path: |
+            ${{ steps.dbg.outputs.out }}
+
       - name: Comment result
         if: always()
         shell: powershell
@@ -186,11 +194,14 @@ jobs:
 
           if ("${{ job.status }}" -eq "success") {
             $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
-            if ($txt.Length -gt 60000) { $txt = $txt.Substring(0,60000) + "`n...(truncated)" }
-
-            $body = 'Crash triage complete'
+          
+            # Grab just the most useful lines (adjust patterns once you see your output)
+            $lnLine  = ($txt -split "`r?`n" | Where-Object { $_ -match '^\s*\(.*\)\s+\S+!\S+\+\S+' } | Select-Object -First 1)
+            $kvStart = ($txt -split "`r?`n" | Select-String -Pattern '^\s*Child-SP' -SimpleMatch | Select-Object -First 1)
+          
+            $body = "Crash triage complete.`n`nTop resolve: $lnLine`n`n(Full output attached to workflow run as artifact: crash-triage-output)"
           } else {
-            $body = 'Crash triage failed - see Actions log.'
+            $body = "Crash triage failed - see Actions log."
           }
 
           $payload = @{ body = $body } | ConvertTo-Json -Compress
