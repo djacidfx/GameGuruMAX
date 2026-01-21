@@ -16,7 +16,7 @@ jobs:
         join(github.event.issue.labels.*.name, ','),
         'crash-triage'
       ))
-    runs-on: [self-hosted, windows, crashtriage]
+    runs-on: [self-hosted, Windows, crashtriage]
 
     steps:
       - name: Prepare workspace
