@@ -97,7 +97,10 @@ jobs:
         id: stage
         shell: powershell
         run: |
-          $store = "D:\DEV\DEV\BUILDS\GameGuru Wicked MAX PDBs"
+          $store = "D:\DEV\BUILDS\GameGuru Wicked MAX PDBs"
+          Write-Host "Store is: $store"
+          Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
+
           $ts = "${{ steps.parse.outputs.ts }}"
 
           $exeName = "GameGuruMAX_$ts.exe"
