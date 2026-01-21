@@ -165,9 +165,9 @@ jobs:
           if ("${{ job.status }}" -eq "success") {
             $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
             if ($txt.Length -gt 60000) { $txt = $txt.Substring(0,60000) + "`n...(truncated)" }
-            $body = "✅ **Crash triage complete**`n```text`n$txt`n```"
+            $body = "**Crash triage complete**`n```text`n$txt`n```"
           } else {
-            $body = "❌ **Crash triage failed** – see Actions log."
+            $body = "**Crash triage failed** - see Actions log."
           }
 
           Invoke-RestMethod -Uri $api -Method Post -Headers $headers `
