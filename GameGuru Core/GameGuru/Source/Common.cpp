@@ -3103,6 +3103,9 @@ void FPSC_LoadSETUPINI (bool bUseMySystemFolder)
 					extern int g_iDisableTerrainSystem;
 					t.tryfield_s = "disableterrainsystem"; if (t.field_s == t.tryfield_s) g_iDisableTerrainSystem = t.value1;
 
+					extern int g_iDisableJustGrassSystem;
+					t.tryfield_s = "disablejustgrasssystem"; if (t.field_s == t.tryfield_s) g_iDisableJustGrassSystem = t.value1;
+
 					extern int g_iDisableWParticleSystem;
 					t.tryfield_s = "disablewparticlesystem"; if (t.field_s == t.tryfield_s) g_iDisableWParticleSystem = t.value1;
 
@@ -6183,6 +6186,14 @@ void GetSetupIniEarly( void )
 					{
 						extern int g_iDisableTerrainSystem;
 						g_iDisableTerrainSystem = 1;
+					}
+				}
+				if (pestrcasestr(t, "disablejustgrasssystem"))
+				{
+					if (pestrcasestr(t, "1"))
+					{
+						extern int g_iDisableJustGrassSystem;
+						g_iDisableJustGrassSystem = 1;
 					}
 				}
 				if (pestrcasestr(t, "disablewparticlesystem"))

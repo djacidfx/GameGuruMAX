@@ -166,8 +166,13 @@ bool GuruLoopLogic ( void )
 					GGTerrain::GGTerrain_Init(cmd);
 					timestampactivity(0, "GGTrees::GGTrees_Init();");
 					GGTrees::GGTrees_Init();
-					timestampactivity(0, "GGGrass::GGGrass_Init();");
-					GGGrass::GGGrass_Init();
+
+					extern int g_iDisableJustGrassSystem;
+					if (g_iDisableJustGrassSystem == 0)
+					{
+						timestampactivity(0, "GGGrass::GGGrass_Init();");
+						GGGrass::GGGrass_Init();
+					}
 				}
 				#endif
 				
