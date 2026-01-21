@@ -78,20 +78,35 @@ jobs:
           "dmp=$dmpPath" | Out-File $env:GITHUB_OUTPUT -Append
           "log=$logPath" | Out-File $env:GITHUB_OUTPUT -Append
 
-      - name: Parse timestamp and offset
+      - name: Parse timestamp and offset (LAST crash entry)
         id: parse
         shell: powershell
         run: |
-          $log = Get-Content "${{ steps.dl.outputs.log }}" -Raw
+          $logText = Get-Content "${{ steps.dl.outputs.log }}" -Raw
 
-          $ts  = [regex]::Match($log, 'GameGuru\s*MAX\s*Build\s*([0-9\-]{16})').Groups[1].Value
-          $off = [regex]::Match($log, 'Offset\s*value:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
+          # Split into blocks; keep only blocks that look like crash entries
+          $blocks = ($logText -split '==== GAMEGURU MAX CRASH DETECTED ====' ) |
+                    ForEach-Object { $_.Trim() } |
+                    Where-Object { $_ -match 'Build:\s*GameGuru\s*MAX\s*Build' }
 
-          if (-not $ts)  { throw "Build timestamp not found" }
-          if (-not $off) { throw "Offset not found" }
+          if (-not $blocks -or $blocks.Count -eq 0) {
+            throw "No crash blocks found in Guru-Crash.log"
+          }
+
+          $last = $blocks[-1]
+
+          $ts = [regex]::Match($last, 'Build:\s*GameGuru\s*MAX\s*Build\s*([0-9\-]{16})').Groups[1].Value
+          $off = [regex]::Match($last, 'Offset\s*value:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
+          $crashAddr  = [regex]::Match($last, 'Crash\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
+          $moduleAddr = [regex]::Match($last, 'Module\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
+
+          if (-not $ts)  { throw "Build timestamp not found in LAST crash block.`n$last" }
+          if (-not $off) { throw "Offset value not found in LAST crash block.`n$last" }
 
           "ts=$ts" | Out-File $env:GITHUB_OUTPUT -Append
           "off=$off" | Out-File $env:GITHUB_OUTPUT -Append
+          "crash_addr=$crashAddr" | Out-File $env:GITHUB_OUTPUT -Append
+          "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append   
 
       - name: Stage EXE and PDB
         id: stage
