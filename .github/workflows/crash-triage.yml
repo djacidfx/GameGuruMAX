@@ -126,13 +126,14 @@ jobs:
           $out = Join-Path $work "resolve.txt"
 
           # 1) Get Base Address from !lmi output
-          $cmd1 = @"
-.symfix
-.sympath+ $work
-.reload /f
-!lmi GameGuruMAX
-q
-"@
+$cmd1 = @(
+  ".symfix",
+  ".sympath+ $work",
+  ".reload /f",
+  "!lmi GameGuruMAX",
+  "q"
+) -join "`n"
+
           $lmiOut = Join-Path $work "lmi.txt"
           & $cdb -z "$dmp" -c "$cmd1" *> $lmiOut
 
