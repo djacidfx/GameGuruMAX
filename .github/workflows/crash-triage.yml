@@ -177,7 +177,7 @@ jobs:
             ".ecxr",
             "r rip",
             "ln @rip",
-            ".line @rip",
+            ".lines",
             "u @rip L20",
             "kv",
             "q"
