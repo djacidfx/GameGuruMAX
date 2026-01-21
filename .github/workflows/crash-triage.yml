@@ -167,17 +167,21 @@ jobs:
 
           $base = $m.Groups[1].Value -replace '`',''
 
-          # Pass 2: resolve address and get stack
+          # Pass 2: use exception context, resolve RIP, try source line, show stack
           @(
             ".symfix",
             ".sympath+ $work",
             ".reload /f",
-            "ln ($base + $off)",
             ".lastevent",
             ".ecxr",
+            "r rip",
+            "ln @rip",
+            "l+s @rip",
+            "u @rip L20",
             "kv",
             "q"
           ) | Set-Content -Path $cmdFile -Encoding ASCII
+          
 
           & $cdb -z "$dmp" -cf "$cmdFile" *> $out
 
