@@ -171,17 +171,17 @@ jobs:
           @(
             ".symfix",
             ".sympath+ $work",
-            ".reload /f",
+            "!sym noisy",
+            ".reload /f GameGuruMAX.exe",
             ".lastevent",
             ".ecxr",
             "r rip",
             "ln @rip",
-            "l+s @rip",
+            ".line @rip",
             "u @rip L20",
             "kv",
             "q"
           ) | Set-Content -Path $cmdFile -Encoding ASCII
-          
 
           & $cdb -z "$dmp" -cf "$cmdFile" *> $out
 
