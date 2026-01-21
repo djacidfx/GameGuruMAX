@@ -129,25 +129,42 @@ jobs:
           $work = "${{ steps.stage.outputs.work }}"
           $off  = "${{ steps.parse.outputs.off }}"
 
-          $out = Join-Path $work "resolve.txt"
+          $lmiOut  = Join-Path $work "modules.txt"
+          $out     = Join-Path $work "resolve.txt"
+          $cmdFile = Join-Path $work "cmd.txt"
 
-          # 1) Get Base Address from !lmi output
-          $syms = "srv*$work*https://msdl.microsoft.com/download/symbols"
-          $cmd1 = ".sympath $syms; .reload /f; !lmi GameGuruMAX.exe; q"
+          # Pass 1: list modules so we can get the base address
+          @(
+            ".symfix",
+            ".sympath+ $work",
+            ".reload /f",
+            "lm m GameGuruMAX*",
+            "q"
+          ) | Set-Content -Path $cmdFile -Encoding ASCII
 
-          $lmiOut = Join-Path $work "lmi.txt"
-          & $cdb -z "$dmp" -c "$cmd1" *> $lmiOut
+          & $cdb -z "$dmp" -cf "$cmdFile" *> $lmiOut
 
-          $lmiText = Get-Content $lmiOut -Raw
-          $base = [regex]::Match($lmiText, 'Base\s+Address:\s+([0-9a-fA-F`]+)').Groups[1].Value
-          if (-not $base) { throw "Could not parse Base Address from !lmi output.`n$lmiText" }
-          $base = $base -replace '`',''
+          $txt = Get-Content $lmiOut -Raw
 
-          # 2) Resolve ln(base+offset) and collect context
+          # Parse base address from "lm" line: start end module
+          $m = [regex]::Match($txt, '^\s*([0-9a-fA-F`]+)\s+[0-9a-fA-F`]+\s+GameGuruMAX', 'Multiline')
+          if (-not $m.Success) { throw "Could not find GameGuruMAX module in lm output.`n$txt" }
 
-          $cmd2 = ".sympath $syms; .reload /f; ln ($base + $off); .lastevent; .ecxr; kv; q"
+          $base = $m.Groups[1].Value -replace '`',''
 
-          & $cdb -z "$dmp" -c "$cmd2" *> $out
+          # Pass 2: resolve address and get stack
+          @(
+            ".symfix",
+            ".sympath+ $work",
+            ".reload /f",
+            "ln ($base + $off)",
+            ".lastevent",
+            ".ecxr",
+            "kv",
+            "q"
+          ) | Set-Content -Path $cmdFile -Encoding ASCII
+
+          & $cdb -z "$dmp" -cf "$cmdFile" *> $out
 
           "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
 
