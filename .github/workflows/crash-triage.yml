@@ -212,13 +212,19 @@ jobs:
           }
 
           if ("${{ job.status }}" -eq "success") {
+
             $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
-          
-            # Grab just the most useful lines (adjust patterns once you see your output)
-            $lnLine  = ($txt -split "`r?`n" | Where-Object { $_ -match '^\s*\(.*\)\s+\S+!\S+\+\S+' } | Select-Object -First 1)
-            $kvStart = ($txt -split "`r?`n" | Select-String -Pattern '^\s*Child-SP' -SimpleMatch | Select-Object -First 1)
-          
-            $body = "Crash triage complete.`n`nTop resolve: $lnLine`n`n(Full output attached to workflow run as artifact: crash-triage-output)"
+            
+            # 1) Pull the "u @rip" header line that contains file + line
+            $crashLine = ($txt -split "`r?`n" | Where-Object { $_ -match '!\w+\+\w+ \[.* @ \d+\]:' } | Select-Object -First 1)
+            
+            # 2) Pull the top frames that have [file @ line]
+            $frames = ($txt -split "`r?`n" |
+              Where-Object { $_ -match ':\s+GameGuruMAX!.*\[[A-Z]:\\.* @ \d+\]' } |
+              Select-Object -First 10) -join "`n"
+            
+            $body = "Crash triage complete.`n`nCrash site:`n$crashLine`n`nTop frames:`n$frames"
+
           } else {
             $body = "Crash triage failed - see Actions log."
           }
