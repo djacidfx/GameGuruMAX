@@ -1,0 +1,179 @@
+name: Crash Triage (WinDbg)
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    if: github.event.label.name == 'crash-triage'
+    runs-on: [self-hosted, windows, crashtriage]
+
+    steps:
+      - name: Prepare workspace
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "crashtriage"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          "CRASHTRIAGE_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Fetch issue body and comments
+        id: issue_text
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $num  = "${{ github.event.issue.number }}"
+
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            "User-Agent"  = "crash-triage"
+          }
+
+          $issue = Invoke-RestMethod "https://api.github.com/repos/$repo/issues/$num" -Headers $headers
+          $comments = Invoke-RestMethod "https://api.github.com/repos/$repo/issues/$num/comments" -Headers $headers
+
+          $text = $issue.body
+          foreach ($c in $comments) { $text += "`n`n" + $c.body }
+
+          $out = Join-Path $env:CRASHTRIAGE_ROOT "issue.txt"
+          Set-Content $out $text -Encoding UTF8
+          "issue_text=$out" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Download crashdump and log
+        id: dl
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $text = Get-Content "${{ steps.issue_text.outputs.issue_text }}" -Raw
+
+          $dmp = [regex]::Match($text, '(https://\S+?\.dmp)\b').Value
+          $log = [regex]::Match($text, '(https://\S+?Guru-Crash\.log)\b').Value
+
+          if (-not $dmp) { throw "Missing .dmp link" }
+          if (-not $log) { throw "Missing Guru-Crash.log link" }
+
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            "User-Agent"  = "crash-triage"
+          }
+
+          $dmpPath = Join-Path $env:CRASHTRIAGE_ROOT "crashdump.dmp"
+          $logPath = Join-Path $env:CRASHTRIAGE_ROOT "Guru-Crash.log"
+
+          Invoke-WebRequest $dmp -Headers $headers -OutFile $dmpPath
+          Invoke-WebRequest $log -Headers $headers -OutFile $logPath
+
+          "dmp=$dmpPath" | Out-File $env:GITHUB_OUTPUT -Append
+          "log=$logPath" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Parse timestamp and offset
+        id: parse
+        shell: pwsh
+        run: |
+          $log = Get-Content "${{ steps.dl.outputs.log }}" -Raw
+
+          $ts  = [regex]::Match($log, 'GameGuru\s*MAX\s*Build\s*([0-9\-]{16})').Groups[1].Value
+          $off = [regex]::Match($log, 'Offset\s*value:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
+
+          if (-not $ts)  { throw "Build timestamp not found" }
+          if (-not $off) { throw "Offset not found" }
+
+          "ts=$ts" | Out-File $env:GITHUB_OUTPUT -Append
+          "off=$off" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Stage EXE and PDB
+        id: stage
+        shell: pwsh
+        run: |
+          $store = "D:\DEV\DEV\BUILDS\GameGuru Wicked MAX PDBs"
+          $ts = "${{ steps.parse.outputs.ts }}"
+
+          $exe = Join-Path $store "GameGuruMAX_$ts.exe"
+          $pdb = Join-Path $store "GameGuruMAX_$ts.pdb"
+
+          if (-not (Test-Path $exe)) { throw "EXE not found: $exe" }
+          if (-not (Test-Path $pdb)) { throw "PDB not found: $pdb" }
+
+          $work = Join-Path $env:CRASHTRIAGE_ROOT "work"
+          New-Item -ItemType Directory -Force -Path $work | Out-Null
+
+          Copy-Item $exe (Join-Path $work "GameGuruMAX.exe") -Force
+          Copy-Item $pdb (Join-Path $work "GameGuruMAX.pdb") -Force
+
+          "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Run CDB
+        id: dbg
+        shell: pwsh
+        run: |
+          $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
+          $dmp  = "${{ steps.dl.outputs.dmp }}"
+          $work = "${{ steps.stage.outputs.work }}"
+          $off  = "${{ steps.parse.outputs.off }}"
+
+          $out = Join-Path $work "resolve.txt"
+
+          # 1) Get Base Address from !lmi output
+          $cmd1 = @"
+.symfix
+.sympath+ $work
+.reload /f
+!lmi GameGuruMAX
+q
+"@
+          $lmiOut = Join-Path $work "lmi.txt"
+          & $cdb -z "$dmp" -c "$cmd1" *> $lmiOut
+
+          $lmiText = Get-Content $lmiOut -Raw
+          $base = [regex]::Match($lmiText, 'Base\s+Address:\s+([0-9a-fA-F`]+)').Groups[1].Value
+          if (-not $base) { throw "Could not parse Base Address from !lmi output.`n$lmiText" }
+          $base = $base -replace '`',''
+
+          # 2) Resolve ln(base+offset) and collect context
+          $cmd2 = @"
+.symfix
+.sympath+ $work
+.reload /f
+ln ($base + $off)
+.lastevent
+.ecxr
+kv
+q
+"@
+          & $cdb -z "$dmp" -c "$cmd2" *> $out
+
+          "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Comment result
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $num  = "${{ github.event.issue.number }}"
+          $api  = "https://api.github.com/repos/$repo/issues/$num/comments"
+
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            "User-Agent"  = "crash-triage"
+          }
+
+          if ("${{ job.status }}" -eq "success") {
+            $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
+            if ($txt.Length -gt 60000) { $txt = $txt.Substring(0,60000) + "`n...(truncated)" }
+            $body = "✅ **Crash triage complete**`n```text`n$txt`n```"
+          } else {
+            $body = "❌ **Crash triage failed** – see Actions log."
+          }
+
+          Invoke-RestMethod -Uri $api -Method Post -Headers $headers `
+            -Body (@{ body = $body } | ConvertTo-Json) `
+            -ContentType "application/json"
