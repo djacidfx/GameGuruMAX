@@ -132,7 +132,7 @@ jobs:
           $out = Join-Path $work "resolve.txt"
 
           # 1) Get Base Address from !lmi output
-          $cmd1 = ".symfix`n.sympath+ $work`n.reload /f`n!lmi GameGuruMAX`nq"
+          $cmd1 = ".symfix; .sympath+ $work; .reload /f; !lmi GameGuruMAX.exe; q"
 
           $lmiOut = Join-Path $work "lmi.txt"
           & $cdb -z "$dmp" -c "$cmd1" *> $lmiOut
@@ -144,7 +144,7 @@ jobs:
 
           # 2) Resolve ln(base+offset) and collect context
 
-          $cmd2 = ".symfix`n.sympath+ $work`n.reload /f`nln ($base + $off)`n.lastevent`n.ecxr`nkv`nq"
+          $cmd2 = ".symfix; .sympath+ $work; .reload /f; ln ($base + $off); .lastevent; .ecxr; kv; q"
 
           & $cdb -z "$dmp" -c "$cmd2" *> $out
 
