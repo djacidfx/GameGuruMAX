@@ -4353,9 +4353,11 @@ void imgui_Customize_Terrain_v3(int mode)
 		if (g_iDeferTextureUpdateToNow == 3)
 		{
 			// ensure invalid terrain textures are not allowed to be used
+			std::string fullList = "";
 			for (auto& id : g_DeferTextureUpdateIncompatibleTextures)
 			{
 				char* name = t.visuals.sTerrainTextures[id].Get();
+				if(name) fullList += name;
 				int nameLength = t.visuals.sTerrainTextures[id].Len();
 				if (strcmp(name + nameLength - strlen("mat32\\Color.dds"), "mat32\\Color.dds") != 0)
 				{
@@ -4368,7 +4370,7 @@ void imgui_Customize_Terrain_v3(int mode)
 				extern bool bTriggerMessage;
 				extern char cTriggerMessage[MAX_PATH];
 				bTriggerMessage = true;
-				strcpy(cTriggerMessage, "No compatible textures");// , try PNG format");
+				sprintf(cTriggerMessage, "No compatible textures (Incompatible=%d fullList=%s)", g_DeferTextureUpdateIncompatibleTextures.size(), fullList.c_str());// , try PNG format");
 				ResetTextureSettings();
 			}
 
@@ -9406,6 +9408,7 @@ void procedural_new_level(void)
 					{
 						timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:3");
 						GGTerrain_RemoveAllFlatAreas(); //PE: Remove all flat areas.
+						timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:9");
 						iRandomThemeChoice = 7; //PE: new design always rainforest.
 						bProceduralLevelStartup = false;
 						bTriggerStableY = true;
