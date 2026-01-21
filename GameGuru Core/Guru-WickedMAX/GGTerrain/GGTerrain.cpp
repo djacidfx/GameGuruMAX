@@ -6203,22 +6203,26 @@ void GGTerrain_RemoveAllFlatAreas()
 	ggterrain_flat_areas = new GGTerrainFlatArea[ ggterrain_flat_areas_array_size ];
 	memset(ggterrain_flat_areas, 0, ggterrain_flat_areas_array_size * sizeof(GGTerrainFlatArea));
 
+	timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:4");
 	ggterrain_flat_areas_free.Clear();
 	ggterrain_flat_areas_free.Resize( ggterrain_flat_areas_array_size );
 	
+	timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:5");
 	for( uint32_t i = ggterrain_flat_areas_array_size-1; i > 0; i-- ) // don't add index 0 as that will be the error id
 	{
 		ggterrain_flat_areas_free.PushItem( i );
 	}
 
+	timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:6");
 	GGTrees_RestoreAllFlattened();
+	timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:7");
 	GGGrass_RestoreAllFlattened();
 
+	timestampactivity(0, "GGTerrain_RemoveAllFlatAreas:8");
 	ggterrain_internal_params.update_flat_areas_minX = -1e20f;
 	ggterrain_internal_params.update_flat_areas_minZ = -1e20f;
 	ggterrain_internal_params.update_flat_areas_maxX = 1e20f;
 	ggterrain_internal_params.update_flat_areas_maxZ = 1e20f;
-
 	ggterrain_internal_params.update_flat_areas = 1;
 }
 
