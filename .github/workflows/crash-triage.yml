@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Prepare workspace
-        shell: pwsh
+        shell: powershell
         run: |
           $root = Join-Path $env:RUNNER_TEMP "crashtriage"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
@@ -28,7 +28,7 @@ jobs:
 
       - name: Fetch issue body and comments
         id: issue_text
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -52,7 +52,7 @@ jobs:
 
       - name: Download crashdump and log
         id: dl
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -80,7 +80,7 @@ jobs:
 
       - name: Parse timestamp and offset
         id: parse
-        shell: pwsh
+        shell: powershell
         run: |
           $log = Get-Content "${{ steps.dl.outputs.log }}" -Raw
 
@@ -95,7 +95,7 @@ jobs:
 
       - name: Stage EXE and PDB
         id: stage
-        shell: pwsh
+        shell: powershell
         run: |
           $store = "D:\DEV\DEV\BUILDS\GameGuru Wicked MAX PDBs"
           $ts = "${{ steps.parse.outputs.ts }}"
@@ -116,7 +116,7 @@ jobs:
 
       - name: Run CDB
         id: dbg
-        shell: pwsh
+        shell: powershell
         run: |
           $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
           $dmp  = "${{ steps.dl.outputs.dmp }}"
@@ -146,7 +146,7 @@ jobs:
 
       - name: Comment result
         if: always()
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
