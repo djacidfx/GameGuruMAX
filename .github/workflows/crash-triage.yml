@@ -181,16 +181,18 @@ jobs:
           $headers = @{
             Authorization = "Bearer $env:GH_TOKEN"
             "User-Agent"  = "crash-triage"
+            "Accept"      = "application/vnd.github+json"
           }
 
           if ("${{ job.status }}" -eq "success") {
             $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
             if ($txt.Length -gt 60000) { $txt = $txt.Substring(0,60000) + "`n...(truncated)" }
-            $body = "**Crash triage complete**`n```text`n$txt`n```"
+
+            $body = "Crash triage complete`n`n```text`n$txt`n```"
           } else {
-            $body = "**Crash triage failed** - see Actions log."
+            $body = 'Crash triage failed - see Actions log.'
           }
 
-          Invoke-RestMethod -Uri $api -Method Post -Headers $headers `
-            -Body (@{ body = $body } | ConvertTo-Json) `
-            -ContentType "application/json"
+          $payload = @{ body = $body } | ConvertTo-Json -Compress
+
+          Invoke-RestMethod -Uri $api -Method Post -Headers $headers -Body $payload -ContentType 'application/json'
