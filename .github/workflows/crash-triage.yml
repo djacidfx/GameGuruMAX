@@ -210,21 +210,45 @@ jobs:
             "User-Agent"  = "crash-triage"
             "Accept"      = "application/vnd.github+json"
           }
-
+          
           if ("${{ job.status }}" -eq "success") {
-
+          
             $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
-            
-            # 1) Pull the "u @rip" header line that contains file + line
-            $crashLine = ($txt -split "`r?`n" | Where-Object { $_ -match '!\w+\+\w+ \[.* @ \d+\]:' } | Select-Object -First 1)
-            
-            # 2) Pull the top frames that have [file @ line]
-            $frames = ($txt -split "`r?`n" |
-              Where-Object { $_ -match ':\s+GameGuruMAX!.*\[[A-Z]:\\.* @ \d+\]' } |
-              Select-Object -First 10) -join "`n"
-            
-            $body = "Crash triage complete.`n`nCrash site:`n$crashLine`n`nTop frames:`n$frames"
-
+            $lines = $txt -split "`r?`n"
+          
+            function Extract-Frame($line) {
+              # Matches: GameGuruMAX!Func+0xNN [D:\path\file.cpp @ 123]
+              $m = [regex]::Match($line, '(GameGuruMAX!\S+)\s+\[([A-Za-z]:\\.+?)\s+@\s+(\d+)\]')
+              if ($m.Success) {
+                $func = $m.Groups[1].Value
+                $path = $m.Groups[2].Value
+                $ln   = $m.Groups[3].Value
+          
+                # Optional path shortening (keeps it readable)
+                $path = $path -replace '^.*?\\GameGuru Core\\', 'GameGuru Core\'
+          
+                return "$path`:$ln — $func"
+              }
+              return $null
+            }
+          
+            # Build unique list in order
+            $frames = New-Object System.Collections.Generic.List[string]
+            foreach ($l in $lines) {
+              $f = Extract-Frame $l
+              if ($f -and -not $frames.Contains($f)) { [void]$frames.Add($f) }
+            }
+          
+            if ($frames.Count -eq 0) {
+              $body = "Crash triage complete, but no file/line frames were found in debugger output."
+            } else {
+              $crashSite = $frames[0]
+              $topN = 8
+              $top = $frames | Select-Object -First $topN
+          
+              $body = "Crash triage complete.`n`nCrash site:`n$crashSite`n`nTop frames:`n$($top -join "`n")"
+            }
+          
           } else {
             $body = "Crash triage failed - see Actions log."
           }
