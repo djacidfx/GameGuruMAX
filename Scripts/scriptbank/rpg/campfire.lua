@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Campfire v15 by Necrym59
+-- Campfire v16 by Necrym59
 -- DESCRIPTION: This object will stow and deploy like a camp fire?
 -- DESCRIPTION: Apply to an object to be used as a campfire.
 -- DESCRIPTION: [USE_RANGE=120]
@@ -173,44 +173,43 @@ function campfire_main(e)
 			campfire_state[e] = "deployed"
 		end
 		hurttime[e] = g_Time + 500
-	
-		--Find Named Particle --
-		if campfire[e].particle_name > "" and campfire[e].particle_number == 0 then
-			for p = 1, g_EntityElementMax do
-				if p ~= nil and g_Entity[p] ~= nil then
-					if string.lower(GetEntityName(p)) == campfire[e].particle_name then					
-						campfire[e].particle_number = p
-						Hide(p)
-						break
-					end
-				end
-			end
-		end
-		--Find Named Light --
-		if campfire[e].light_name > "" and campfire[e].light_number == 0 then
-			for b = 1, g_EntityElementMax do
-				if b ~= nil and g_Entity[b] ~= nil then
-					if string.lower(GetEntityName(b)) == campfire[e].light_name then
-						campfire[e].light_number = GetEntityLightNumber(b)
-						SetActivated(b,0)
-						break
-					end
-				end
-			end		
-		end
-		--Find Resource Item --
-		if campfire[e].resource_required > "" and tobeused[e] == 0 then			
-			for ee = 1, g_EntityElementMax do
-				if ee ~= nil and g_Entity[ee] ~= nil then
-					if string.lower(GetEntityName(ee)) == campfire[e].resource_required and GetEntityCollected(ee) == 1 and GetEntityUsed(ee) ~= -1 then
-						tobeused[e] = ee						
-						break
-					end
-				end			
-			end
-		end
-
 		status[e] = "endinit"
+	end		
+	
+	--Find Named Particle --
+	if campfire[e].particle_name > "" and campfire[e].particle_number == 0 then
+		for p = 1, g_EntityElementMax do
+			if p ~= nil and g_Entity[p] ~= nil then
+				if string.lower(GetEntityName(p)) == campfire[e].particle_name then					
+					campfire[e].particle_number = p
+					Hide(p)
+					break
+				end
+			end
+		end
+	end
+	--Find Named Light --
+	if campfire[e].light_name > "" and campfire[e].light_number == 0 then
+		for b = 1, g_EntityElementMax do
+			if b ~= nil and g_Entity[b] ~= nil then
+				if string.lower(GetEntityName(b)) == campfire[e].light_name then
+					campfire[e].light_number = GetEntityLightNumber(b)
+					SetActivated(b,0)
+					break
+				end
+			end
+		end		
+	end
+	--Find Resource Item --
+	if campfire[e].resource_required > "" and tobeused[e] == 0 then			
+		for ee = 1, g_EntityElementMax do
+			if ee ~= nil and g_Entity[ee] ~= nil then
+				if string.lower(GetEntityName(ee)) == campfire[e].resource_required and GetEntityCollected(ee) == 1 and GetEntityUsed(ee) ~= -1 then
+					tobeused[e] = ee						
+					break
+				end
+			end			
+		end
 	end
 	
 	local PlayerDist = GetPlayerDistance(e)
@@ -317,6 +316,7 @@ function campfire_main(e)
 			end
 		end	
 	end	
+	
 	if keypressed[e] == 1 then
 		svol[e] = (3000-GetPlayerDistance(e))/30
 		campfire_state[e] = "lit" 		
