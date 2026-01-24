@@ -136,7 +136,7 @@ jobs:
           Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
 
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
-
+         
       - name: Run CDB
         id: dbg
         shell: powershell
@@ -144,13 +144,49 @@ jobs:
           $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
           $dmp  = "${{ steps.dl.outputs.dmp }}"
           $work = "${{ steps.stage.outputs.work }}"
-          $out  = Join-Path $work "resolve.txt"
+          $out     = Join-Path $work "resolve.txt"
           $cmdFile = Join-Path $work "cmd.txt"
+          $probeOut = Join-Path $work "probe.txt"
+          $probeCmd = Join-Path $work "probe_cmd.txt"
       
-          # Single pass: resolve crash site via exception context (no module name assumptions)
+          # --- Pass 0: probe dump for the original EXE filename (renamed game) ---
           @(
             ".symfix",
             ".sympath+ $work",
+            ".reload /f",
+            "q"
+          ) | Set-Content -Path $probeCmd -Encoding ASCII
+      
+          & $cdb -z "$dmp" -cf "$probeCmd" *> $probeOut
+          $probeTxt = Get-Content $probeOut -Raw
+      
+          # If dump references a renamed EXE, CDB prints:
+          # "Unable to load image ...\Some Name.exe, Win32 error 0n2"
+          $exeName = $null
+          $m = [regex]::Match($probeTxt, 'Unable to load image .*?\\([^\\]+\.exe), Win32 error', 'IgnoreCase')
+          if ($m.Success) {
+            $exeName = $m.Groups[1].Value
+          }
+      
+          # If we found a renamed exe, create a matching copy in $work so CDB can load the image.
+          if ($exeName) {
+            $srcExe = Join-Path $work "GameGuruMAX.exe"
+            $dstExe = Join-Path $work $exeName
+            if (Test-Path $srcExe) {
+              Copy-Item $srcExe $dstExe -Force
+              Write-Host "Created EXE alias for dump image load: $dstExe"
+            } else {
+              Write-Host "WARNING: Expected staged EXE missing: $srcExe"
+            }
+          } else {
+            Write-Host "No renamed EXE detected from probe output (dump may already reference GameGuruMAX.exe)."
+          }
+      
+          # --- Main pass: resolve crash site via exception context ---
+          @(
+            ".symfix",
+            ".sympath+ $work",
+            ".exepath $work",
             "!sym noisy",
             ".reload /f",
             ".lastevent",
