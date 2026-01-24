@@ -174,13 +174,10 @@ jobs:
             ".symfix",
             ".sympath+ $work",
             "!sym noisy",
-            ".reload /f GameGuruMAX.exe",
-            ".lastevent",
+            ".reload /f",
             ".ecxr",
-            "r rip",
-            "ln @rip",
             ".lines",
-            "u @rip L20",
+            "ln @rip",
             "kv",
             "q"
           ) | Set-Content -Path $cmdFile -Encoding ASCII
