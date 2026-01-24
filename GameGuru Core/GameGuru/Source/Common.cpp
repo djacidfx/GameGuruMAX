@@ -6170,7 +6170,8 @@ void GetSetupIniEarly( void )
 	//PE: Standalone option to make sure no mem is used by terrain system.
 	char appname[1024];
 	GetModuleFileNameA(g_pGlob->hInstance, appname, 1024);
-	if(!pestrcasestr(appname,"gamegurumax.exe"))
+	//LB: allow early disabling of terrain, justgrass, etc for testing purposes
+	if ( true ) //!pestrcasestr(appname,"gamegurumax.exe"))
 	{
 		//PE: Cant use any special commands at this point. so simple parsing only what we need at this point.
 		FILE* file = fopen("setup.ini", "r");
