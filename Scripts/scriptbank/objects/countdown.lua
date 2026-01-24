@@ -1,8 +1,8 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Countdown v17 by Necrym59
+-- Countdown v18 by Necrym59
 -- DESCRIPTION: Countdown timer to count down to an end action.
 -- DESCRIPTION: Attach to an object. Set Always Active ON. Trigger from a zone or switch.
--- DESCRIPTION: [#MAXIMUM_TIME=1.00(0.25,60.00)]
+-- DESCRIPTION: [#MAXIMUM_TIME=1.00(0.01,60.00)]
 -- DESCRIPTION: [@TIME_DISPLAY=1(1=On, 2=Off)]
 -- DESCRIPTION: [DISPLAY_TEXT$="Time Left:"]
 -- DESCRIPTION: [DISPLAY_X=10]

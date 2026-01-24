@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Monitor v16 by Necrym59
+-- NPC Monitor v17 by Necrym59
 -- DESCRIPTION: A global behavior that allows a named npc to be health monitored and trigger event(s) or Lose/Win game or go to a specified level upon its death.
 -- DESCRIPTION: Attach to an object set AlwaysActive=ON, and attach any logic links to this object and/or use ActivateIfUsed field.
 -- DESCRIPTION: [NPC_NAME$=""] to monitor.
@@ -124,13 +124,15 @@ function npc_monitor_main(e)
 			end
 			--Health and Healthbar check--
 			if g_LegacyNPC == 0 then hreadout[e] = g_Entity[pEntn[e]]['health'] end
-			if g_LegacyNPC == 1 then hreadout[e] = g_Entity[pEntn[e]]['health']-1000 end			
-			if hreadout[e] < 9000 then
-				hbarsize[e] = hreadout[e]/200
-				SetSpriteSize(hbarsprite[e],hbarsize[e],3)
-				if g_Entity[pEntn[e]]['health'] > 100 then SetSpriteColor(hbarsprite[e],0,255,0,255) end
-				if g_Entity[pEntn[e]]['health'] < 100 then SetSpriteColor(hbarsprite[e],255,0,0,255) end				
-			end				
+			if g_LegacyNPC == 1 then hreadout[e] = g_Entity[pEntn[e]]['health']-1000 end
+			if npc_monitor[e].health_bar ~= "" then
+				if hreadout[e] < 9000 then
+					hbarsize[e] = hreadout[e]/200
+					SetSpriteSize(hbarsprite[e],hbarsize[e],3)
+					if g_Entity[pEntn[e]]['health'] > 100 then SetSpriteColor(hbarsprite[e],0,255,0,255) end
+					if g_Entity[pEntn[e]]['health'] < 100 then SetSpriteColor(hbarsprite[e],255,0,0,255) end				
+				end
+			end	
 			if npc_monitor[e].health_display == 1 then
 				PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
 			end			

@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Wicked Particle Emmitter Activator v3 
+-- Wicked Particle Emmitter Activator v4 
 -- DESCRIPTION: Attach to an object and activate by a linked switch or zone or set IsActive to ON.
 -- DESCRIPTION: [WPEFILE$="particlesbank//wpe//firearea.pe"] Name of WPE Particle file
 -- DESCRIPTION: [Y_ADJUSTMENT=0] Y adjustment of the effect.
@@ -57,6 +57,7 @@ function wpe_activator_main(e)
 				if wpestate[e] ~= 1 then
 					WParticleEffectVisible(wpeactivator[e].effectid,1)
 					WParticleEffectAction(wpeactivator[e].effectid,3)
+					WParticleEffectAction(wpeactivator[e].effectid,1)
 					if wpeactivator[e].sound_style == 1 then PlaySound(e,0) end
 					if wpeactivator[e].sound_style == 2 then LoopSound(e,0) end					
 					wpestate[e] = 1
@@ -79,7 +80,7 @@ function wpe_activator_main(e)
 		end	
 	end	
 end
-
+-- WParticleEffectAction(effectid,Action) - Action =  1=Burst all 2=Pause 3=Resume 4=Restart
 function wpe_activator_preexit(e)
 	WParticleEffectVisible(wpeactivator[e].effectid,0)
 	WParticleEffectAction(wpeactivator[e].effectid,3)
