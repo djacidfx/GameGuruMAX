@@ -118,6 +118,78 @@ jobs:
           Write-Host "Store is: $store"
 
           $ts = "${{ steps.parse.outputs.ts }}"
+
+          function Get-PeTimeDateStampHex([string]$path) {
+            $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try {
+              $br = New-Object System.IO.BinaryReader($fs)
+              $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $peOff = $br.ReadInt32()
+              $fs.Seek($peOff, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sig = $br.ReadUInt32()
+              if ($sig -ne 0x00004550) { throw "Not a PE file: $path" } # "PE\0\0"
+              [void]$br.ReadUInt16() # Machine
+              [void]$br.ReadUInt16() # NumberOfSections
+              $timeDateStamp = $br.ReadUInt32()
+              return ('0x{0:X8}' -f $timeDateStamp)
+            } finally {
+              $fs.Dispose()
+            }
+          }
+
+          if (-not $ts) {
+            Write-Host "Build timestamp missing/blank in log. Falling back to dump timestamp match..."
+
+            $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
+            $dmp  = "${{ steps.dl.outputs.dmp }}"
+            $root = $env:CRASHTRIAGE_ROOT
+            $idOut = Join-Path $root "identify.txt"
+            $cmd   = Join-Path $root "identify_cmd.txt"
+
+            @(
+              ".symfix",
+              ".reload /f",
+              "q"
+            ) | Set-Content -Path $cmd -Encoding ASCII
+
+            & $cdb -z "$dmp" -cf "$cmd" *> $idOut
+            $txt = Get-Content $idOut -Raw
+
+            # Parse the dump's EXE key (timestamp+imagesize) from SYMSRV lines:
+            # e.g. "The Lonelly House.exe 697060022f490000"
+            $key = [regex]::Match($txt, '\.exe\s+([0-9A-Fa-f]{16})').Groups[1].Value
+            if (-not $key) {
+              throw "Fallback failed: couldn't find timestamp+size key in dump output.`n$idOut`n$txt"
+            }
+
+            $dumpTsHex = "0x" + $key.Substring(0,8)
+            Write-Host "Dump PE timestamp is: $dumpTsHex"
+
+            $candidates = Get-ChildItem -Path $store -Recurse -File -Filter "GameGuruMAX_*.exe" -ErrorAction SilentlyContinue
+            if (-not $candidates -or $candidates.Count -eq 0) {
+              throw "Fallback failed: no GameGuruMAX_*.exe files found under: $store"
+            }
+
+            $match = $null
+            foreach ($exe in $candidates) {
+              try {
+                $exeTsHex = Get-PeTimeDateStampHex $exe.FullName
+                if ($exeTsHex -ieq $dumpTsHex) { $match = $exe; break }
+              } catch {
+                # Ignore unreadable/non-PE files
+              }
+            }
+
+            if (-not $match) {
+              throw "Fallback failed: no build EXE in store matched dump timestamp $dumpTsHex"
+            }
+
+            $ts = [regex]::Match($match.Name, '^GameGuruMAX_(.+)\.exe$').Groups[1].Value
+            if (-not $ts) { throw "Fallback failed: couldn't parse ts from matched exe name: $($match.Name)" }
+
+            Write-Host "Fallback matched build: GameGuruMAX_$ts.exe"
+          }
+
           Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
 
           $exeName = "GameGuruMAX_$ts.exe"
@@ -136,7 +208,7 @@ jobs:
           Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
 
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
-         
+        
       - name: Run CDB
         id: dbg
         shell: powershell
