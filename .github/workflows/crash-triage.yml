@@ -137,54 +137,34 @@ jobs:
 
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
 
-      - name: Run CDB
-        id: dbg
-        shell: powershell
-        run: |
-          $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
-          $dmp  = "${{ steps.dl.outputs.dmp }}"
-          $work = "${{ steps.stage.outputs.work }}"
-          $off  = "${{ steps.parse.outputs.off }}"
-
-          $lmiOut  = Join-Path $work "modules.txt"
-          $out     = Join-Path $work "resolve.txt"
-          $cmdFile = Join-Path $work "cmd.txt"
-
-          # Pass 1: list modules so we can get the base address
-          @(
-            ".symfix",
-            ".sympath+ $work",
-            ".reload /f",
-            "lm m GameGuruMAX*",
-            "q"
-          ) | Set-Content -Path $cmdFile -Encoding ASCII
-
-          & $cdb -z "$dmp" -cf "$cmdFile" *> $lmiOut
-
-          $txt = Get-Content $lmiOut -Raw
-
-          # Parse base address from "lm" line: start end module
-          $m = [regex]::Match($txt, '^\s*([0-9a-fA-F`]+)\s+[0-9a-fA-F`]+\s+GameGuruMAX', 'Multiline')
-          if (-not $m.Success) { throw "Could not find GameGuruMAX module in lm output.`n$txt" }
-
-          $base = $m.Groups[1].Value -replace '`',''
-
-          # Pass 2: use exception context, resolve RIP, try source line, show stack
-          @(
-            ".symfix",
-            ".sympath+ $work",
-            "!sym noisy",
-            ".reload /f",
-            ".ecxr",
-            ".lines",
-            "ln @rip",
-            "kv",
-            "q"
-          ) | Set-Content -Path $cmdFile -Encoding ASCII
-
-          & $cdb -z "$dmp" -cf "$cmdFile" *> $out
-
-          "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
+          - name: Run CDB
+            id: dbg
+            shell: powershell
+            run: |
+              $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
+              $dmp  = "${{ steps.dl.outputs.dmp }}"
+              $work = "${{ steps.stage.outputs.work }}"
+              $out  = Join-Path $work "resolve.txt"
+              $cmdFile = Join-Path $work "cmd.txt"
+          
+              # Single pass: resolve crash site via exception context (no module name assumptions)
+              @(
+                ".symfix",
+                ".sympath+ $work",
+                "!sym noisy",
+                ".reload /f",
+                ".lastevent",
+                ".ecxr",
+                ".lines",
+                "ln @rip",
+                "u @rip L20",
+                "kv",
+                "q"
+              ) | Set-Content -Path $cmdFile -Encoding ASCII
+          
+              & $cdb -z "$dmp" -cf "$cmdFile" *> $out
+          
+              "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
 
       - name: Upload triage output
         if: always()
