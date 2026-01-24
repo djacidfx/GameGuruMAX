@@ -85,9 +85,11 @@ jobs:
           $logText = Get-Content "${{ steps.dl.outputs.log }}" -Raw
 
           # Split into blocks; keep only blocks that look like crash entries
-          $blocks = ($logText -split '==== GAMEGURU MAX CRASH DETECTED ====' ) |
-                    ForEach-Object { $_.Trim() } |
-                    Where-Object { $_ -match 'Build:\s*GameGuru\s*MAX\s*Build' }
+          $blocks = @(
+            ($logText -split '==== GAMEGURU MAX CRASH DETECTED ====') |
+              ForEach-Object { $_.Trim() } |
+              Where-Object { $_ -match 'Build:\s*GameGuru\s*MAX\s*Build' }
+          )                    
 
           if (-not $blocks -or $blocks.Count -eq 0) {
             throw "No crash blocks found in Guru-Crash.log"
