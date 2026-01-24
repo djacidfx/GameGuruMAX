@@ -83,32 +83,37 @@ jobs:
         shell: powershell
         run: |
           $logText = Get-Content "${{ steps.dl.outputs.log }}" -Raw
-
-          # Split into blocks; keep only blocks that look like crash entries
+      
+          # Split into blocks using the crash marker
           $blocks = @(
             ($logText -split '==== GAMEGURU MAX CRASH DETECTED ====') |
               ForEach-Object { $_.Trim() } |
-              Where-Object { $_ -match 'Build:\s*GameGuru\s*MAX\s*Build' }
-          )                    
-
+              Where-Object { $_ -ne "" }
+          )
+      
           if (-not $blocks -or $blocks.Count -eq 0) {
-            throw "No crash blocks found in Guru-Crash.log"
+            throw "No crash blocks found in Guru-Crash.log (marker not present)."
           }
-
+      
           $last = $blocks[-1]
-
+      
+          # Try to read the timestamp if it exists (do NOT fail if missing)
           $ts = [regex]::Match($last, 'Build:\s*GameGuru\s*MAX\s*Build\s*([0-9\-]{16})').Groups[1].Value
+      
+          # Offset is still required for WinDbg address resolution
           $off = [regex]::Match($last, 'Offset\s*value:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
           $crashAddr  = [regex]::Match($last, 'Crash\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
           $moduleAddr = [regex]::Match($last, 'Module\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
-
-          if (-not $ts)  { throw "Build timestamp not found in LAST crash block.`n$last" }
-          if (-not $off) { throw "Offset value not found in LAST crash block.`n$last" }
-
+      
+          if (-not $off) {
+            throw "Offset value not found in LAST crash block.`n$last"
+          }
+      
+          # Outputs: ts may be blank (Stage step should handle fallback)
           "ts=$ts" | Out-File $env:GITHUB_OUTPUT -Append
           "off=$off" | Out-File $env:GITHUB_OUTPUT -Append
           "crash_addr=$crashAddr" | Out-File $env:GITHUB_OUTPUT -Append
-          "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append   
+          "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append
 
       - name: Stage EXE and PDB
         id: stage
