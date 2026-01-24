@@ -3607,6 +3607,11 @@ void mapfile_savestandalone_stage4 ( void )
 	t.dest_s = t.exepath_s + t.exename_s + "\\" + pCritDLLFilename;
 	if (FileExist(pCritDLLFilename) == 1) CopyAFile(pCritDLLFilename, t.dest_s.Get());
 
+	// copy the version.ini file over (helps with crash triage system)
+	strcpy(pCritDLLFilename, "version.ini");
+	t.dest_s = t.exepath_s + t.exename_s + "\\" + pCritDLLFilename;
+	if (FileExist(pCritDLLFilename) == 1) CopyAFile(pCritDLLFilename, t.dest_s.Get());
+
 	// for wicked, create fonts and shaders folder
 	cstr destExeRoot_s = t.exepath_s + t.exename_s;
 	//SetDir ( destExeRoot_s.Get() );
