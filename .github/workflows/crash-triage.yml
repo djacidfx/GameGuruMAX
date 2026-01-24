@@ -210,7 +210,7 @@ jobs:
           path: |
             ${{ steps.dbg.outputs.out }}
 
-      - name: Comment result
+      - name: Comment result 
         if: always()
         shell: powershell
         env:
@@ -219,53 +219,66 @@ jobs:
           $repo = "${{ github.repository }}"
           $num  = "${{ github.event.issue.number }}"
           $api  = "https://api.github.com/repos/$repo/issues/$num/comments"
-
+      
           $headers = @{
             Authorization = "Bearer $env:GH_TOKEN"
             "User-Agent"  = "crash-triage"
             "Accept"      = "application/vnd.github+json"
           }
-
+      
           if ("${{ job.status }}" -eq "success") {
-
-            $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
+      
+            $txt   = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
             $lines = $txt -split "`r?`n"
-
+      
             function ExtractFrame($line) {
-              # Matches: GameGuruMAX!Func+0xNN [D:\path\file.cpp @ 123]
-              $m = [regex]::Match($line, '(GameGuruMAX!\S+)\s+\[([A-Za-z]:\\.+?)\s+@\s+(\d+)\]')
+              # Matches:
+              #   ModuleName!Func+0xNN [D:\path\file.cpp @ 123]
+              # Works for GameGuruMAX!..., The_Lonelly_House!..., etc.
+              $m = [regex]::Match(
+                $line,
+                '([^\s!]+)!(\S+?)\s+\[([A-Za-z]:\\.+?)\s+@\s+(\d+)\]',
+                'IgnoreCase'
+              )
+      
               if ($m.Success) {
-                $func = $m.Groups[1].Value
-                $path = $m.Groups[2].Value
-                $ln   = $m.Groups[3].Value
-
+                $module = $m.Groups[1].Value
+                $func   = $m.Groups[2].Value
+                $path   = $m.Groups[3].Value
+                $ln     = $m.Groups[4].Value
+      
                 # Optional path shortening:
                 $path = $path -replace '^.*?\\GameGuru Core\\', 'GameGuru Core\'
-
+                $path = $path -replace '^.*?\\WickedEngine\\', 'WickedEngine\'
+                $path = $path -replace '^.*?\\Dark Basic Pro SDK\\', 'Dark Basic Pro SDK\'
+      
+                # Optional: remove module name so renamed EXEs don't change formatting
+                # (Keeps function + offset only)
                 return ("{0}:{1} - {2}" -f $path, $ln, $func)
               }
+      
               return $null
             }
-
+      
+            # Build unique list in order
             $frames = New-Object System.Collections.Generic.List[string]
             foreach ($l in $lines) {
               $f = ExtractFrame $l
               if ($f -and -not $frames.Contains($f)) { [void]$frames.Add($f) }
             }
-
+      
             if ($frames.Count -eq 0) {
               $body = "Crash triage complete, but no file/line frames were found in debugger output."
             } else {
               $crashSite = $frames[0]
               $topN = 8
               $top = $frames | Select-Object -First $topN
-
               $body = "Crash triage complete.`n`nCrash site:`n$crashSite`n`nTop frames:`n$($top -join "`n")"
             }
-
+      
           } else {
             $body = "Crash triage failed - see Actions log."
           }
-
+      
           $payload = @{ body = $body } | ConvertTo-Json -Compress
           Invoke-RestMethod -Uri $api -Method Post -Headers $headers -Body $payload -ContentType 'application/json'
