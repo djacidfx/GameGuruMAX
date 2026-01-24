@@ -114,7 +114,7 @@ jobs:
           "off=$off" | Out-File $env:GITHUB_OUTPUT -Append
           "crash_addr=$crashAddr" | Out-File $env:GITHUB_OUTPUT -Append
           "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append
-      
+
       - name: Stage EXE and PDB
         id: stage
         shell: powershell
@@ -122,7 +122,7 @@ jobs:
           $store = "D:\DEV\BUILDS\GameGuru Wicked MAX PDBs"
           Write-Host "Store is: $store"
       
-          # Always define work early so fallback can use it safely
+          # Define work early (fallback needs it)
           $work = Join-Path $env:CRASHTRIAGE_ROOT "work"
           New-Item -ItemType Directory -Force -Path $work | Out-Null
       
@@ -133,30 +133,25 @@ jobs:
             try {
               $br = New-Object System.IO.BinaryReader($fs)
       
-              # DOS header -> e_lfanew
               $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
               $peOffset = $br.ReadInt32()
       
-              # PE signature "PE\0\0"
               $fs.Seek($peOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
               $sig = $br.ReadUInt32()
-              if ($sig -ne 0x00004550) { return $null }
+              if ($sig -ne 0x00004550) { return $null }  # "PE\0\0"
       
-              # COFF header TimeDateStamp (offset +8 from PE start)
+              # COFF TimeDateStamp at peOffset + 8
               $fs.Seek($peOffset + 8, [System.IO.SeekOrigin]::Begin) | Out-Null
               $timeDateStamp = $br.ReadUInt32()
       
-              # Optional header start = peOffset + 24
-              # SizeOfImage is at +0x38 from optional header start
+              # Optional header begins peOffset + 24; SizeOfImage is +0x38 into optional header
               $opt = $peOffset + 24
               $fs.Seek($opt + 0x38, [System.IO.SeekOrigin]::Begin) | Out-Null
               $sizeOfImage = $br.ReadUInt32()
       
               return ("{0:x8}{1:x8}" -f $timeDateStamp, $sizeOfImage).ToLower()
             }
-            finally {
-              $fs.Dispose()
-            }
+            finally { $fs.Dispose() }
           }
       
           if (-not $ts) {
@@ -181,21 +176,30 @@ jobs:
             & $cdb -z "$dmp" -cf "$cmd" *> $idOut
             $txt = Get-Content $idOut -Raw
       
-            # Parse from lmv output (reliable, name-independent):
-            #   Timestamp: 69706002
-            #   ImageSize: 2f490000
+            # Attempt A: parse Timestamp/ImageSize if present (best case)
             $mt = [regex]::Match($txt, '(?im)^\s*Timestamp:\s*([0-9a-fA-F]{8})\b')
             $ms = [regex]::Match($txt, '(?im)^\s*ImageSize:\s*([0-9a-fA-F`]+)\b')
       
-            if (-not $mt.Success -or -not $ms.Success) {
-              throw "Fallback failed: couldn't find Timestamp/ImageSize in lmv output.`n$idOut`n$txt"
+            $dumpKey = $null
+      
+            if ($mt.Success -and $ms.Success) {
+              $tsHex   = $mt.Groups[1].Value.ToLower()
+              $sizeHex = ($ms.Groups[1].Value -replace '`','').ToLower().PadLeft(8,'0')
+              $dumpKey = "$tsHex$sizeHex"
+              Write-Host "Found key from lmv: $dumpKey"
+            }
+            else {
+              # Attempt B: parse SYMSRV-style key like: "<something>.exe 697060022f490000"
+              $mk = [regex]::Match($txt, '(?im)\b\S+\.exe\s+([0-9a-fA-F]{16})\b')
+              if ($mk.Success) {
+                $dumpKey = $mk.Groups[1].Value.ToLower()
+                Write-Host "Found key from SYMSRV/module text: $dumpKey"
+              }
             }
       
-            $tsHex   = $mt.Groups[1].Value.ToLower()
-            $sizeHex = ($ms.Groups[1].Value -replace '`','').ToLower().PadLeft(8,'0')
-            $dumpKey = "$tsHex$sizeHex"
-      
-            Write-Host "Dump key (timestamp+imagesize) = $dumpKey"
+            if (-not $dumpKey) {
+              throw "Fallback failed: couldn't find Timestamp/ImageSize in lmv output OR a SYMSRV .exe key in output.`n$idOut`n$txt"
+            }
       
             $candidates = Get-ChildItem -Path $store -Recurse -File -Filter "GameGuruMAX_*.exe" -ErrorAction SilentlyContinue
             if (-not $candidates -or $candidates.Count -eq 0) {
@@ -208,7 +212,7 @@ jobs:
                 $k = Get-PeTimestampAndSizeKey $exe.FullName
                 if ($k -and $k -eq $dumpKey) { $match = $exe; break }
               } catch {
-                # ignore unreadable/non-PE files
+                # ignore
               }
             }
       
