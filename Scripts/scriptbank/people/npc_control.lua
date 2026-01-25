@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Control v94 by Necrym59 and Lee
+-- NPC Control v95 by Necrym59 and Lee
 -- DESCRIPTION: The attached NPC will be controlled by this behavior.
 -- DESCRIPTION: [SENSE_TEXT$="Who's that ..an intruder??"]
 -- DESCRIPTION: [SENSE_RANGE=500(0,2000)]
@@ -1151,7 +1151,7 @@ function npc_control_main(e)
 			if anim_var[e] == 1 then SetAnimationName(e,npc_control[e].death1_animation) end
 			if anim_var[e] == 2 then SetAnimationName(e,npc_control[e].death2_animation) end
 			ModulateSpeed(e,npc_control[e].npc_anim_speed)
-			PlayAnimation(e)
+			PlayAnimation(e)			
 			animonce[e] = 1
 		end
 		if g_GibsEnabled == 1 then
@@ -1168,12 +1168,10 @@ function npc_control_main(e)
 			StopSound(e,3)
 			if npc_control[e].on_death == 2 then SetEntityActivated(deathifusedno[e],1) end
 			state[e] = "dead"			
-		end		
+		end
 	end
-	if state[e] == "dead" then
-		SetEntityHealth(e,0)
-		SetPreExitValue(e,2)
-		SwitchScript(e,"no_behavior_selected.lua")
+	if state[e] == "dead" then		
+		SetPreExitValue(e,1)
 	end
 
 	--- Check Health and Hurt Animation -------------------------------------
@@ -1302,6 +1300,11 @@ function npc_control_main(e)
 end
 
 function npc_control_preexit(e)
+	if g_Entity[e]['animating'] == 0 then
+		SetEntityHealth(e,0)
+		SetPreExitValue(e,2) -- when we set this to two, we instruct the engine to stop calling preexit and go to _exit
+		SwitchScript(e,"no_behavior_selected.lua")
+	end	
 end
 
 function npc_control_exit(e)
