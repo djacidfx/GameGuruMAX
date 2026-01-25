@@ -83,32 +83,37 @@ jobs:
         shell: powershell
         run: |
           $logText = Get-Content "${{ steps.dl.outputs.log }}" -Raw
-
-          # Split into blocks; keep only blocks that look like crash entries
+      
+          # Split into blocks using the crash marker
           $blocks = @(
             ($logText -split '==== GAMEGURU MAX CRASH DETECTED ====') |
               ForEach-Object { $_.Trim() } |
-              Where-Object { $_ -match 'Build:\s*GameGuru\s*MAX\s*Build' }
-          )                    
-
+              Where-Object { $_ -ne "" }
+          )
+      
           if (-not $blocks -or $blocks.Count -eq 0) {
-            throw "No crash blocks found in Guru-Crash.log"
+            throw "No crash blocks found in Guru-Crash.log (marker not present)."
           }
-
+      
           $last = $blocks[-1]
-
+      
+          # Try to read the timestamp if it exists (do NOT fail if missing)
           $ts = [regex]::Match($last, 'Build:\s*GameGuru\s*MAX\s*Build\s*([0-9\-]{16})').Groups[1].Value
+      
+          # Offset is still required for WinDbg address resolution
           $off = [regex]::Match($last, 'Offset\s*value:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
           $crashAddr  = [regex]::Match($last, 'Crash\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
           $moduleAddr = [regex]::Match($last, 'Module\s*address:\s*(0x[0-9a-fA-F]+)').Groups[1].Value
-
-          if (-not $ts)  { throw "Build timestamp not found in LAST crash block.`n$last" }
-          if (-not $off) { throw "Offset value not found in LAST crash block.`n$last" }
-
+      
+          if (-not $off) {
+            throw "Offset value not found in LAST crash block.`n$last"
+          }
+      
+          # Outputs: ts may be blank (Stage step should handle fallback)
           "ts=$ts" | Out-File $env:GITHUB_OUTPUT -Append
           "off=$off" | Out-File $env:GITHUB_OUTPUT -Append
           "crash_addr=$crashAddr" | Out-File $env:GITHUB_OUTPUT -Append
-          "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append   
+          "module_addr=$moduleAddr" | Out-File $env:GITHUB_OUTPUT -Append
 
       - name: Stage EXE and PDB
         id: stage
@@ -116,27 +121,170 @@ jobs:
         run: |
           $store = "D:\DEV\BUILDS\GameGuru Wicked MAX PDBs"
           Write-Host "Store is: $store"
-          Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
-
-          $ts = "${{ steps.parse.outputs.ts }}"
-
-          $exeName = "GameGuruMAX_$ts.exe"
-          $pdbName = "GameGuruMAX_$ts.pdb"
-
-          $exeItem = Get-ChildItem -Path $store -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
-          $pdbItem = Get-ChildItem -Path $store -Recurse -File -Filter $pdbName -ErrorAction SilentlyContinue | Select-Object -First 1
-
-          if (-not $exeItem) { throw "EXE not found anywhere under: $store (wanted $exeName)" }
-          if (-not $pdbItem) { throw "PDB not found anywhere under: $store (wanted $pdbName)" }
-
+      
+          # Always create work folder and output it (even if we can't stage EXE/PDB)
           $work = Join-Path $env:CRASHTRIAGE_ROOT "work"
           New-Item -ItemType Directory -Force -Path $work | Out-Null
-
-          Copy-Item $exeItem.FullName (Join-Path $work "GameGuruMAX.exe") -Force
-          Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
-
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
-
+      
+          # Timestamp from log parse (may be blank)
+          $ts = "${{ steps.parse.outputs.ts }}"
+      
+          function Get-PeTimeDateStampHex([string]$path) {
+            $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try {
+              $br = New-Object System.IO.BinaryReader($fs)
+              $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $peOff = $br.ReadInt32()
+              $fs.Seek($peOff, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sig = $br.ReadUInt32()
+              if ($sig -ne 0x00004550) { throw "Not a PE file: $path" } # "PE\0\0"
+              [void]$br.ReadUInt16() # Machine
+              [void]$br.ReadUInt16() # NumberOfSections
+              $timeDateStamp = $br.ReadUInt32()
+              return ('0x{0:X8}' -f $timeDateStamp)
+            } finally {
+              $fs.Dispose()
+            }
+          }
+      
+          function Get-PeImageSizeHex([string]$path) {
+            $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try {
+              $br = New-Object System.IO.BinaryReader($fs)
+              $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $peOff = $br.ReadInt32()
+              $fs.Seek($peOff, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sig = $br.ReadUInt32()
+              if ($sig -ne 0x00004550) { throw "Not a PE file: $path" } # "PE\0\0"
+      
+              # IMAGE_FILE_HEADER is 20 bytes; TimeDateStamp starts at +8 from start of file header.
+              # We want OptionalHeader to get SizeOfImage.
+              [void]$br.ReadUInt16() # Machine
+              [void]$br.ReadUInt16() # NumberOfSections
+              [void]$br.ReadUInt32() # TimeDateStamp
+              [void]$br.ReadUInt32() # PointerToSymbolTable
+              [void]$br.ReadUInt32() # NumberOfSymbols
+              $sizeOfOptionalHeader = $br.ReadUInt16()
+              [void]$br.ReadUInt16() # Characteristics
+      
+              $optStart = $fs.Position
+              $magic = $br.ReadUInt16()
+              # PE32+ magic = 0x20B, PE32 = 0x10B
+              $isPE32Plus = ($magic -eq 0x20B)
+      
+              # SizeOfImage offset within OptionalHeader:
+              # For PE32: 0x38 from OptionalHeader start
+              # For PE32+: 0x38 from OptionalHeader start (same offset)
+              $fs.Seek($optStart + 0x38, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sizeOfImage = $br.ReadUInt32()
+              return ('0x{0:X8}' -f $sizeOfImage)
+            } finally {
+              $fs.Dispose()
+            }
+          }
+      
+          function Try-ResolveTsFromDumpKey([string]$dumpPath, [string]$workPath) {
+            $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
+            $idOut = Join-Path $env:CRASHTRIAGE_ROOT "identify.txt"
+            $cmd   = Join-Path $env:CRASHTRIAGE_ROOT "identify_cmd.txt"
+      
+            # We try to extract the SYMSRV key (TimeDateStamp+SizeOfImage) from module text near RIP.
+            @(
+              ".symfix",
+              ".sympath+ $workPath",
+              "!sym noisy",
+              ".reload /f",
+              ".ecxr",
+              "ln @rip",
+              "lmv a @rip",
+              "q"
+            ) | Set-Content -Path $cmd -Encoding ASCII
+      
+            & $cdb -z "$dumpPath" -cf "$cmd" *> $idOut
+            $txt = Get-Content $idOut -Raw
+      
+            # Look for 16 hex digits following ".exe" in SYMSRV/module output
+            # Examples seen: "The Lonelly House.exe 697060022f490000"
+            $key = [regex]::Match($txt, '\.exe\s+([0-9A-Fa-f]{16})').Groups[1].Value
+            if (-not $key) {
+              Write-Warning "Couldn't find dump key in CDB output. See: $idOut"
+              return $null
+            }
+      
+            Write-Host "Found key from SYMSRV/module text: $key"
+            return $key
+          }
+      
+          # If log ts is blank, try to resolve via dump key (timestamp+imagesize)
+          if (-not $ts) {
+            Write-Host "Build timestamp missing/blank in log. Falling back to dump module timestamp+imagesize match..."
+      
+            $dmp = "${{ steps.dl.outputs.dmp }}"
+            $dumpKey = Try-ResolveTsFromDumpKey -dumpPath $dmp -workPath $work
+      
+            if ($dumpKey) {
+              $dumpTsHex   = "0x" + $dumpKey.Substring(0,8)
+              $dumpSizeHex = "0x" + $dumpKey.Substring(8,8)
+              Write-Host "Dump PE timestamp: $dumpTsHex  SizeOfImage: $dumpSizeHex"
+      
+              $candidates = Get-ChildItem -Path $store -Recurse -File -Filter "GameGuruMAX_*.exe" -ErrorAction SilentlyContinue
+              if (-not $candidates -or $candidates.Count -eq 0) {
+                Write-Warning "Fallback: no GameGuruMAX_*.exe files found under: $store"
+              } else {
+                $match = $null
+                foreach ($exe in $candidates) {
+                  try {
+                    $exeTsHex   = Get-PeTimeDateStampHex $exe.FullName
+                    $exeSizeHex = Get-PeImageSizeHex     $exe.FullName
+      
+                    # Build the same 16-hex key: TTTTTTTTSSSSSSSS (no 0x prefixes)
+                    $exeKey = ($exeTsHex -replace '^0x','') + ($exeSizeHex -replace '^0x','')
+                    if ($exeKey.ToLower() -eq $dumpKey.ToLower()) { $match = $exe; break }
+                  } catch {
+                    # ignore unreadable/non-PE
+                  }
+                }
+      
+                if ($match) {
+                  $ts = [regex]::Match($match.Name, '^GameGuruMAX_(.+)\.exe$').Groups[1].Value
+                  if ($ts) {
+                    Write-Host "Fallback matched build: GameGuruMAX_$ts.exe"
+                  } else {
+                    Write-Warning "Fallback matched an EXE but couldn't parse ts from name: $($match.Name)"
+                  }
+                } else {
+                  Write-Warning "Fallback failed: no build EXE in store matched dump key $dumpKey. Continuing without EXE/PDB."
+                }
+              }
+            } else {
+              Write-Warning "Fallback failed: couldn't extract dump key. Continuing without EXE/PDB."
+            }
+          }
+      
+          # If we have ts now, try to stage EXE/PDB; otherwise continue without staging.
+          if ($ts) {
+            Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
+      
+            $exeName = "GameGuruMAX_$ts.exe"
+            $pdbName = "GameGuruMAX_$ts.pdb"
+      
+            $exeItem = Get-ChildItem -Path $store -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
+            $pdbItem = Get-ChildItem -Path $store -Recurse -File -Filter $pdbName -ErrorAction SilentlyContinue | Select-Object -First 1
+      
+            if ($exeItem -and $pdbItem) {
+              Copy-Item $exeItem.FullName (Join-Path $work "GameGuruMAX.exe") -Force
+              Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
+              Write-Host "EXE/PDB staged into: $work"
+            } else {
+              Write-Warning "Build files not found for $ts under store. Continuing without EXE/PDB."
+            }
+          } else {
+            Write-Warning "No build timestamp resolved. Continuing without EXE/PDB."
+          }    
+          
+          "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
+      
       - name: Run CDB
         id: dbg
         shell: powershell
@@ -144,46 +292,62 @@ jobs:
           $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
           $dmp  = "${{ steps.dl.outputs.dmp }}"
           $work = "${{ steps.stage.outputs.work }}"
-          $off  = "${{ steps.parse.outputs.off }}"
-
-          $lmiOut  = Join-Path $work "modules.txt"
           $out     = Join-Path $work "resolve.txt"
           $cmdFile = Join-Path $work "cmd.txt"
-
-          # Pass 1: list modules so we can get the base address
+          $probeOut = Join-Path $work "probe.txt"
+          $probeCmd = Join-Path $work "probe_cmd.txt"
+      
+          # --- Pass 0: probe dump for the original EXE filename (renamed game) ---
           @(
             ".symfix",
             ".sympath+ $work",
             ".reload /f",
-            "lm m GameGuruMAX*",
             "q"
-          ) | Set-Content -Path $cmdFile -Encoding ASCII
-
-          & $cdb -z "$dmp" -cf "$cmdFile" *> $lmiOut
-
-          $txt = Get-Content $lmiOut -Raw
-
-          # Parse base address from "lm" line: start end module
-          $m = [regex]::Match($txt, '^\s*([0-9a-fA-F`]+)\s+[0-9a-fA-F`]+\s+GameGuruMAX', 'Multiline')
-          if (-not $m.Success) { throw "Could not find GameGuruMAX module in lm output.`n$txt" }
-
-          $base = $m.Groups[1].Value -replace '`',''
-
-          # Pass 2: use exception context, resolve RIP, try source line, show stack
+          ) | Set-Content -Path $probeCmd -Encoding ASCII
+      
+          & $cdb -z "$dmp" -cf "$probeCmd" *> $probeOut
+          $probeTxt = Get-Content $probeOut -Raw
+      
+          # If dump references a renamed EXE, CDB prints:
+          # "Unable to load image ...\Some Name.exe, Win32 error 0n2"
+          $exeName = $null
+          $m = [regex]::Match($probeTxt, 'Unable to load image .*?\\([^\\]+\.exe), Win32 error', 'IgnoreCase')
+          if ($m.Success) {
+            $exeName = $m.Groups[1].Value
+          }
+      
+          # If we found a renamed exe, create a matching copy in $work so CDB can load the image.
+          if ($exeName) {
+            $srcExe = Join-Path $work "GameGuruMAX.exe"
+            $dstExe = Join-Path $work $exeName
+            if (Test-Path $srcExe) {
+              Copy-Item $srcExe $dstExe -Force
+              Write-Host "Created EXE alias for dump image load: $dstExe"
+            } else {
+              Write-Host "WARNING: Expected staged EXE missing: $srcExe"
+            }
+          } else {
+            Write-Host "No renamed EXE detected from probe output (dump may already reference GameGuruMAX.exe)."
+          }
+      
+          # --- Main pass: resolve crash site via exception context ---
           @(
             ".symfix",
             ".sympath+ $work",
+            ".exepath $work",
             "!sym noisy",
             ".reload /f",
+            ".lastevent",
             ".ecxr",
             ".lines",
             "ln @rip",
+            "u @rip L20",
             "kv",
             "q"
           ) | Set-Content -Path $cmdFile -Encoding ASCII
-
+      
           & $cdb -z "$dmp" -cf "$cmdFile" *> $out
-
+      
           "out=$out" | Out-File $env:GITHUB_OUTPUT -Append
 
       - name: Upload triage output
@@ -194,7 +358,7 @@ jobs:
           path: |
             ${{ steps.dbg.outputs.out }}
 
-      - name: Comment result
+      - name: Comment result 
         if: always()
         shell: powershell
         env:
@@ -203,53 +367,66 @@ jobs:
           $repo = "${{ github.repository }}"
           $num  = "${{ github.event.issue.number }}"
           $api  = "https://api.github.com/repos/$repo/issues/$num/comments"
-
+      
           $headers = @{
             Authorization = "Bearer $env:GH_TOKEN"
             "User-Agent"  = "crash-triage"
             "Accept"      = "application/vnd.github+json"
           }
-
+      
           if ("${{ job.status }}" -eq "success") {
-
-            $txt = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
+      
+            $txt   = Get-Content "${{ steps.dbg.outputs.out }}" -Raw
             $lines = $txt -split "`r?`n"
-
+      
             function ExtractFrame($line) {
-              # Matches: GameGuruMAX!Func+0xNN [D:\path\file.cpp @ 123]
-              $m = [regex]::Match($line, '(GameGuruMAX!\S+)\s+\[([A-Za-z]:\\.+?)\s+@\s+(\d+)\]')
+              # Matches:
+              #   ModuleName!Func+0xNN [D:\path\file.cpp @ 123]
+              # Works for GameGuruMAX!..., The_Lonelly_House!..., etc.
+              $m = [regex]::Match(
+                $line,
+                '([^\s!]+)!(\S+?)\s+\[([A-Za-z]:\\.+?)\s+@\s+(\d+)\]',
+                'IgnoreCase'
+              )
+      
               if ($m.Success) {
-                $func = $m.Groups[1].Value
-                $path = $m.Groups[2].Value
-                $ln   = $m.Groups[3].Value
-
+                $module = $m.Groups[1].Value
+                $func   = $m.Groups[2].Value
+                $path   = $m.Groups[3].Value
+                $ln     = $m.Groups[4].Value
+      
                 # Optional path shortening:
                 $path = $path -replace '^.*?\\GameGuru Core\\', 'GameGuru Core\'
-
+                $path = $path -replace '^.*?\\WickedEngine\\', 'WickedEngine\'
+                $path = $path -replace '^.*?\\Dark Basic Pro SDK\\', 'Dark Basic Pro SDK\'
+      
+                # Optional: remove module name so renamed EXEs don't change formatting
+                # (Keeps function + offset only)
                 return ("{0}:{1} - {2}" -f $path, $ln, $func)
               }
+      
               return $null
             }
-
+      
+            # Build unique list in order
             $frames = New-Object System.Collections.Generic.List[string]
             foreach ($l in $lines) {
               $f = ExtractFrame $l
               if ($f -and -not $frames.Contains($f)) { [void]$frames.Add($f) }
             }
-
+      
             if ($frames.Count -eq 0) {
               $body = "Crash triage complete, but no file/line frames were found in debugger output."
             } else {
               $crashSite = $frames[0]
               $topN = 8
               $top = $frames | Select-Object -First $topN
-
               $body = "Crash triage complete.`n`nCrash site:`n$crashSite`n`nTop frames:`n$($top -join "`n")"
             }
-
+      
           } else {
             $body = "Crash triage failed - see Actions log."
           }
-
+      
           $payload = @{ body = $body } | ConvertTo-Json -Compress
           Invoke-RestMethod -Uri $api -Method Post -Headers $headers -Body $payload -ContentType 'application/json'
