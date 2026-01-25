@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Monitor v18 by Necrym59
+-- NPC Monitor v19 by Necrym59
 -- DESCRIPTION: A global behavior that allows a named npc to be health monitored and trigger event(s) or Lose/Win game or go to a specified level upon its death.
 -- DESCRIPTION: Attach to an object set AlwaysActive=ON, and attach any logic links to this object and/or use ActivateIfUsed field.
 -- DESCRIPTION: [NPC_NAME$=""] to monitor.
@@ -39,6 +39,7 @@ local rotheight			= {}
 local status			= {}
 local wait				= {}
 local entrange 			= {}
+local doonce			= {}
 local actiondelay		= {}
 local checktime			= {}
 local currentvalue		= {}
@@ -80,13 +81,14 @@ function npc_monitor_init(e)
 	entrange[e] = 0
 	currentvalue[e] = 0
 	pEntn[e] = 0
+	doonce[e] = 0
 	g_LegacyNPC = 0
 end
 
 function npc_monitor_main(e)
 
 	if status[e] == "init" then
-		checktime[e] = g_Time + 500
+		checktime[e] = g_Time + 200
 		if npc_monitor[e].monitor_active == 1 then SetEntityActivated(e,1) end
 		if npc_monitor[e].monitor_active == 2 then SetEntityActivated(e,0) end
 		
@@ -114,45 +116,52 @@ function npc_monitor_main(e)
 
 	if g_Entity[e]['activated'] == 1 then
 	
+		if doonce[e] == 0 then
+			SetEntityAlwaysActive(e,1)
+			doonce[e] = 1
+		end
+	
 		if status[e] == "monitor" then
 			entrange[e] = math.ceil(GetFlatDistanceToPlayer(pEntn[e]))
-			if g_Entity[pEntn[e]]["health"] > 0 and entrange[e] < 1000 then
-				--3dto2d check--
-				ScreenPosX = -1
-				ScreenPosX,ScreenPosY = Convert3DTo2D(g_Entity[pEntn[e]]['x'],g_Entity[pEntn[e]]['y']+rotheight[e],g_Entity[pEntn[e]]['z'])
-				if ScreenPosX < 0 then
-					ScreenPosX = 0
-					ScreenPosY = 0
-				else
-					percentx,percenty = ScreenCoordsToPercent(ScreenPosX,ScreenPosY)
-				end
-				--Health and Healthbar check--
-				if g_LegacyNPC == 0 then hreadout[e] = g_Entity[pEntn[e]]['health'] end
-				if g_LegacyNPC == 1 then hreadout[e] = g_Entity[pEntn[e]]['health']-1000 end
-				if npc_monitor[e].health_bar ~= "" then
-					if hreadout[e] < 9000 then	
-						hbarsize[e] = hreadout[e]/200
-						SetSpriteSize(hbarsprite[e],hbarsize[e],3)
-						if g_Entity[pEntn[e]]['health'] > 100 then SetSpriteColor(hbarsprite[e],0,255,0,255) end
-						if g_Entity[pEntn[e]]['health'] < 100 then SetSpriteColor(hbarsprite[e],255,0,0,255) end				
+			GetEntityPlayerVisibility(pEntn[e])
+			if g_Entity[pEntn[e]]['plrvisible'] == 1 then
+				if g_Entity[pEntn[e]]["health"] > 0 and entrange[e] < 1000 then
+					--3dto2d check--
+					ScreenPosX = -1
+					ScreenPosX,ScreenPosY = Convert3DTo2D(g_Entity[pEntn[e]]['x'],g_Entity[pEntn[e]]['y']+rotheight[e],g_Entity[pEntn[e]]['z'])
+					if ScreenPosX < 0 then
+						ScreenPosX = 0
+						ScreenPosY = 0
+					else
+						percentx,percenty = ScreenCoordsToPercent(ScreenPosX,ScreenPosY)
+					end
+					--Health and Healthbar check--
+					if g_LegacyNPC == 0 then hreadout[e] = g_Entity[pEntn[e]]['health'] end
+					if g_LegacyNPC == 1 then hreadout[e] = g_Entity[pEntn[e]]['health']-1000 end
+					if npc_monitor[e].health_bar ~= "" then
+						if hreadout[e] < 9000 then	
+							hbarsize[e] = hreadout[e]/200
+							SetSpriteSize(hbarsprite[e],hbarsize[e],3)
+							if g_Entity[pEntn[e]]['health'] > 100 then SetSpriteColor(hbarsprite[e],0,255,0,255) end
+							if g_Entity[pEntn[e]]['health'] < 100 then SetSpriteColor(hbarsprite[e],255,0,0,255) end				
+						end
+					end	
+					if npc_monitor[e].health_display == 1 then
+						PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
+					end			
+					if npc_monitor[e].health_display == 2 then
+						TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
+					end
+					if npc_monitor[e].health_display == 3 then
+						PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
+						TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
+					end
+					if npc_monitor[e].health_display == 4 then
+						--No Display--
 					end
 				end	
-				if npc_monitor[e].health_display == 1 then
-					PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
-				end			
-				if npc_monitor[e].health_display == 2 then
-					TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
-				end
-				if npc_monitor[e].health_display == 3 then
-					PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
-					TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
-				end
-				if npc_monitor[e].health_display == 4 then
-					--No Display--
-				end
 			end	
-			
-			if g_Time > checktime[e] then			
+			if g_Time > checktime[e] then					
 				if g_Entity[pEntn[e]].health <= 0 and npc_monitor[e].death_action == 1 then
 					wait[e] = g_Time + (npc_monitor[e].action_delay*1000)				
 					status[e] = "alarm"
