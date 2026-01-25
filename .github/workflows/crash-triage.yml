@@ -122,124 +122,167 @@ jobs:
           $store = "D:\DEV\BUILDS\GameGuru Wicked MAX PDBs"
           Write-Host "Store is: $store"
       
-          # Define work early (fallback needs it)
+          # Always create work folder and output it (even if we can't stage EXE/PDB)
           $work = Join-Path $env:CRASHTRIAGE_ROOT "work"
           New-Item -ItemType Directory -Force -Path $work | Out-Null
+          "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
       
+          # Timestamp from log parse (may be blank)
           $ts = "${{ steps.parse.outputs.ts }}"
       
-          function Get-PeTimestampAndSizeKey([string]$exePath) {
-            $fs = [System.IO.File]::Open($exePath, 'Open', 'Read', 'ReadWrite')
+          function Get-PeTimeDateStampHex([string]$path) {
+            $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
             try {
               $br = New-Object System.IO.BinaryReader($fs)
-      
               $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
-              $peOffset = $br.ReadInt32()
-      
-              $fs.Seek($peOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $peOff = $br.ReadInt32()
+              $fs.Seek($peOff, [System.IO.SeekOrigin]::Begin) | Out-Null
               $sig = $br.ReadUInt32()
-              if ($sig -ne 0x00004550) { return $null }  # "PE\0\0"
-      
-              # COFF TimeDateStamp at peOffset + 8
-              $fs.Seek($peOffset + 8, [System.IO.SeekOrigin]::Begin) | Out-Null
+              if ($sig -ne 0x00004550) { throw "Not a PE file: $path" } # "PE\0\0"
+              [void]$br.ReadUInt16() # Machine
+              [void]$br.ReadUInt16() # NumberOfSections
               $timeDateStamp = $br.ReadUInt32()
-      
-              # Optional header begins peOffset + 24; SizeOfImage is +0x38 into optional header
-              $opt = $peOffset + 24
-              $fs.Seek($opt + 0x38, [System.IO.SeekOrigin]::Begin) | Out-Null
-              $sizeOfImage = $br.ReadUInt32()
-      
-              return ("{0:x8}{1:x8}" -f $timeDateStamp, $sizeOfImage).ToLower()
+              return ('0x{0:X8}' -f $timeDateStamp)
+            } finally {
+              $fs.Dispose()
             }
-            finally { $fs.Dispose() }
           }
       
-          if (-not $ts) {
-            Write-Host "Build timestamp missing/blank in log. Falling back to dump module timestamp+imagesize match..."
+          function Get-PeImageSizeHex([string]$path) {
+            $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try {
+              $br = New-Object System.IO.BinaryReader($fs)
+              $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $peOff = $br.ReadInt32()
+              $fs.Seek($peOff, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sig = $br.ReadUInt32()
+              if ($sig -ne 0x00004550) { throw "Not a PE file: $path" } # "PE\0\0"
       
+              # IMAGE_FILE_HEADER is 20 bytes; TimeDateStamp starts at +8 from start of file header.
+              # We want OptionalHeader to get SizeOfImage.
+              [void]$br.ReadUInt16() # Machine
+              [void]$br.ReadUInt16() # NumberOfSections
+              [void]$br.ReadUInt32() # TimeDateStamp
+              [void]$br.ReadUInt32() # PointerToSymbolTable
+              [void]$br.ReadUInt32() # NumberOfSymbols
+              $sizeOfOptionalHeader = $br.ReadUInt16()
+              [void]$br.ReadUInt16() # Characteristics
+      
+              $optStart = $fs.Position
+              $magic = $br.ReadUInt16()
+              # PE32+ magic = 0x20B, PE32 = 0x10B
+              $isPE32Plus = ($magic -eq 0x20B)
+      
+              # SizeOfImage offset within OptionalHeader:
+              # For PE32: 0x38 from OptionalHeader start
+              # For PE32+: 0x38 from OptionalHeader start (same offset)
+              $fs.Seek($optStart + 0x38, [System.IO.SeekOrigin]::Begin) | Out-Null
+              $sizeOfImage = $br.ReadUInt32()
+              return ('0x{0:X8}' -f $sizeOfImage)
+            } finally {
+              $fs.Dispose()
+            }
+          }
+      
+          function Try-ResolveTsFromDumpKey([string]$dumpPath, [string]$workPath) {
             $cdb  = "C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"
-            $dmp  = "${{ steps.dl.outputs.dmp }}"
-            $root = $env:CRASHTRIAGE_ROOT
-            $idOut = Join-Path $root "identify.txt"
-            $cmd   = Join-Path $root "identify_cmd.txt"
+            $idOut = Join-Path $env:CRASHTRIAGE_ROOT "identify.txt"
+            $cmd   = Join-Path $env:CRASHTRIAGE_ROOT "identify_cmd.txt"
       
+            # We try to extract the SYMSRV key (TimeDateStamp+SizeOfImage) from module text near RIP.
             @(
               ".symfix",
-              ".sympath+ $work",
+              ".sympath+ $workPath",
               "!sym noisy",
               ".reload /f",
               ".ecxr",
+              "ln @rip",
               "lmv a @rip",
               "q"
             ) | Set-Content -Path $cmd -Encoding ASCII
       
-            & $cdb -z "$dmp" -cf "$cmd" *> $idOut
+            & $cdb -z "$dumpPath" -cf "$cmd" *> $idOut
             $txt = Get-Content $idOut -Raw
       
-            # Attempt A: parse Timestamp/ImageSize if present (best case)
-            $mt = [regex]::Match($txt, '(?im)^\s*Timestamp:\s*([0-9a-fA-F]{8})\b')
-            $ms = [regex]::Match($txt, '(?im)^\s*ImageSize:\s*([0-9a-fA-F`]+)\b')
-      
-            $dumpKey = $null
-      
-            if ($mt.Success -and $ms.Success) {
-              $tsHex   = $mt.Groups[1].Value.ToLower()
-              $sizeHex = ($ms.Groups[1].Value -replace '`','').ToLower().PadLeft(8,'0')
-              $dumpKey = "$tsHex$sizeHex"
-              Write-Host "Found key from lmv: $dumpKey"
-            }
-            else {
-              # Attempt B: parse SYMSRV-style key like: "<something>.exe 697060022f490000"
-              $mk = [regex]::Match($txt, '(?im)\b\S+\.exe\s+([0-9a-fA-F]{16})\b')
-              if ($mk.Success) {
-                $dumpKey = $mk.Groups[1].Value.ToLower()
-                Write-Host "Found key from SYMSRV/module text: $dumpKey"
-              }
+            # Look for 16 hex digits following ".exe" in SYMSRV/module output
+            # Examples seen: "The Lonelly House.exe 697060022f490000"
+            $key = [regex]::Match($txt, '\.exe\s+([0-9A-Fa-f]{16})').Groups[1].Value
+            if (-not $key) {
+              Write-Warning "Couldn't find dump key in CDB output. See: $idOut"
+              return $null
             }
       
-            if (-not $dumpKey) {
-              throw "Fallback failed: couldn't find Timestamp/ImageSize in lmv output OR a SYMSRV .exe key in output.`n$idOut`n$txt"
-            }
-      
-            $candidates = Get-ChildItem -Path $store -Recurse -File -Filter "GameGuruMAX_*.exe" -ErrorAction SilentlyContinue
-            if (-not $candidates -or $candidates.Count -eq 0) {
-              throw "Fallback failed: no GameGuruMAX_*.exe files found under: $store"
-            }
-      
-            $match = $null
-            foreach ($exe in $candidates) {
-              try {
-                $k = Get-PeTimestampAndSizeKey $exe.FullName
-                if ($k -and $k -eq $dumpKey) { $match = $exe; break }
-              } catch {
-                # ignore
-              }
-            }
-      
-            if (-not $match) {
-              throw "Fallback failed: no build EXE in store matched dump key $dumpKey"
-            }
-      
-            $ts = [regex]::Match($match.Name, '^GameGuruMAX_(.+)\.exe$').Groups[1].Value
-            if (-not $ts) { throw "Fallback failed: couldn't parse ts from matched exe name: $($match.Name)" }
-      
-            Write-Host "Fallback matched build: GameGuruMAX_$ts.exe"
+            Write-Host "Found key from SYMSRV/module text: $key"
+            return $key
           }
       
-          Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
+          # If log ts is blank, try to resolve via dump key (timestamp+imagesize)
+          if (-not $ts) {
+            Write-Host "Build timestamp missing/blank in log. Falling back to dump module timestamp+imagesize match..."
       
-          $exeName = "GameGuruMAX_$ts.exe"
-          $pdbName = "GameGuruMAX_$ts.pdb"
+            $dmp = "${{ steps.dl.outputs.dmp }}"
+            $dumpKey = Try-ResolveTsFromDumpKey -dumpPath $dmp -workPath $work
       
-          $exeItem = Get-ChildItem -Path $store -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
-          $pdbItem = Get-ChildItem -Path $store -Recurse -File -Filter $pdbName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($dumpKey) {
+              $dumpTsHex   = "0x" + $dumpKey.Substring(0,8)
+              $dumpSizeHex = "0x" + $dumpKey.Substring(8,8)
+              Write-Host "Dump PE timestamp: $dumpTsHex  SizeOfImage: $dumpSizeHex"
       
-          if (-not $exeItem) { throw "EXE not found anywhere under: $store (wanted $exeName)" }
-          if (-not $pdbItem) { throw "PDB not found anywhere under: $store (wanted $pdbName)" }
+              $candidates = Get-ChildItem -Path $store -Recurse -File -Filter "GameGuruMAX_*.exe" -ErrorAction SilentlyContinue
+              if (-not $candidates -or $candidates.Count -eq 0) {
+                Write-Warning "Fallback: no GameGuruMAX_*.exe files found under: $store"
+              } else {
+                $match = $null
+                foreach ($exe in $candidates) {
+                  try {
+                    $exeTsHex   = Get-PeTimeDateStampHex $exe.FullName
+                    $exeSizeHex = Get-PeImageSizeHex     $exe.FullName
       
-          Copy-Item $exeItem.FullName (Join-Path $work "GameGuruMAX.exe") -Force
-          Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
+                    # Build the same 16-hex key: TTTTTTTTSSSSSSSS (no 0x prefixes)
+                    $exeKey = ($exeTsHex -replace '^0x','') + ($exeSizeHex -replace '^0x','')
+                    if ($exeKey.ToLower() -eq $dumpKey.ToLower()) { $match = $exe; break }
+                  } catch {
+                    # ignore unreadable/non-PE
+                  }
+                }
       
+                if ($match) {
+                  $ts = [regex]::Match($match.Name, '^GameGuruMAX_(.+)\.exe$').Groups[1].Value
+                  if ($ts) {
+                    Write-Host "Fallback matched build: GameGuruMAX_$ts.exe"
+                  } else {
+                    Write-Warning "Fallback matched an EXE but couldn't parse ts from name: $($match.Name)"
+                  }
+                } else {
+                  Write-Warning "Fallback failed: no build EXE in store matched dump key $dumpKey. Continuing without EXE/PDB."
+                }
+              }
+            } else {
+              Write-Warning "Fallback failed: couldn't extract dump key. Continuing without EXE/PDB."
+            }
+          }
+      
+          # If we have ts now, try to stage EXE/PDB; otherwise continue without staging.
+          if ($ts) {
+            Write-Host "Looking for: GameGuruMAX_$ts.exe and .pdb"
+      
+            $exeName = "GameGuruMAX_$ts.exe"
+            $pdbName = "GameGuruMAX_$ts.pdb"
+      
+            $exeItem = Get-ChildItem -Path $store -Recurse -File -Filter $exeName -ErrorAction SilentlyContinue | Select-Object -First 1
+            $pdbItem = Get-ChildItem -Path $store -Recurse -File -Filter $pdbName -ErrorAction SilentlyContinue | Select-Object -First 1
+      
+            if ($exeItem -and $pdbItem) {
+              Copy-Item $exeItem.FullName (Join-Path $work "GameGuruMAX.exe") -Force
+              Copy-Item $pdbItem.FullName (Join-Path $work "GameGuruMAX.pdb") -Force
+              Write-Host "EXE/PDB staged into: $work"
+            } else {
+              Write-Warning "Build files not found for $ts under store. Continuing without EXE/PDB."
+            }
+          } else {
+            Write-Warning "No build timestamp resolved. Continuing without EXE/PDB."
+          }    
+          
           "work=$work" | Out-File $env:GITHUB_OUTPUT -Append
       
       - name: Run CDB
