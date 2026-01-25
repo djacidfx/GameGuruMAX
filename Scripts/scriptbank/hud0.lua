@@ -1602,7 +1602,9 @@ function hud0.main()
 				if hud0_mapView_LevelImage > 0 then
 					if GetImageWidth(hud0_mapView_LevelImage) > 0 then scrimg = hud0_mapView_LevelImage end
 				end
-				tscrheight = tscrwidth * (GetImageHeight(scrimg)/GetImageWidth(scrimg))
+				if scrimg > 0 then
+					tscrheight = tscrwidth * (GetImageHeight(scrimg)/GetImageWidth(scrimg))
+				end
 				hud0_mapView_ImageOW = tscrwidth
 				hud0_mapView_ImageOH = tscrheight
 				tscrwidth=tscrwidth*hud0_mapView_Scale
@@ -1789,10 +1791,16 @@ function hud0.main()
 		hud0_pointerSpriteImageID = GetScreenElementImage(hud0_pointerID)
 	end
 	if hud0_pointerSpriteImageID == 0 then hud0_pointerSpriteImageID = LoadImage("imagebank\\HUD\\cursor-medium.png") end
-	if hud0_pointerSpriteID == nil then hud0_pointerSpriteID = CreateSprite ( hud0_pointerSpriteImageID ) end
-	SetSpritePosition ( hud0_pointerSpriteID, g_sprCursorPtrX, g_sprCursorPtrY )
-	SetSpritePriority(hud0_pointerSpriteID,-1)
-	PasteSprite(hud0_pointerSpriteID)
+	if hud0_pointerSpriteImageID > 0 then
+		if hud0_pointerSpriteID == nil then hud0_pointerSpriteID = CreateSprite ( hud0_pointerSpriteImageID ) end
+		if hud0_pointerSpriteID ~= nil then
+			if hud0_pointerSpriteID > 0 then
+				SetSpritePosition ( hud0_pointerSpriteID, g_sprCursorPtrX, g_sprCursorPtrY )
+				SetSpritePriority(hud0_pointerSpriteID,-1)
+				PasteSprite(hud0_pointerSpriteID)
+			end
+		end
+	end
   end
   
   -- handle slow absorbsion of magic

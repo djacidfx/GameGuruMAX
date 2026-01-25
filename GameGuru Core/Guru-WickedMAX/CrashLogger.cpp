@@ -47,7 +47,7 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
 
     // full path message
     char fullPathMsg[MAX_PATH * 2];
-    sprintf_s(fullPathMsg, MAX_PATH * 2, "A crash has been detected!\r\nA crash report has been created in file '%s'", logPath);
+    sprintf_s(fullPathMsg, MAX_PATH * 2, "A crash report has been created in file '%s'", logPath);
     MessageBoxA(
         NULL,
         fullPathMsg,
@@ -64,7 +64,7 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
     log << "EXE Module:      " << exeFile << "\r\n";
     log << "Time:            " << GetTimestamp() << "\r\n";
     log << "Build:           " << g_pCrashVersionINIValue << "\r\n";
-    log << "Exception code:  0x" << std::hex << pExceptionInfo->ExceptionRecord->ExceptionCode << "\r\n";
+    if(pExceptionInfo)  log << "Exception code:  0x" << std::hex << pExceptionInfo->ExceptionRecord->ExceptionCode << "\r\n";
 
     // two ways to use symbols
     bool bSymbCall = true;
@@ -132,8 +132,11 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
 
         // the address we need is not the runtime address the exception provides!
         moduleBase = (DWORD64)GetModuleHandle(NULL);
-        crashAddress = (DWORD64)pExceptionInfo->ExceptionRecord->ExceptionAddress;
-        offset = crashAddress - moduleBase;
+        if (pExceptionInfo)
+        {
+            crashAddress = (DWORD64)pExceptionInfo->ExceptionRecord->ExceptionAddress;
+            offset = crashAddress - moduleBase;
+        }
         lookupAddress = baseAddress + offset;
 
         // Get source line info for the crash point
@@ -180,200 +183,201 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         // 5-layer stack trace (callers)
         // ----------------------------
         // Note: StackWalk64 mutates the CONTEXT you pass, so use a copy.
-        CONTEXT ctx = *pExceptionInfo->ContextRecord;
-
-        HANDLE thread = GetCurrentThread();
-
-        STACKFRAME64 frame = {};
-        DWORD machineType = 0;
+        if (pExceptionInfo)
+        {
+            CONTEXT ctx = *pExceptionInfo->ContextRecord;
+            HANDLE thread = GetCurrentThread();
+            STACKFRAME64 frame = {};
+            DWORD machineType = 0;
 
 #if defined(_M_X64)
-        machineType = IMAGE_FILE_MACHINE_AMD64;
-        frame.AddrPC.Offset = ctx.Rip;
-        frame.AddrStack.Offset = ctx.Rsp;
-        frame.AddrFrame.Offset = ctx.Rbp;
+            machineType = IMAGE_FILE_MACHINE_AMD64;
+            frame.AddrPC.Offset = ctx.Rip;
+            frame.AddrStack.Offset = ctx.Rsp;
+            frame.AddrFrame.Offset = ctx.Rbp;
 #elif defined(_M_IX86)
-        machineType = IMAGE_FILE_MACHINE_I386;
-        frame.AddrPC.Offset = ctx.Eip;
-        frame.AddrStack.Offset = ctx.Esp;
-        frame.AddrFrame.Offset = ctx.Ebp;
+            machineType = IMAGE_FILE_MACHINE_I386;
+            frame.AddrPC.Offset = ctx.Eip;
+            frame.AddrStack.Offset = ctx.Esp;
+            frame.AddrFrame.Offset = ctx.Ebp;
 #else
-        machineType = 0;
+            machineType = 0;
 #endif
 
-        frame.AddrPC.Mode = AddrModeFlat;
-        frame.AddrStack.Mode = AddrModeFlat;
-        frame.AddrFrame.Mode = AddrModeFlat;
+            frame.AddrPC.Mode = AddrModeFlat;
+            frame.AddrStack.Mode = AddrModeFlat;
+            frame.AddrFrame.Mode = AddrModeFlat;
 
-        auto TranslateAddrIfNeeded = [&](DWORD64 runtimeAddr) -> DWORD64
-        {
-            // If invade worked, DbgHelp knows true module bases -> use runtime addr.
-            if (bInvadeProcessMode) return runtimeAddr;
-
-            // If invade failed, DbgHelp often thinks your EXE lives at preferred base (0x140...).
-            // Translate runtime address (0x7ff6...) into preferred-base address (0x140...).
-            if (moduleBase != 0 && baseAddress != 0 && runtimeAddr >= moduleBase)
+            auto TranslateAddrIfNeeded = [&](DWORD64 runtimeAddr) -> DWORD64
             {
-                DWORD64 off = runtimeAddr - moduleBase;
-                return baseAddress + off;
-            }
-            return runtimeAddr; // best effort
-        };
+                // If invade worked, DbgHelp knows true module bases -> use runtime addr.
+                if (bInvadeProcessMode) return runtimeAddr;
 
-        // For SymFromAddr
-        BYTE symBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME] = {};
-        SYMBOL_INFO* pSym = (SYMBOL_INFO*)symBuffer;
-        pSym->SizeOfStruct = sizeof(SYMBOL_INFO);
-        pSym->MaxNameLen = MAX_SYM_NAME;
-
-
-        // excellent stack tracer (walk more, print best 5)
-        log << "Call stack:   Up to 10 frames:\r\n";
-
-        const int kMaxWalk = 32;
-        const int kWantPrinted = 10;
-
-        DWORD64 lastRuntimePC = 0;
-        int printed = 0;
-
-        for (int walk = 0; walk < kMaxWalk && printed < kWantPrinted; ++walk)
-        {
-            BOOL ok = StackWalk64(
-                machineType,
-                process,
-                thread,
-                &frame,
-                &ctx,
-                NULL,
-                SymFunctionTableAccess64,
-                SymGetModuleBase64,
-                NULL
-            );
-
-            if (!ok || frame.AddrPC.Offset == 0)
-            {
-                log << "  <StackWalk64 stopped> err=" << std::dec << GetLastError() << "\r\n";
-                break;
-            }
-
-            DWORD64 runtimePC = frame.AddrPC.Offset;
-
-            // sanity: 0x1 / 0x42 etc
-            if (runtimePC < 0x10000)
-            {
-                log << "  <invalid PC 0x" << std::hex << runtimePC << ">\r\n";
-                break;
-            }
-
-            // skip duplicates (can happen depending on unwind/prolog)
-            if (runtimePC == lastRuntimePC)
-                continue;
-            lastRuntimePC = runtimePC;
-
-            // We will try to resolve symbols/lines using runtime PC first.
-            // If that fails (common when InvadeProcess fails), fall back to translated PC.
-            DWORD64 pcRuntime = runtimePC;
-            DWORD64 pcXlated = TranslateAddrIfNeeded(runtimePC);
-
-            auto ResolveFnAndLine = [&](DWORD64 addr,
-                std::string& outFn,
-                DWORD64& outDispSym,
-                std::string& outFile,
-                DWORD& outLine,
-                DWORD& outDispLine,
-                DWORD& outLineErr) -> bool
-            {
-                outFn = "???";
-                outDispSym = 0;
-
-                if (SymFromAddr(process, addr, &outDispSym, pSym))
-                    outFn = pSym->Name;
-
-                IMAGEHLP_LINE64 line = {};
-                line.SizeOfStruct = sizeof(line);
-                DWORD dispLine = 0;
-
-                if (SymGetLineFromAddr64(process, addr, &dispLine, &line))
+                // If invade failed, DbgHelp often thinks your EXE lives at preferred base (0x140...).
+                // Translate runtime address (0x7ff6...) into preferred-base address (0x140...).
+                if (moduleBase != 0 && baseAddress != 0 && runtimeAddr >= moduleBase)
                 {
-                    outFile = line.FileName ? line.FileName : "";
-                    outLine = line.LineNumber;
-                    outDispLine = dispLine;
-                    outLineErr = 0;
-                    return true;
+                    DWORD64 off = runtimeAddr - moduleBase;
+                    return baseAddress + off;
                 }
-
-                outLineErr = GetLastError();
-                outFile.clear();
-                outLine = 0;
-                outDispLine = 0;
-                return false;
+                return runtimeAddr; // best effort
             };
 
-            std::string fn;
-            DWORD64 dispSym = 0;
-            std::string file;
-            DWORD lineNo = 0;
-            DWORD dispLine = 0;
-            DWORD lineErr = 0;
+            // For SymFromAddr
+            BYTE symBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME] = {};
+            SYMBOL_INFO* pSym = (SYMBOL_INFO*)symBuffer;
+            pSym->SizeOfStruct = sizeof(SYMBOL_INFO);
+            pSym->MaxNameLen = MAX_SYM_NAME;
 
-            bool haveLine = ResolveFnAndLine(pcRuntime, fn, dispSym, file, lineNo, dispLine, lineErr);
 
-            // If runtime address failed, try translated address:
-            if (!haveLine && pcXlated != pcRuntime)
+            // excellent stack tracer (walk more, print best 5)
+            log << "Call stack:   Up to 10 frames:\r\n";
+
+            const int kMaxWalk = 32;
+            const int kWantPrinted = 10;
+
+            DWORD64 lastRuntimePC = 0;
+            int printed = 0;
+
+            for (int walk = 0; walk < kMaxWalk && printed < kWantPrinted; ++walk)
             {
-                std::string fn2;
-                DWORD64 dispSym2 = 0;
-                std::string file2;
-                DWORD lineNo2 = 0;
-                DWORD dispLine2 = 0;
-                DWORD lineErr2 = 0;
+                BOOL ok = StackWalk64(
+                    machineType,
+                    process,
+                    thread,
+                    &frame,
+                    &ctx,
+                    NULL,
+                    SymFunctionTableAccess64,
+                    SymGetModuleBase64,
+                    NULL
+                );
 
-                bool haveLine2 = ResolveFnAndLine(pcXlated, fn2, dispSym2, file2, lineNo2, dispLine2, lineErr2);
-
-                // Prefer the translated result if it gives us line info, or even a better symbol name:
-                if (haveLine2 || fn == "???")
+                if (!ok || frame.AddrPC.Offset == 0)
                 {
-                    fn = fn2;
-                    dispSym = dispSym2;
-                    file = file2;
-                    lineNo = lineNo2;
-                    dispLine = dispLine2;
-                    lineErr = lineErr2;
-                    haveLine = haveLine2;
+                    log << "  <StackWalk64 stopped> err=" << std::dec << GetLastError() << "\r\n";
+                    break;
                 }
+
+                DWORD64 runtimePC = frame.AddrPC.Offset;
+
+                // sanity: 0x1 / 0x42 etc
+                if (runtimePC < 0x10000)
+                {
+                    log << "  <invalid PC 0x" << std::hex << runtimePC << ">\r\n";
+                    break;
+                }
+
+                // skip duplicates (can happen depending on unwind/prolog)
+                if (runtimePC == lastRuntimePC)
+                    continue;
+                lastRuntimePC = runtimePC;
+
+                // We will try to resolve symbols/lines using runtime PC first.
+                // If that fails (common when InvadeProcess fails), fall back to translated PC.
+                DWORD64 pcRuntime = runtimePC;
+                DWORD64 pcXlated = TranslateAddrIfNeeded(runtimePC);
+
+                auto ResolveFnAndLine = [&](DWORD64 addr,
+                    std::string& outFn,
+                    DWORD64& outDispSym,
+                    std::string& outFile,
+                    DWORD& outLine,
+                    DWORD& outDispLine,
+                    DWORD& outLineErr) -> bool
+                {
+                    outFn = "???";
+                    outDispSym = 0;
+
+                    if (SymFromAddr(process, addr, &outDispSym, pSym))
+                        outFn = pSym->Name;
+
+                    IMAGEHLP_LINE64 line = {};
+                    line.SizeOfStruct = sizeof(line);
+                    DWORD dispLine = 0;
+
+                    if (SymGetLineFromAddr64(process, addr, &dispLine, &line))
+                    {
+                        outFile = line.FileName ? line.FileName : "";
+                        outLine = line.LineNumber;
+                        outDispLine = dispLine;
+                        outLineErr = 0;
+                        return true;
+                    }
+
+                    outLineErr = GetLastError();
+                    outFile.clear();
+                    outLine = 0;
+                    outDispLine = 0;
+                    return false;
+                };
+
+                std::string fn;
+                DWORD64 dispSym = 0;
+                std::string file;
+                DWORD lineNo = 0;
+                DWORD dispLine = 0;
+                DWORD lineErr = 0;
+
+                bool haveLine = ResolveFnAndLine(pcRuntime, fn, dispSym, file, lineNo, dispLine, lineErr);
+
+                // If runtime address failed, try translated address:
+                if (!haveLine && pcXlated != pcRuntime)
+                {
+                    std::string fn2;
+                    DWORD64 dispSym2 = 0;
+                    std::string file2;
+                    DWORD lineNo2 = 0;
+                    DWORD dispLine2 = 0;
+                    DWORD lineErr2 = 0;
+
+                    bool haveLine2 = ResolveFnAndLine(pcXlated, fn2, dispSym2, file2, lineNo2, dispLine2, lineErr2);
+
+                    // Prefer the translated result if it gives us line info, or even a better symbol name:
+                    if (haveLine2 || fn == "???")
+                    {
+                        fn = fn2;
+                        dispSym = dispSym2;
+                        file = file2;
+                        lineNo = lineNo2;
+                        dispLine = dispLine2;
+                        lineErr = lineErr2;
+                        haveLine = haveLine2;
+                    }
+                }
+
+                // Module name (handy for filtering / sanity)
+                std::string modName = "?";
+                IMAGEHLP_MODULE64 mod = {};
+                mod.SizeOfStruct = sizeof(mod);
+                if (SymGetModuleInfo64(process, pcXlated, &mod))
+                {
+                    if (mod.ModuleName) modName = mod.ModuleName;
+                }
+
+                // Print
+                log << "  #" << std::dec << printed
+                    << "  0x" << std::hex << runtimePC
+                    << "  [" << modName << "] "
+                    << fn;
+
+                if (dispSym)
+                    log << "+0x" << std::hex << dispSym;
+
+                if (haveLine && !file.empty())
+                {
+                    log << "  (" << file << ":" << std::dec << lineNo << ")";
+                    if (dispLine)
+                        log << " +0x" << std::hex << dispLine;
+                    log << "\r\n";
+                }
+                else
+                {
+                    log << "  (no line, err=" << std::dec << lineErr << ")\r\n";
+                }
+
+                ++printed;
             }
-
-            // Module name (handy for filtering / sanity)
-            std::string modName = "?";
-            IMAGEHLP_MODULE64 mod = {};
-            mod.SizeOfStruct = sizeof(mod);
-            if (SymGetModuleInfo64(process, pcXlated, &mod))
-            {
-                if (mod.ModuleName) modName = mod.ModuleName;
-            }
-
-            // Print
-            log << "  #" << std::dec << printed
-                << "  0x" << std::hex << runtimePC
-                << "  [" << modName << "] "
-                << fn;
-
-            if (dispSym)
-                log << "+0x" << std::hex << dispSym;
-
-            if (haveLine && !file.empty())
-            {
-                log << "  (" << file << ":" << std::dec << lineNo << ")";
-                if (dispLine)
-                    log << " +0x" << std::hex << dispLine;
-                log << "\r\n";
-            }
-            else
-            {
-                log << "  (no line, err=" << std::dec << lineErr << ")\r\n";
-            }
-
-            ++printed;
         }
 
         // NOW cleanup (after stack trace)
@@ -420,22 +424,24 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
-    MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
-    exceptionInfo.ThreadId = GetCurrentThreadId();
-    exceptionInfo.ExceptionPointers = pExceptionInfo;
-    exceptionInfo.ClientPointers = TRUE;
+    if (pExceptionInfo)
+    {
+        MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
+        exceptionInfo.ThreadId = GetCurrentThreadId();
+        exceptionInfo.ExceptionPointers = pExceptionInfo;
+        exceptionInfo.ClientPointers = TRUE;
+        BOOL success = MiniDumpWriteDump(
+            GetCurrentProcess(),
+            GetCurrentProcessId(),
+            hFile,
+            MiniDumpNormal, // MiniDumpWithFullMemory,
+            &exceptionInfo,
+            nullptr,
+            nullptr
+        );
+    }
 
-    BOOL success = MiniDumpWriteDump(
-        GetCurrentProcess(),
-        GetCurrentProcessId(),
-        hFile,
-        MiniDumpNormal, // MiniDumpWithFullMemory,
-        &exceptionInfo,
-        nullptr,
-        nullptr
-    );
     CloseHandle(hFile);
-
     Sleep(100);
     return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -447,6 +453,6 @@ void InitCrashHandler()
 
 char* GetCrashHandlerDebugLogRef()
 {
-    if (strlen(g_pDebugExtraInfo) == 0) strcpy_s(g_pDebugExtraInfo, 10240, "Extra Debug Log:");
+    if (strlen(g_pDebugExtraInfo) == 0) strcpy_s(g_pDebugExtraInfo, 10240, "GFX Debug Log:");
     return g_pDebugExtraInfo;
 }

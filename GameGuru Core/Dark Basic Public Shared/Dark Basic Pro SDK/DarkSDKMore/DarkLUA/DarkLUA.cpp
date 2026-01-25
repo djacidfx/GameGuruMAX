@@ -167,6 +167,26 @@ int luaMessageCount = 0;
 int maxLuaMessages = 0;
 luaMessage** ppLuaMessages = NULL;
 
+// extra debug info if runtime happens from a LUA script command call
+thread_local lua_State* g_CurrentLuaState = nullptr;
+//struct LuaStateGuard
+//{
+//	lua_State* prev;
+//	LuaStateGuard(lua_State* L) : prev(g_CurrentLuaState) { g_CurrentLuaState = L; }
+//	~LuaStateGuard() { g_CurrentLuaState = prev; }
+//};
+//inline int LuaGetTopAndSetState(lua_State* L)
+//{
+//	return lua_gettop(L);
+//}
+//#define LUA_BEGIN(L) LuaStateGuard _luaGuard(L)
+//#define LUA_GETTOP(L) (LUA_BEGIN(L), lua_gettop(L))
+static int LUA_GETTOP(lua_State* L)
+{
+	g_CurrentLuaState = L;
+	return lua_gettop(L);
+}
+
 //=============
 
  int LuaSendMessage(lua_State *L)
@@ -174,7 +194,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	/* get number of arguments */
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int i;
 
 	/* loop through each argument */
@@ -237,7 +257,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	/* get number of arguments */
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int i;
 
 	if ( n != 2 && n != 3 )
@@ -318,7 +338,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	/* get number of arguments */
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int i;
 
 	if ( n != 2 && n != 3 )
@@ -396,7 +416,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	/* get number of arguments */
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int i;
 
 	if ( n != 2 && n != 3 )
@@ -482,7 +502,7 @@ luaMessage** ppLuaMessages = NULL;
  int RestoreGameFromSlot(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	t.luaglobal.gamestatechange = lua_tonumber(L, 1);
 	if ( t.luaglobal.gamestatechange==0 )
@@ -509,7 +529,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetInternalSoundState(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	if (iIndex >= 0 && iIndex < 65535)
@@ -522,7 +542,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetInternalSoundState(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	if (iIndex >= 0 && iIndex < 65535)
@@ -546,7 +566,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetCheckpoint(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	t.playercheckpoint.x=lua_tonumber(L, 1);
 	t.playercheckpoint.y=lua_tonumber(L, 2);
@@ -570,7 +590,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponSlotGot(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iWeaponSlot = lua_tonumber(L, 1);
 	lua_pushinteger ( L, t.weaponslot[iWeaponSlot].got );
@@ -579,7 +599,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponSlotNoSelect(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iWeaponSlot = lua_tonumber(L, 1);
 	lua_pushinteger ( L, t.weaponslot[iWeaponSlot].noselect );
@@ -588,7 +608,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetWeaponSlot(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int iWeaponSlot = lua_tonumber(L, 1);
 	t.weaponslot[iWeaponSlot].got = lua_tonumber(L, 2);
@@ -598,7 +618,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iWeaponSlot = lua_tonumber(L, 1);
 	if(iWeaponSlot>=0 && iWeaponSlot<t.weaponammo.size())
@@ -610,7 +630,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetWeaponAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iWeaponSlot = lua_tonumber(L, 1);
 	if (iWeaponSlot >= 0 && iWeaponSlot < t.weaponammo.size())
@@ -622,7 +642,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponClipAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iWeaponSlotClipIndex = lua_tonumber(L, 1);
 	if (iWeaponSlotClipIndex >= 0 && iWeaponSlotClipIndex < t.weaponclipammo.size())
@@ -634,7 +654,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetWeaponClipAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iWeaponSlotClipIndex = lua_tonumber(L, 1);
 	if (iWeaponSlotClipIndex >= 0 && iWeaponSlotClipIndex < t.weaponclipammo.size())
@@ -652,7 +672,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponPoolAmmoIndex(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iWeaponSlot = lua_tonumber(L, 1);
 	 if (iWeaponSlot >= 0 && iWeaponSlot < t.weaponslot.size())
@@ -670,7 +690,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponPoolAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iPoolIndex = lua_tonumber(L, 1);
 	if (iPoolIndex >= 0 && iPoolIndex < t.ammopool.size())
@@ -686,7 +706,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetWeaponPoolAmmo(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iPoolIndex = lua_tonumber(L, 1);
 	if (iPoolIndex >= 0 && iPoolIndex < t.ammopool.size())
@@ -698,7 +718,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponSlot(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 
 	// returns the gunID
@@ -715,7 +735,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponSlotPref(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iWeaponID = 0;
 	 int iWeaponSlot = lua_tonumber(L, 1);
@@ -728,7 +748,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetPlayerWeaponID(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n > 0 ) return 0;
 
 	// returns the playres current gun ID
@@ -739,7 +759,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponID(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 
 	// returns the gun
@@ -762,7 +782,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityWeaponID(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -780,7 +800,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawSetWeaponData ( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int tgunid = lua_tonumber(L, 1);
 	int tfiremode = lua_tonumber(L, 2);
@@ -807,7 +827,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawGetWeaponData( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 
 	// specify weaponID and firemode index
@@ -841,7 +861,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetWeaponName(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int tgunid = lua_tonumber(L, 1);
 	 if(tgunid>0)
@@ -879,7 +899,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawSetCameraData ( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int tcameraid=0, tvalue=0;
 	float fX=0, fY=0, fZ=0;
 	if ( iDataMode < 11 )
@@ -918,7 +938,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawGetCameraData( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int tcameraid = 0;
 	if ( iDataMode < 500 )
 	{
@@ -952,7 +972,7 @@ luaMessage** ppLuaMessages = NULL;
  int WrapAngle(lua_State *L) 
  { 
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	float fAngle = wrapangleoffset(lua_tonumber(L, 1));
 	float fDestAngle = wrapangleoffset(lua_tonumber(L, 2));
@@ -983,7 +1003,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetCameraFOV ( lua_State *L )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iCameraIndex = lua_tonumber(L, 1);
 	float fCameraFOV = lua_tonumber(L, 2);
@@ -997,7 +1017,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawSetPlayerData ( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( iDataMode == 1 )
 	{
  		//  apply force to push player
@@ -1018,7 +1038,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityLUACore ( lua_State *L, int iCode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	switch ( iCode )
@@ -1051,7 +1071,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityLUACore ( lua_State *L, int iCode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	if ( iIndex > 0 )
@@ -1141,7 +1161,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityActive(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	int iSetThisValue = lua_tonumber(L, 2);
@@ -1151,7 +1171,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityActivated(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	t.entityelement[iIndex].activated = lua_tonumber(L, 2);
@@ -1160,7 +1180,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityHasKey(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iIndex = lua_tonumber(L, 1);
 	 t.entityelement[iIndex].lua.haskey = lua_tonumber(L, 2);
@@ -1169,7 +1189,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityObjective(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iIndex = lua_tonumber(L, 1);
 	 t.entityelement[iIndex].eleprof.isobjective = lua_tonumber(L, 2);
@@ -1178,7 +1198,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityCollectable(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iIndex = lua_tonumber(L, 1);
 	 t.entityelement[iIndex].eleprof.iscollectable = lua_tonumber(L, 2);
@@ -1188,7 +1208,7 @@ luaMessage** ppLuaMessages = NULL;
  {
 	// bForceMode when true will ignore state of entity, only interested in adding to inventory (used for saved game restoring)
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 || n > 6 ) return 0;
 	int iReturnSlot = -1;
 	bool bItemHandled = false;
@@ -1471,7 +1491,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityUsed(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1495,7 +1515,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityExplodable(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1508,7 +1528,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetExplosionDamage(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1521,7 +1541,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetExplosionHeight(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1535,7 +1555,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetCustomExplosion(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1584,7 +1604,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityExplodable(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1600,7 +1620,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityObjective(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1617,7 +1637,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityProjectGlobal(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1632,7 +1652,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityCollectable(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1646,7 +1666,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityCollected(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1660,7 +1680,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityUsed(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1674,7 +1694,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityQuantity(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -1687,7 +1707,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityQuantity(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iQty = 0;
@@ -1702,7 +1722,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityWhoActivated(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int e = lua_tonumber(L, 1);
 	 int iReturnValue = 0;
@@ -1716,7 +1736,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityActive(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	int iReturnValue = 0;
@@ -1733,7 +1753,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityVisibility(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -1753,7 +1773,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntitySpawnAtStart(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	if (iEntityIndex > 0)
@@ -1765,7 +1785,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntitySpawnAtStart(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -1779,7 +1799,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityFilePath(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	char pReturnValue[1024];
 	strcpy ( pReturnValue, "" );
@@ -1799,7 +1819,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityClonedSinceStartValue(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iReturnValue = 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -1811,7 +1831,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetPreExitValue(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	if (iEntityIndex > 0)
@@ -1824,7 +1844,7 @@ luaMessage** ppLuaMessages = NULL;
  int RawSetEntityData ( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	if (iEntityIndex > 0 && iEntityIndex < t.entityelement.size())
@@ -1881,7 +1901,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityData ( lua_State *L, int iDataMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( iDataMode == 19 )
 	{
 		if ( n < 4 ) return 0;
@@ -2083,7 +2103,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityIfUsed(lua_State* L) 
  { 
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 const char* pString = lua_tostring(L, 2);
@@ -2093,7 +2113,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityIfUsed(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 lua_pushstring(L, t.entityelement[iEntityIndex].eleprof.ifused_s.Get());
@@ -2117,7 +2137,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityRelationshipData (lua_State *L, int iDataMode)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	int iNewValue = lua_tonumber(L, 2);
@@ -2137,7 +2157,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityRelationshipData (lua_State *L, int iDataMode)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1 || n > 2) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	int iSubscriptValue = lua_tonumber(L, 2);
@@ -2222,7 +2242,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntitiesWithinCone(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 8) return 0;
 	 float fX = lua_tonumber(L, 1);
 	 float fY = lua_tonumber(L, 2);
@@ -2261,7 +2281,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityWithinCone(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iIndex = lua_tonumber(L, 1);
 	 int iEntityIndex = 0;
@@ -2279,7 +2299,7 @@ luaMessage** ppLuaMessages = NULL;
  extern std::vector<int> g_iDestroyedEntitiesList;
  int GetNearestEntityDestroyed(lua_State* L)
  {
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iMode = lua_tonumber(L, 1);
 	 int iBestE = 0;
@@ -2318,7 +2338,7 @@ luaMessage** ppLuaMessages = NULL;
  }
  int GetNearestSoundDistance(lua_State *L)
  {
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 4) return 0;
 	 float fX = lua_tonumber(L, 1);
 	 float fY = lua_tonumber(L, 2);
@@ -2334,7 +2354,7 @@ luaMessage** ppLuaMessages = NULL;
  int MakeAISound (lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 6) return 0;
 	 t.tsx_f = lua_tonumber(L, 1);
 	 t.tsy_f = lua_tonumber(L, 2);
@@ -2351,7 +2371,7 @@ luaMessage** ppLuaMessages = NULL;
  #ifdef WICKEDENGINE
  int GetTerrainEditableArea(lua_State *L)
  {
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iDimension = lua_tonumber(L, 1);
 	 float fTerrainEditableAreaSize = 0.0f;
@@ -2450,7 +2470,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityString(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2472,7 +2492,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetLimbName(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iID = lua_tonumber(L, 1);
 	 LPSTR pString = "";
@@ -2499,7 +2519,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetEntityAnimation(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
 	int iAnimationSetIndex = lua_tonumber(L, 2);
@@ -2523,7 +2543,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationStart(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2542,7 +2562,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationFinish(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2561,7 +2581,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationFound(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2581,7 +2601,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetObjectAnimationFinished(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1 || n > 2) return 0;
 	 int iReturnValue = 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -2618,7 +2638,7 @@ luaMessage** ppLuaMessages = NULL;
  int AdjustLookAimSettings (lua_State *L, int iMode )
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 t.e = lua_tonumber(L, 1);
 	 float fValue = lua_tonumber(L, 2);
@@ -2651,7 +2671,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityFootfallMax(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2669,7 +2689,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityFootfallKeyframe(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int iReturnValue = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -2693,7 +2713,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationNameExistCore(lua_State *L, int iAnimQueryMode)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iReturnValue = 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -2790,7 +2810,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationTriggerFrame(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iReturnValue = -1;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -2830,7 +2850,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetEntityAnimationStartFinish(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 int iReturnValue = 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -2860,7 +2880,7 @@ luaMessage** ppLuaMessages = NULL;
  int CreateEntityIfNotPresent(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iNewE = -1;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -2964,7 +2984,7 @@ luaMessage** ppLuaMessages = NULL;
  int SpawnNewEntity(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iNewE = -1;
 	 int iEntityIndex = lua_tonumber(L, 1);
@@ -3032,7 +3052,7 @@ luaMessage** ppLuaMessages = NULL;
  int DeleteNewEntity(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 1) return 0;
 	 int iEntityIndex = lua_tonumber(L, 1);
 	 if (iEntityIndex > 0)
@@ -3089,7 +3109,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetAmmoClipMax(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -3101,7 +3121,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetAmmoClip(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -3113,7 +3133,7 @@ luaMessage** ppLuaMessages = NULL;
  int SetAmmoClip(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -3127,7 +3147,7 @@ luaMessage** ppLuaMessages = NULL;
  int FreezeEntityCore ( lua_State *L, int iCoreMode )
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( iCoreMode == 0 && n < 1 ) return 0;
 	if ( iCoreMode == 1 && n < 2 ) return 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -3165,7 +3185,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetTerrainHeight(lua_State *L)
  {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	float fReturnHeight = 0.0f;
 	float fX = lua_tonumber(L, 1);
@@ -3177,7 +3197,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetTerrainHeightFloat(lua_State* L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 2) return 0;
 	 float fReturnHeight = 0.0f;
 	 float fX = lua_tonumber(L, 1);
@@ -3324,7 +3344,7 @@ luaMessage** ppLuaMessages = NULL;
  int GetSurfaceHeight(lua_State *L)
  {
 	 lua = L;
-	 int n = lua_gettop(L);
+	 int n = LUA_GETTOP(L);
 	 if (n < 3) return 0;
 	 float fReturnHeight = 0.0f;
 	 float fX = lua_tonumber(L, 1);
@@ -3352,7 +3372,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 2 ) return 0;
 
@@ -3373,7 +3393,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 2 ) return 0;
 
@@ -3391,7 +3411,7 @@ luaMessage** ppLuaMessages = NULL;
 	 lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 1 ) return 0;
 
@@ -3409,7 +3429,7 @@ int AIEntityAddTarget(lua_State *L)
 	 lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 2 ) return 0;
 
@@ -3427,7 +3447,7 @@ int AIEntityRemoveTarget(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 2 ) return 0;
 
@@ -3445,7 +3465,7 @@ int AIEntityMoveToCover(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 3 ) return 0;
 
@@ -3464,7 +3484,7 @@ int AIGetEntityCanSee(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 5 ) return 0;
 
@@ -3483,7 +3503,7 @@ int AIGetEntityCanFire(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 1 ) return 0;
 
@@ -3500,7 +3520,7 @@ int AIGetEntityCanFire(lua_State *L)
 int AIGetEntityViewRange(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3513,7 +3533,7 @@ int AIGetEntityViewRange(lua_State *L)
 int AIGetEntitySpeed(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3527,7 +3547,7 @@ int AIGetEntitySpeed(lua_State *L)
 int AIGetTotalPaths(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n != 0 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3540,7 +3560,7 @@ int AIGetTotalPaths(lua_State *L)
 int AIGetPathCountPoints(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3553,7 +3573,7 @@ int AIGetPathCountPoints(lua_State *L)
 int AIPathGetPointX(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3566,7 +3586,7 @@ int AIPathGetPointX(lua_State *L)
 int AIPathGetPointY(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3579,7 +3599,7 @@ int AIPathGetPointY(lua_State *L)
 int AIPathGetPointZ(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3593,7 +3613,7 @@ int AIPathGetPointZ(lua_State *L)
 int AIGetTotalCover(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n != 0 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3606,7 +3626,7 @@ int AIGetTotalCover(lua_State *L)
 int AICoverGetPointX(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3619,7 +3639,7 @@ int AICoverGetPointX(lua_State *L)
 int AICoverGetPointY(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3632,7 +3652,7 @@ int AICoverGetPointY(lua_State *L)
 int AICoverGetPointZ(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3645,7 +3665,7 @@ int AICoverGetPointZ(lua_State *L)
 int AICoverGetAngle(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3658,7 +3678,7 @@ int AICoverGetAngle(lua_State *L)
 int AICoverGetIfUsed(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3674,7 +3694,7 @@ int MsgBox(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 1 ) return 0;
 
@@ -3686,7 +3706,7 @@ int MsgBox(lua_State *L)
 int AISetEntityMoveBoostPriority(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int iObj = lua_tointeger(L, 1);
 #ifdef WICKEDENGINE
@@ -3703,7 +3723,7 @@ int AIEntityGoToPosition(lua_State *L)
 	// (3) obj,x,z 
 	// (4) obj,x,y,z
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int iObj = lua_tointeger(L, 1);
 	float fGoToX = lua_tonumber(L, 2);
@@ -3750,7 +3770,7 @@ int AIEntityGoToPosition(lua_State *L)
 
 int AIGetEntityHeardSound(lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3770,7 +3790,7 @@ int AISetData ( lua_State *L, int iDataMode )
 		case 1 : iParamNum = 4;	break;
 		case 2 : iParamNum = 2;	break;
 	}
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < iParamNum ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3786,7 +3806,7 @@ int AISetData ( lua_State *L, int iDataMode )
 int AIGetData ( lua_State *L, int iDataMode )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 #ifdef WICKEDENGINE
 	// No subsystem for AI in MAX
@@ -3816,7 +3836,7 @@ int AIGetEntityIsMoving ( lua_State *L ) { return AIGetData ( L, 2 ); }
 int AIGetVisualSetting ( lua_State *L, int iMode )
 {
 	lua = L;
-	//int n = lua_gettop(L);
+	//int n = LUA_GETTOP(L);
 	//if ( n < 1 ) return 0;
 	switch ( iMode )
 	{
@@ -3871,7 +3891,7 @@ int AICouldSee(lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 4 ) return 0;
 
@@ -3893,7 +3913,7 @@ int AICouldSee(lua_State *L )
 int SetEntityAttachmentVisibility (lua_State *L, bool bVisible)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int e = lua_tonumber(L, 1);
 	if (e > 0 && e < t.entityelement.size())
@@ -3937,7 +3957,7 @@ int ShowEntityAttachment (lua_State *L) { return SetEntityAttachmentVisibility(L
 int SetDebuggingData (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	int instructionindex = lua_tonumber(L, 2);
@@ -3963,7 +3983,7 @@ int SetDebuggingData (lua_State *L)
 int RDFindPath (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 6) return 0;
 
 	// generate path
@@ -4008,7 +4028,7 @@ int RDGetPathPointCount(lua_State *L)
 int RDGetPathPointX(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iPointIndex = lua_tonumber(L, 1);
 	float thisPoint[3] = { 0, 0, 0 };
@@ -4020,7 +4040,7 @@ int RDGetPathPointX(lua_State *L)
 int RDGetPathPointY(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iPointIndex = lua_tonumber(L, 1);
 	float thisPoint[3] = { 0, 0, 0 };
@@ -4032,7 +4052,7 @@ int RDGetPathPointY(lua_State *L)
 int RDGetPathPointZ(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iPointIndex = lua_tonumber(L, 1);
 	float thisPoint[3] = { 0, 0, 0 };
@@ -4044,7 +4064,7 @@ int RDGetPathPointZ(lua_State *L)
 int StartMoveAndRotateToXYZ (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3 || n > 5) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -4084,7 +4104,7 @@ int StartMoveAndRotateToXYZ (lua_State *L)
 int MoveAndRotateToXYZ (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3 || n > 5) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -4115,7 +4135,7 @@ int MoveAndRotateToXYZ (lua_State *L)
 int SetEntityPathRotationMode (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	t.e = lua_tonumber(L, 1);
 	entity_lua_findcharanimstate();
@@ -4129,7 +4149,7 @@ int SetEntityPathRotationMode (lua_State *L)
 int RDIsWithinMesh(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4146,7 +4166,7 @@ int RDIsWithinMesh(lua_State *L)
 int RDIsWithinAndOverMesh(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4164,7 +4184,7 @@ int RDIsWithinAndOverMesh(lua_State* L)
 int RDGetYFromMeshPosition(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4182,7 +4202,7 @@ int RDBlockNavMeshCore(lua_State* L,int iWithShape)
 {
 	// block and unblock navmesh
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (iWithShape == 0 && n < 5) return 0;
 	if (iWithShape == 1 && n < 7) return 0;
 	float fX = lua_tonumber(L, 1);
@@ -4312,7 +4332,7 @@ int RDBlockNavMesh(lua_State *L)
 int DoTokenDrop(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4326,7 +4346,7 @@ int DoTokenDrop(lua_State* L)
 int GetTokenDropCount(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n > 0) return 0;
 	int iTokenDropCount = g_RecastDetour.GetTokenDropCount();
 	lua_pushnumber (L, iTokenDropCount);
@@ -4335,7 +4355,7 @@ int GetTokenDropCount(lua_State* L)
 int GetTokenDropX(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	float fValue = g_RecastDetour.GetTokenDropX(iIndex);
@@ -4345,7 +4365,7 @@ int GetTokenDropX(lua_State* L)
 int GetTokenDropY(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	float fValue = g_RecastDetour.GetTokenDropY(iIndex);
@@ -4355,7 +4375,7 @@ int GetTokenDropY(lua_State* L)
 int GetTokenDropZ(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	float fValue = g_RecastDetour.GetTokenDropZ(iIndex);
@@ -4365,7 +4385,7 @@ int GetTokenDropZ(lua_State* L)
 int GetTokenDropType(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	float fValue = g_RecastDetour.GetTokenDropType(iIndex);
@@ -4375,7 +4395,7 @@ int GetTokenDropType(lua_State* L)
 int GetTokenDropTimeLeft(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iIndex = lua_tonumber(L, 1);
 	float fValue = g_RecastDetour.GetTokenDropTimeLeft(iIndex);
@@ -4387,7 +4407,7 @@ int GetTokenDropTimeLeft(lua_State* L)
 int AdjustPositionToGetLineOfSight (lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 8) return 0;
 	int iIgnoreObjNo = lua_tonumber(L, 1);
 	float fX = lua_tonumber(L, 2);
@@ -4450,7 +4470,7 @@ int AdjustPositionToGetLineOfSight (lua_State *L)
 int SetCharacterMode(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	float e = lua_tonumber(L, 1);
 	float mode = lua_tonumber(L, 2);
@@ -4610,7 +4630,7 @@ int GetHeadTrackerNormalZ(lua_State *L)
 
 int Prompt3D(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	char pTextToRender[1024];
 	strcpy ( pTextToRender, lua_tostring(L, 1));
@@ -4621,7 +4641,7 @@ int Prompt3D(lua_State *L)
 
 int PositionPrompt3D(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4634,7 +4654,7 @@ int PositionPrompt3D(lua_State *L)
 
 int PromptLocalDuration(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	int storee = t.e;
 	cstr stores = t.s_s;
@@ -4666,7 +4686,7 @@ int LoadImage(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, send 0 result back
 	if ( n < 1 )
@@ -4709,7 +4729,7 @@ int GetImageWidth(lua_State *L)
 {
 	// get LUA param
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) { lua_pushnumber ( L , 0 ); return 1; }
 
 	// get image width
@@ -4727,7 +4747,7 @@ int GetImageHeight(lua_State *L)
 {
 	// get LUA param
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) { lua_pushnumber ( L , 0 ); return 1; }
 
 	// get image width
@@ -4745,7 +4765,7 @@ int DeleteSpriteImage(lua_State *L)
 {
 	// get LUA param
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) { lua_pushnumber ( L , 0 ); return 1; }
 
 	// get image width
@@ -4768,7 +4788,7 @@ int CreateSprite(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, send 0 result back
 	if ( n < 1 )
@@ -4798,7 +4818,7 @@ int CreateSprite(lua_State *L)
 int PasteSprite(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) { lua_pushnumber ( L , 0 ); return 1; }
 	int iID = lua_tointeger(L, 1);
 	if (iID > 0)
@@ -4811,7 +4831,7 @@ int PasteSprite(lua_State *L)
 int PasteSpritePosition(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) { lua_pushnumber ( L , 0 ); return 1; }
 	int iID = lua_tointeger(L, 1);
 	if (iID > 0)
@@ -4830,7 +4850,7 @@ int PasteSpritePosition(lua_State *L)
 int SetSpriteScissor(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -4849,7 +4869,7 @@ int SetSpriteImage(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 2 )
@@ -4872,7 +4892,7 @@ int SetSpritePosition(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 3 )
@@ -4901,7 +4921,7 @@ int SetSpritePosition(lua_State *L)
 int SetSpritePriorityForLUA(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int iID = lua_tointeger(L, 1);
 	int iPriority = lua_tointeger(L, 2);
@@ -4920,7 +4940,7 @@ int SetSpriteDepth(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 2 )
@@ -4944,7 +4964,7 @@ int SetSpriteColor(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 5 )
@@ -4971,7 +4991,7 @@ int SetSpriteAngle(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 2 )
@@ -4994,7 +5014,7 @@ int DeleteSprite(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -5016,7 +5036,7 @@ int SetSpriteOffset(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 3 )
@@ -5064,7 +5084,7 @@ int SetSpriteSize ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 3 )
@@ -5156,7 +5176,7 @@ int BackdropOnForLUA ( lua_State *L )
 
 int LoadGlobalSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	const char* pFilename = lua_tostring(L, 1);
 	int iID = g.globalsoundoffset + lua_tointeger(L, 2);
@@ -5166,7 +5186,7 @@ int LoadGlobalSound ( lua_State *L )
 }
 int PlayGlobalSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	if ( SoundExist(iID)==1 )
@@ -5177,7 +5197,7 @@ int PlayGlobalSound ( lua_State *L )
 }
 int LoopGlobalSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	if ( SoundExist(iID)==1 )
@@ -5188,7 +5208,7 @@ int LoopGlobalSound ( lua_State *L )
 }
 int StopGlobalSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	if ( SoundExist(iID)==1 )
@@ -5199,7 +5219,7 @@ int StopGlobalSound ( lua_State *L )
 }
 int DeleteGlobalSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	if ( SoundExist(iID)==1 )
@@ -5210,7 +5230,7 @@ int DeleteGlobalSound ( lua_State *L )
 }
 int SetGlobalSoundSpeed ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	int iSpeed = lua_tointeger(L, 2);
@@ -5222,7 +5242,7 @@ int SetGlobalSoundSpeed ( lua_State *L )
 }
 int SetGlobalSoundVolume ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	int iVolume = lua_tointeger(L, 2);
@@ -5237,7 +5257,7 @@ int SetGlobalSoundVolume ( lua_State *L )
 int GetGlobalSoundExist(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	lua_pushinteger ( L , SoundExist ( iID ) );
@@ -5246,7 +5266,7 @@ int GetGlobalSoundExist(lua_State *L)
 int GetGlobalSoundPlaying(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	lua_pushinteger ( L , SoundPlaying ( iID ) );
@@ -5255,7 +5275,7 @@ int GetGlobalSoundPlaying(lua_State *L)
 int GetGlobalSoundLooping(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iID = g.globalsoundoffset + lua_tointeger(L, 1);
 	lua_pushinteger ( L , SoundLooping ( iID ) );
@@ -5265,7 +5285,7 @@ int GetGlobalSoundLooping(lua_State *L)
 int GetSoundPlaying(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tointeger(L, 1);
 	int v = lua_tointeger(L, 2);
@@ -5300,7 +5320,7 @@ int SetRawSoundData ( lua_State *L, int iDataMode )
 		case 3 : iParamNum = 1;	break;
 		case 4 : iParamNum = 2;	break;
 	}
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < iParamNum ) return 0;
 	int iSoundID = lua_tonumber(L, 1);
 	if (iSoundID > 0 && SoundExist(iSoundID) == 1)
@@ -5327,7 +5347,7 @@ int SetRawSoundData ( lua_State *L, int iDataMode )
 int GetRawSoundData ( lua_State *L, int iDataMode )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	switch ( iDataMode )
 	{
@@ -5348,7 +5368,7 @@ int RawSoundPlaying ( lua_State *L ) { return GetRawSoundData ( L, 2 ); }
 int GetEntityRawSound(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	int iE = lua_tonumber(L, 1);
 	int iSoundSlot = lua_tonumber(L, 2);
@@ -5398,7 +5418,7 @@ int StopAmbientMusicTrack(lua_State* L)
 int SetAmbientMusicTrackVolume(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	if (t.gamevisuals.bEndableAmbientMusicTrack)
 	{
@@ -5441,7 +5461,7 @@ int StopCombatMusicTrack(lua_State* L)
 int SetCombatMusicTrackVolume(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iFreeSoundID = g.temppreviewsoundoffset + 5;
 	if (SoundExist(iFreeSoundID) == 1)
@@ -5470,7 +5490,7 @@ int GetCombatMusicTrackPlaying(lua_State *L)
 int SetSoundMusicMode(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	extern bool g_bSoundIsMusic[65536];
 	int iSoundIndex = lua_tonumber(L, 1);
@@ -5481,7 +5501,7 @@ int SetSoundMusicMode(lua_State* L)
 int GetSoundMusicMode(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	extern bool g_bSoundIsMusic[65536];
 	int iSoundIndex = lua_tonumber(L, 1);
@@ -5497,7 +5517,7 @@ int GetSoundMusicMode(lua_State* L)
 int GetSpeech(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iRunning = 0;
 	int iE = lua_tonumber(L, 1);
@@ -5527,7 +5547,7 @@ int GetTimeElapsed ( lua_State *L )
 int GetKeyState ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	int iKeyValue = lua_tonumber(L, 1);
 	lua_pushnumber ( L, KeyState(g.keymap[iKeyValue]) );
@@ -5537,7 +5557,7 @@ int GetKeyState ( lua_State *L )
 int SetGlobalTimer (lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iRestoreToTime = lua_tonumber(L, 1);
 	extern DWORD g_dwAppLocalTimeStart;
@@ -5581,7 +5601,7 @@ int GetDesktopHeight ( lua_State *L )
 int CurveValue ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	float a = lua_tonumber(L, 1);
 	float b = lua_tonumber(L, 2);
@@ -5592,7 +5612,7 @@ int CurveValue ( lua_State *L )
 int CurveAngle ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	float a = lua_tonumber(L, 1);
 	float b = lua_tonumber(L, 2);
@@ -5603,7 +5623,7 @@ int CurveAngle ( lua_State *L )
 int PositionMouse ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	float fScreenX = lua_tonumber(L, 1);
 	float fScreenY = lua_tonumber(L, 2);
@@ -5629,7 +5649,7 @@ int GetCharacterControllerDucking ( lua_State *L )
 int WrapValue ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	float a = lua_tonumber(L, 1);
 	lua_pushnumber ( L, WrapValue(a) );
@@ -5680,7 +5700,7 @@ int GetPlrObjectAngleZ ( lua_State *L )
 int GetGroundHeight ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	float x = lua_tonumber(L, 1);
 	float z = lua_tonumber(L, 2);
@@ -5690,7 +5710,7 @@ int GetGroundHeight ( lua_State *L )
 int NewXValue ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	float a = lua_tonumber(L, 1);
 	float b = lua_tonumber(L, 2);
@@ -5701,7 +5721,7 @@ int NewXValue ( lua_State *L )
 int NewZValue ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	float a = lua_tonumber(L, 1);
 	float b = lua_tonumber(L, 2);
@@ -5712,7 +5732,7 @@ int NewZValue ( lua_State *L )
 
 int ControlDynamicCharacterController ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 8 ) return 0;
 	float fAngleY = lua_tonumber(L, 1);
 	float fAngleX = lua_tonumber(L, 2);
@@ -5859,7 +5879,7 @@ int ControlDynamicCharacterController ( lua_State *L )
 int SetCharacterDirectionOverride(lua_State* L)
 {
 	// Check for the correct parameter count.
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 7) 
 		return 0;
 
@@ -5879,7 +5899,7 @@ int SetCharacterDirectionOverride(lua_State* L)
 
 int LimitSwimmingVerticalMovement(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1)
 		return 0;
 
@@ -5900,7 +5920,7 @@ int GetCharacterFallDistance ( lua_State *L )
 }
 int RayTerrain ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 6 ) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -5933,7 +5953,7 @@ int IntersectCore (lua_State* L, int iMode)
 	OPTICK_EVENT();
 	#endif
 	// iMode : 0=dynamic, 1=staticonly, 2-performant, 3-dynamic and use terrain hit to adjust ray to detect objects only
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (iMode == 2)
 	{
 		if (n < 9) return 0;
@@ -6014,7 +6034,7 @@ int IntersectCore (lua_State* L, int iMode)
 
 int IntersectGetLastHitBone(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1)
 	{
 		lua_pushstring(L, "");
@@ -6055,7 +6075,7 @@ int IntersectGetLastHitBone(lua_State* L)
 
 int IntersectGetLastHitFrame(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1)
 	{
 		lua_pushstring(L, "");
@@ -6143,7 +6163,7 @@ int GetIntersectCollisionNZ ( lua_State *L )
 int PositionCamera ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	PositionCamera ( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
 	return 0;
@@ -6151,7 +6171,7 @@ int PositionCamera ( lua_State *L )
 int PointCamera ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	PointCamera ( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
 	return 0;
@@ -6159,14 +6179,14 @@ int PointCamera ( lua_State *L )
 int MoveCamera ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	MoveCamera ( lua_tonumber(L, 1), lua_tonumber(L, 2) );
 	return 0;
 }
 int GetObjectExist ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, ObjectExist(lua_tonumber(L, 1)) );
 	return 1;
@@ -6195,7 +6215,7 @@ void GunInitAnimationSettings(void)
 }
 int ForceGunUnderWater(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	bForceGunUnderWater = lua_tonumber(L, 1);
 	return 0;
@@ -6203,14 +6223,14 @@ int ForceGunUnderWater(lua_State* L)
 
 int GetGunEmissiveStrength(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	lua_pushnumber(L, t.gun[t.gunid].settings.fEmissiveStrength);
 	return 1;
 }
 int SetGunEmissiveStrength(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	float emi = lua_tonumber(L, 1);
 	sObject* pGunObject = GetObjectData(t.currentgunobj);
@@ -6221,7 +6241,7 @@ int SetGunEmissiveStrength(lua_State* L)
 
 int GetGunAnimationFramesFromName(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	char AnimName[512];
 	float fFoundStart = 0, fFoundFinish = 0;
@@ -6275,7 +6295,7 @@ int GetGunAnimationFramesFromName(lua_State* L)
 }
 int GunAnimationSetFrame(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	float start = lua_tonumber(L, 1);
 	gun_SetObjectFrame(t.currentgunobj, start);
@@ -6283,7 +6303,7 @@ int GunAnimationSetFrame(lua_State* L)
 }
 int GunAnimationPlaying(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	//if (n < 1) return 0;
 	float frame = GetFrame(t.currentgunobj);
 	if (iGunAnimMode == 0)
@@ -6333,7 +6353,7 @@ int GunAnimationPlaying(lua_State* L)
 }
 int SetGunAnimationSpeed(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	float speed = lua_tonumber(L, 1);
 	if(fOldGunSpeed == 0)
@@ -6344,7 +6364,7 @@ int SetGunAnimationSpeed(lua_State* L)
 int PlayGunAnimation(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	float start = lua_tonumber(L, 1);
 	float end = lua_tonumber(L, 2);
@@ -6364,7 +6384,7 @@ int PlayGunAnimation(lua_State* L)
 int StopGunAnimation(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	gun_StopObject(t.currentgunobj);
 	if (fOldGunSpeed > 1)
 		gun_SetObjectSpeed(t.currentgunobj, fOldGunSpeed);
@@ -6377,7 +6397,7 @@ int StopGunAnimation(lua_State* L)
 int LoopGunAnimation(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	float start = lua_tonumber(L, 1);
 	float end = lua_tonumber(L, 2);
@@ -6400,14 +6420,14 @@ int LoopGunAnimation(lua_State* L)
 int SetObjectFrame (lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	SetObjectFrame (lua_tonumber(L, 1), lua_tonumber(L, 2));
 	return 0;
 }
 int GetObjectFrame ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, GetFrame(lua_tonumber(L, 1)) );
 	return 1;
@@ -6415,28 +6435,28 @@ int GetObjectFrame ( lua_State *L )
 int SetObjectSpeed ( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 2 ) return 0;
 	SetObjectSpeed ( lua_tonumber(L, 1), lua_tonumber(L, 2) );
 	return 0;
 }
 int GetObjectSpeed ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, GetSpeed(lua_tonumber(L, 1)) );
 	return 1;
 }
 int PositionObject ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	PositionObject ( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
 	return 0;
 }
 int ScaleObjectXYZ(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	ScaleObject(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	return 0;
@@ -6444,7 +6464,7 @@ int ScaleObjectXYZ(lua_State *L)
 // Add Fast Quaternion functions
 int QuatMultiply(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 8) return 0;
 
 	GGQUATERNION q1( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
@@ -6472,7 +6492,7 @@ int QuatMultiply(lua_State *L)
 }
 int QuatToEuler(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 
 	GGQUATERNION q( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
@@ -6505,7 +6525,7 @@ int QuatToEuler(lua_State *L)
 }
 int EulerToQuat(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float pitch = lua_tonumber( L, 1 );
 	float yaw   = lua_tonumber( L, 2 );
@@ -6531,7 +6551,7 @@ int EulerToQuat(lua_State *L)
 }
 int QuatSLERP(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 9) return 0;
 	const GGQUATERNION qa(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	const GGQUATERNION qb(lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7), lua_tonumber(L, 8));
@@ -6548,7 +6568,7 @@ int QuatSLERP(lua_State *L)
 }
 int QuatLERP(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 9) return 0;
 
 	const GGQUATERNION qa(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
@@ -6571,7 +6591,7 @@ int QuatLERP(lua_State *L)
 
 int ScreenCoordsToPercent(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -6585,7 +6605,7 @@ int ScreenCoordsToPercent(lua_State* L)
 
 int LuaConvert2DTo3D(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -6614,7 +6634,7 @@ int LuaConvert2DTo3D(lua_State* L)
 
 int LuaConvert3DTo2D(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float fX = lua_tonumber(L, 1);
 	float fY = lua_tonumber(L, 2);
@@ -6629,28 +6649,28 @@ int LuaConvert3DTo2D(lua_State* L)
 // end of Fast Quaternion functions
 int RotateObject ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	RotateObject ( lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4) );
 	return 0;
 }
 int GetObjectAngleX ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, ObjectAngleX(lua_tonumber(L, 1)) );
 	return 1;
 }
 int GetObjectAngleY ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, ObjectAngleY(lua_tonumber(L, 1)) );
 	return 1;
 }
 int GetObjectAngleZ ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	lua_pushnumber ( L, ObjectAngleZ(lua_tonumber(L, 1)) );
 	return 1;
@@ -6686,7 +6706,7 @@ int GetObjectPosAng( lua_State *L )
 }
 int GetObjectColBox( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber( L, 1 );
 	if (!ConfirmObjectInstance( iID ) )
@@ -6704,7 +6724,7 @@ int GetObjectColBox( lua_State *L )
 }
 int GetObjectCentre( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -6719,7 +6739,7 @@ int GetObjectCentre( lua_State *L )
 }
 int GetObjectColCentre(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID)) return 0;
@@ -6732,7 +6752,7 @@ int GetObjectColCentre(lua_State *L)
 }
 int GetObjectScales( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -6747,7 +6767,7 @@ int GetObjectScales( lua_State *L )
 }
 int PushObject( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -6765,7 +6785,7 @@ int PushObject( lua_State *L )
 }
 int ConstrainObjMotion( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -6775,7 +6795,7 @@ int ConstrainObjMotion( lua_State *L )
 }
 int ConstrainObjRotation( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 4 ) return 0;
 	int iID = lua_tonumber( L, 1 );
 	if ( !ConfirmObjectInstance(iID) )
@@ -6785,7 +6805,7 @@ int ConstrainObjRotation( lua_State *L )
 }
 int CreateSingleHinge( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 7 ) return 0;
 	int iID = lua_tonumber( L, 1 );
 	if ( !ConfirmObjectInstance(iID) )
@@ -6856,7 +6876,7 @@ int CreateSliderDouble( lua_State *L )
 }
 int SetSliderLimits(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6877,7 +6897,7 @@ int RemoveObjectConstraints( lua_State *L )
 }
 int RemoveConstraint( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iC = lua_tonumber( L, 1 );
 
@@ -6886,7 +6906,7 @@ int RemoveConstraint( lua_State *L )
 }
 int SetObjectDamping( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	int iID = lua_tonumber( L, 1 );
 	if ( !ConfirmObjectInstance( iID ) )
@@ -6898,7 +6918,7 @@ int SetObjectDamping( lua_State *L )
 }
 int SetHingeLimits(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6928,7 +6948,7 @@ int SetHingeLimits(lua_State *L)
 }
 int SetHingeMotor( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6937,7 +6957,7 @@ int SetHingeMotor( lua_State *L )
 }
 int SetSliderMotor(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6946,7 +6966,7 @@ int SetSliderMotor(lua_State *L)
 }
 int GetHingeAngle(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6955,7 +6975,7 @@ int GetHingeAngle(lua_State *L)
 }
 int GetSliderPosition(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -6964,7 +6984,7 @@ int GetSliderPosition(lua_State *L)
 }
 int SetBodyScaling(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iC = lua_tonumber(L, 1);
 
@@ -7001,7 +7021,7 @@ int PhysicsRayCast( lua_State *L )
 }
 int GetObjectNumCollisions(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -7070,7 +7090,7 @@ int AddObjectCollisionCheck( lua_State *L )
 }
 int RemoveObjectCollisionCheck(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iID = lua_tonumber(L, 1);
 	if (!ConfirmObjectInstance(iID))
@@ -7128,7 +7148,7 @@ int RotateGlobalAngleY(lua_State *L)
 {
 	lua = L;
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	// Not enough params, return out
 	if (n < 4)
 		return 0;
@@ -7152,7 +7172,7 @@ int RotateGlobalAngleY(lua_State *L)
 int GetLightAngle(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1)
 		return 0;
 
@@ -7184,7 +7204,7 @@ int GetLightAngle(lua_State *L)
 int GetLightEuler(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int i = lua_tointeger(L, 1);
 	if (i > 0 && i <= g.infinilightmax && t.infinilight[i].used == 1)
@@ -7272,7 +7292,7 @@ int SetLightAngle(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if (n < 4)
@@ -7300,7 +7320,7 @@ int SetLightAngle(lua_State *L)
 int SetLightEuler(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int i = lua_tonumber(L, 1);
 	if (i > 0 && i <= g.infinilightmax && t.infinilight[i].used == 1)
@@ -7336,7 +7356,7 @@ int SetLightRange( lua_State *L )
 {
 	lua = L;
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	// Not enough params, return out
 	if (n < 2)
 		return 0;
@@ -7368,7 +7388,7 @@ int RunCharLoop ( lua_State *L )
 }
 int TriggerWaterRipple ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	g.decalx=lua_tonumber(L, 1);
 	g.decaly=lua_tonumber(L, 2);
@@ -7388,7 +7408,7 @@ int TriggerWaterRipple ( lua_State *L )
 
 int TriggerWaterRippleSize(lua_State *L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	g.decalx = lua_tonumber(L, 1);
 	g.decaly = lua_tonumber(L, 2);
@@ -7408,7 +7428,7 @@ int TriggerWaterRippleSize(lua_State *L)
 }
 int TriggerWaterSplash(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	g.decalx = lua_tonumber(L, 1);
 	g.decaly = lua_tonumber(L, 2);
@@ -7426,7 +7446,7 @@ int TriggerWaterSplash(lua_State* L)
 }
 int PlayFootfallSound ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 5 || n > 7 ) return 0;
 	int footfalltype = lua_tonumber(L, 1);
 	float fX = lua_tonumber(L, 2);
@@ -7485,7 +7505,7 @@ int SetUnderwaterOff ( lua_State *L )
 }
 int SetWorldGravity(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4)
 		return 0;
 
@@ -7501,7 +7521,7 @@ int SetWorldGravity(lua_State* L)
 
 int SetShaderVariable ( lua_State *L )
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 6 ) return 0;
 	int iShaderIndex = lua_tonumber(L, 1);
 	char pConstantName[512];
@@ -7537,7 +7557,7 @@ int GetCloudDensity(lua_State* L)
 }
 int SetCloudDensity(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.SkyCloudiness = lua_tonumber(L, 1);
 	Wicked_Update_Cloud((void*) &t.gamevisuals);
@@ -7550,7 +7570,7 @@ int GetCloudCoverage(lua_State* L)
 }
 int SetCloudCoverage(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.SkyCloudCoverage = lua_tonumber(L, 1);
 	Wicked_Update_Cloud((void*)&t.gamevisuals);
@@ -7563,7 +7583,7 @@ int GetCloudHeight(lua_State* L)
 }
 int SetCloudHeight(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.SkyCloudHeight = lua_tonumber(L, 1);
 	Wicked_Update_Cloud((void*)&t.gamevisuals);
@@ -7576,7 +7596,7 @@ int GetCloudThickness(lua_State* L)
 }
 int SetCloudThickness(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.SkyCloudThickness = lua_tonumber(L, 1);
 	Wicked_Update_Cloud((void*)&t.gamevisuals);
@@ -7589,7 +7609,7 @@ int GetCloudSpeed(lua_State* L)
 }
 int SetCloudSpeed(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.SkyCloudSpeed = lua_tonumber(L, 1);
 	Wicked_Update_Cloud((void*)&t.gamevisuals);
@@ -7599,7 +7619,7 @@ int SetCloudSpeed(lua_State* L)
 //PE: Other Shaders
 int SetTreeWind(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.gamevisuals.tree_wind = lua_tonumber(L, 1);
 	//void WickedCall_UpdateTreeWind(float wind)
@@ -7932,7 +7952,7 @@ int CheckScreenToggles(lua_State* L)
 int ScreenToggle(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L); if (n < 1) return 0;
+	int n = LUA_GETTOP(L); if (n < 1) return 0;
 	char pScreenTitle[512];
 	strcpy(pScreenTitle, lua_tostring(L, 1));
 	t.game.activeStoryboardScreen = -1;
@@ -7946,7 +7966,7 @@ int ScreenToggle(lua_State* L)
 int ScreenToggleByKey(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L); if (n < 1) return 0;
+	int n = LUA_GETTOP(L); if (n < 1) return 0;
 	char pKeyToSearchFor[512];
 	strcpy(pKeyToSearchFor, lua_tostring(L, 1));
 	t.game.activeStoryboardScreen = -1;
@@ -8729,7 +8749,7 @@ void darklua_refreshhaskeystatefor(LPSTR keyobjectname)
 int MoveInventoryItem (lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 	char pNameOfInventoryFrom[512];
 	strcpy(pNameOfInventoryFrom, lua_tostring(L, 1));
@@ -8924,7 +8944,7 @@ int DeleteAllInventoryContainers (lua_State* L)
 int AddInventoryItem (lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	char pNameOfInventoryTo[512];
 	strcpy(pNameOfInventoryTo, lua_tostring(L, 1));
@@ -8957,7 +8977,7 @@ int SetGamePlayerControlData ( lua_State *L, int iDataMode )
 	lua = L;
 	int iSrc = 0;
 	int iDest = 0;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( iDataMode < 500 )
 	{
 		if ( n < 1 ) return 0;
@@ -9293,7 +9313,7 @@ int GetGamePlayerControlData ( lua_State *L, int iDataMode )
 {
 	lua = L;
 	int iSrc = 0;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( iDataMode >= 500 )
 	{
 		if ( iDataMode >= 1001 )
@@ -9689,7 +9709,7 @@ int GetPlayerAttacking (lua_State* L)
 int PushPlayer (lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	// trigger short or long player arms animation (jerked back; typically when counter attacked)
 	t.gunmode = 1011;
@@ -10179,7 +10199,7 @@ int GetEntityAnimFinish ( lua_State *L ) { return GetGamePlayerControlData ( L, 
 int CombatControllerLaserGuidedHit(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iObjToHit = lua_tonumber(L, 1);
 	float fX=0, fY=0, fZ=0;
@@ -10194,7 +10214,7 @@ int CombatControllerLaserGuidedHit(lua_State* L)
 int SetRotationYSlowly ( lua_State *L ) 
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 3 ) return 0;
 	int iEntityID = lua_tonumber( L, 1 );
 	float fDestAngle = lua_tonumber( L, 2 );
@@ -10221,7 +10241,7 @@ int ParticlesGetFreeEmitter ( lua_State *L )
 int ParticlesLoadImage(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	int iID = 0;
@@ -10241,7 +10261,7 @@ int ParticlesLoadImage(lua_State *L)
 int ParticlesLoadEffect(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 
 	char pFileName[256];
@@ -10254,7 +10274,7 @@ int ParticlesLoadEffect(lua_State *L)
 int ParticlesSetFrames(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 
 	ravey_particles_set_frames(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
@@ -10264,7 +10284,7 @@ int ParticlesSetFrames(lua_State *L)
 int ParticlesSetSpeed(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 7) return 0;
 
 	ravey_particles_set_speed(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4),
@@ -10275,7 +10295,7 @@ int ParticlesSetSpeed(lua_State *L)
 int ParticlesSetGravity(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 
 	ravey_particles_set_gravity(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
@@ -10285,7 +10305,7 @@ int ParticlesSetGravity(lua_State *L)
 int ParticlesSetOffset(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 7) return 0;
 
 	ravey_particles_set_offset(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4),
@@ -10296,7 +10316,7 @@ int ParticlesSetOffset(lua_State *L)
 int ParticlesSetAngle(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 
 	ravey_particles_set_angle(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
@@ -10306,7 +10326,7 @@ int ParticlesSetAngle(lua_State *L)
 int ParticlesSetRotation(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 8) return 0;
 
 	ravey_particles_set_rotate(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4),
@@ -10317,7 +10337,7 @@ int ParticlesSetRotation(lua_State *L)
 int ParticlesSetScale(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 
 	ravey_particles_set_scale(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4),
@@ -10328,7 +10348,7 @@ int ParticlesSetScale(lua_State *L)
 int ParticlesSetAlpha(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 
 	ravey_particles_set_alpha(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4),
@@ -10358,7 +10378,7 @@ int ParticlesSetLife( lua_State *L )
 int ParticlesSetWindVector(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 
 	ravey_particles_set_wind_vector(lua_tonumber(L, 1), lua_tonumber(L, 2));
@@ -10368,7 +10388,7 @@ int ParticlesSetWindVector(lua_State *L)
 int ParticlesSetNoWind(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	ravey_particles_set_no_wind(lua_tonumber(L, 1));
@@ -10378,7 +10398,7 @@ int ParticlesSetNoWind(lua_State *L)
 int ParticlesSpawnParticle(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	if (n < 4)
@@ -10395,7 +10415,7 @@ int ParticlesSpawnParticle(lua_State *L)
 int ParticlesAddEmitterCore(lua_State *L, int iExtended)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (iExtended == 0)
 	{
 		if (n < 28) return 0;
@@ -10532,7 +10552,7 @@ int ParticlesAddEmitterEx( lua_State *L )
 int ParticlesDeleteEmitter( lua_State *L )
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if ( n < 1 ) return 0;
 	t.tRaveyParticlesEmitterID = lua_tonumber(L, 1);
 	ravey_particles_delete_emitter ( );
@@ -10544,7 +10564,7 @@ int ParticlesDeleteEmitter( lua_State *L )
 int EffectStart(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int e = lua_tonumber(L, 1);
 	t.entityelement[e].eleprof.newparticle.bParticle_Show_At_Start = 1;
@@ -10553,7 +10573,7 @@ int EffectStart(lua_State* L)
 int EffectStop(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int e = lua_tonumber(L, 1);
 	t.entityelement[e].eleprof.newparticle.bParticle_Show_At_Start = 0;
@@ -10562,7 +10582,7 @@ int EffectStop(lua_State* L)
 int EffectSetLocalPosition(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int e = lua_tonumber(L, 1);
 	float x = lua_tonumber(L, 2);
@@ -10577,7 +10597,7 @@ int EffectSetLocalPosition(lua_State* L)
 int EffectSetLocalRotation(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int e = lua_tonumber(L, 1);
 	float x = lua_tonumber(L, 2);
@@ -10592,7 +10612,7 @@ int EffectSetLocalRotation(lua_State* L)
 int EffectSetSpeed(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	float speed = lua_tonumber(L, 2) / 100.0f;
@@ -10603,7 +10623,7 @@ int EffectSetSpeed(lua_State* L)
 int EffectSetOpacity(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	float opacity = lua_tonumber(L, 2) / 100.0f;
@@ -10614,7 +10634,7 @@ int EffectSetOpacity(lua_State* L)
 int EffectSetParticleSize(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	float opacity = lua_tonumber(L, 2) / 100.0f;
@@ -10625,7 +10645,7 @@ int EffectSetParticleSize(lua_State* L)
 int EffectSetBurstMode(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	int automode = lua_tonumber(L, 2);
@@ -10635,7 +10655,7 @@ int EffectSetBurstMode(lua_State* L)
 int EffectFireBurst(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int e = lua_tonumber(L, 1);
 	t.entityelement[e].eleprof.newparticle.bParticle_Fire = true;
@@ -10644,7 +10664,7 @@ int EffectFireBurst(lua_State* L)
 int EffectSetFloorReflection(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	int e = lua_tonumber(L, 1);
 	int active = lua_tonumber(L, 2);
@@ -10656,7 +10676,7 @@ int EffectSetFloorReflection(lua_State* L)
 int EffectSetBounciness(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	float bounciness = lua_tonumber(L, 2) / 100.0f;
@@ -10667,7 +10687,7 @@ int EffectSetBounciness(lua_State* L)
 int EffectSetColor(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int e = lua_tonumber(L, 1);
 	float r = lua_tonumber(L, 2);
@@ -10682,7 +10702,7 @@ int EffectSetColor(lua_State* L)
 int EffectSetLifespan(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	int e = lua_tonumber(L, 1);
 	float lifespan = lua_tonumber(L, 2) * 10.0f;
@@ -10753,7 +10773,7 @@ void CleanUpEmitterEffects(void)
 int WParticleEffectLoad(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	// disable wicked particles (for testing/etc)
@@ -10808,7 +10828,7 @@ int WParticleEffectLoad(lua_State* L)
 int WParticleEffectPosition(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 
 	Entity root = lua_tonumber(L, 1);
@@ -10868,7 +10888,7 @@ int WParticleEffectPosition(lua_State* L)
 int WParticleEffectVisible(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 
 	Entity root = lua_tonumber(L, 1);
@@ -10900,7 +10920,7 @@ int WParticleEffectVisible(lua_State* L)
 int WParticleEffectAction(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	Entity root = lua_tonumber(L, 1);
 	int iAction = lua_tonumber(L, 2);
@@ -10920,7 +10940,7 @@ int WParticleEffectAction(lua_State* L)
 //PE: Missing command for position sound if different then entity position.
 int entity_lua_positionsound(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 5) return 0;
 	int e = lua_tonumber(L, 1);
 	int v = lua_tonumber(L, 2);
@@ -10940,7 +10960,7 @@ int entity_lua_positionsound(lua_State* L)
 int LoadTracerImage(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 2) return 0;
 	char FileName[MAX_PATH];
 	strcpy(FileName, lua_tostring(L, 1));
@@ -10958,7 +10978,7 @@ int LoadTracerImage(lua_State* L)
 int AddTracer(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 16) return 0;
 
 	float fX = lua_tonumber(L, 1);
@@ -11080,7 +11100,7 @@ int SetFlashLight ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -11101,7 +11121,7 @@ int SetFlashLightPosition(lua_State* L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if (n < 3)
@@ -11135,7 +11155,7 @@ int SetPlayerRun ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -11153,7 +11173,7 @@ int SetFont ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 2 )
@@ -11210,7 +11230,7 @@ int SetOcclusion ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -11228,7 +11248,7 @@ int SetFlashLightKeyEnabled ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -11249,7 +11269,7 @@ int SetPlayerWeapons ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 1 )
@@ -11287,7 +11307,7 @@ int SetPlayerWeapons ( lua_State *L )
 int FirePlayerWeapon(lua_State *L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	int firingmode = lua_tointeger(L, 1);
@@ -11310,7 +11330,7 @@ int SetAttachmentVisible ( lua_State *L )
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	// Not enough params, return out
 	if ( n < 2 )
@@ -11343,7 +11363,7 @@ int Include(lua_State *L)
 	lua = L;
 
 	// get number of arguments
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 
 	if ( n < 1 ) return 0;
 
@@ -11384,7 +11404,7 @@ int GetCharacterForwardZ(lua_State* L)
 int SetMaterialData(lua_State *L, int mode)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	int iEntityID = lua_tonumber(L, 1);
 	int iObjID = t.entityelement[iEntityID].obj;
 	if (!ConfirmObjectInstance (iObjID)) return 0;
@@ -11481,7 +11501,7 @@ int SetMaterialData(lua_State *L, int mode)
 int GetMaterialData(lua_State *L, int mode)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int iEntityID = lua_tonumber(L, 1);
 	int iObjID = t.entityelement[iEntityID].obj;
@@ -11566,7 +11586,7 @@ int SetEntityTextureOffset (lua_State *L) { return SetMaterialData (L, 23); }
 int GetEntityInZoneWithFilter(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	int storee = t.e;
@@ -11593,7 +11613,7 @@ int GetEntityInZoneWithFilter(lua_State* L)
 int IsPointWithinZone(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 4) return 0;
 	int iIsInZone = 0;
 	int iEntityIndex = lua_tonumber(L, 1);
@@ -11628,7 +11648,7 @@ int IsPointWithinZone(lua_State* L)
 int SetWeaponArmsVisible(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 
 	extern bool bHideWeaponsMuzzle;
@@ -11672,7 +11692,7 @@ int IsPlayerInGame(lua_State* L)
 int SetLevelFadeoutEnabled(lua_State* L)
 {
 	lua = L;
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int newFadeoutState = lua_tonumber(L, 1);
 	t.postprocessings.fadeinenabled = newFadeoutState;
@@ -11682,7 +11702,7 @@ int SetLevelFadeoutEnabled(lua_State* L)
 extern void WickedCall_SetSunColors(float fRed, float fGreen, float fBlue, float fEnergy, float fFov, float fShadowBias);
 int SetSunLightingColor(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 3) return 0;
 	float r = lua_tonumber(L, 1);
 	float g = lua_tonumber(L, 2);
@@ -11696,7 +11716,7 @@ int SetSunLightingColor(lua_State* L)
 
 int SetSunIntensity(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	float intensity = lua_tonumber(L, 1);
 	t.visuals.SunIntensity_f = intensity;
@@ -11728,7 +11748,7 @@ int GetSunIntensity(lua_State* L)
 
 int SetExposure(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	float exposure = lua_tonumber(L, 1);
 	t.visuals.fExposure = exposure;
@@ -11750,7 +11770,7 @@ int iPromptYOffset = 0;
 int iPromptZOffset = 0;
 int PromptLocalOffset(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int storee = t.e;
 	cstr stores = t.s_s;
@@ -11776,7 +11796,7 @@ int PromptLocalOffset(lua_State* L)
 	
 int PromptGuruMeditation(lua_State * L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	t.luaglobal.gurumeditationprompttime = Timer();
 	t.luaglobal.gurumeditationprompt_s = lua_tostring(L, 1);
@@ -11786,7 +11806,7 @@ int PromptGuruMeditation(lua_State * L)
 //gggrass_global_params.grass_scale
 int SetGrassScale(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	gggrass_global_params.grass_scale = lua_tonumber(L, 1);
 	return 0;
@@ -11812,7 +11832,7 @@ int lua_get_lut(lua_State* L)
 
 int lua_set_lut(lua_State* L)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int storee = t.e;
 	cstr stores = t.s_s;
@@ -12144,7 +12164,7 @@ enum eInternalCommandNames
 //losegame lua_losegame(); }
 int int_core_sendmessagenone(lua_State* L, eInternalCommandNames eInternalCommandValue)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n > 0) return 0;
 	int storee = t.e;
 	int storev = t.v;
@@ -12192,7 +12212,7 @@ void addInternalFunctions_nones()
 // Internal Integer commands:
 int int_core_sendmessagei(lua_State* L, eInternalCommandNames eInternalCommandValue)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int storee = t.e;
 	int storev = t.v;
@@ -12731,7 +12751,7 @@ void addInternalFunctions_integer()
 //setpostdepthoffieldintensity t.v_f = LuaMessageFloat(); lua_setpostdepthoffieldintensity(); }
 int int_core_sendmessagef(lua_State* L, eInternalCommandNames eInternalCommandValue)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int storee = t.e;
 	float storev = t.v_f;
@@ -13101,7 +13121,7 @@ void addInternalFunctions_float()
 //setcharactersound t.e = LuaMessageIndex(); t.s_s = LuaMessageString(); character_sound_load(); }
 int int_core_sendmessages(lua_State* L, eInternalCommandNames eInternalCommandValue)
 {
-	int n = lua_gettop(L);
+	int n = LUA_GETTOP(L);
 	if (n < 1) return 0;
 	int storee = t.e;
 	cstr stores = t.s_s;
