@@ -205,7 +205,6 @@ function npc_monitor_main(e)
 			end
 		end
 	end
-	Text(50,50,3,entrange[e])
 end
 
 function GetFlatDistanceToPlayer(v)
