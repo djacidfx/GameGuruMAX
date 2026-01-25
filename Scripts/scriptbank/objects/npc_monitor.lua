@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Monitor v20 by Necrym59
+-- NPC Monitor v21 by Necrym59
 -- DESCRIPTION: A global behavior that allows a named npc to be health monitored and trigger event(s) or Lose/Win game or go to a specified level upon its death.
 -- DESCRIPTION: Attach to an object set AlwaysActive=ON, and attach any logic links to this object and/or use ActivateIfUsed field.
 -- DESCRIPTION: [NPC_NAME$=""] to monitor.
@@ -124,7 +124,7 @@ function npc_monitor_main(e)
 		if status[e] == "monitor" then
 			entrange[e] = math.ceil(GetFlatDistanceToPlayer(pEntn[e]))
 			GetEntityPlayerVisibility(pEntn[e])
-			if g_Entity[pEntn[e]]['plrvisible'] == 1 then
+			if g_Entity[pEntn[e]]['plrvisible'] == 1 and GetPlrLookingAtEx(pEntn[e],1)then
 				if g_Entity[pEntn[e]]["health"] > 0 and entrange[e] < 1000 then
 					--3dto2d check--
 					ScreenPosX = -1
