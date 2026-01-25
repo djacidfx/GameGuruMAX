@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- NPC Monitor v19 by Necrym59
+-- NPC Monitor v20 by Necrym59
 -- DESCRIPTION: A global behavior that allows a named npc to be health monitored and trigger event(s) or Lose/Win game or go to a specified level upon its death.
 -- DESCRIPTION: Attach to an object set AlwaysActive=ON, and attach any logic links to this object and/or use ActivateIfUsed field.
 -- DESCRIPTION: [NPC_NAME$=""] to monitor.
@@ -147,13 +147,13 @@ function npc_monitor_main(e)
 						end
 					end	
 					if npc_monitor[e].health_display == 1 then
-						PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
+						if npc_monitor[e].health_bar ~= "" then PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty) end
 					end			
 					if npc_monitor[e].health_display == 2 then
 						TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
 					end
 					if npc_monitor[e].health_display == 3 then
-						PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty)
+						if npc_monitor[e].health_bar ~= "" then PasteSpritePosition(hbarsprite[e],percentx-(hbarsize[e]/2),percenty) end
 						TextCenterOnXColor(percentx,percenty,1,"Health: " ..hreadout[e],255,255,255)
 					end
 					if npc_monitor[e].health_display == 4 then
