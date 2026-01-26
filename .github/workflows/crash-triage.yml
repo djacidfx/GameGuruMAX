@@ -321,8 +321,10 @@ jobs:
             $srcExe = Join-Path $work "GameGuruMAX.exe"
             $dstExe = Join-Path $work $exeName
             if (Test-Path $srcExe) {
-              Copy-Item $srcExe $dstExe -Force
-              Write-Host "Created EXE alias for dump image load: $dstExe"
+              if ($srcExe -ne $dstExe) {
+                    Copy-Item $srcExe $dstExe -Force
+                    Write-Host "Created EXE alias for dump image load: $dstExe"
+                  }
             } else {
               Write-Host "WARNING: Expected staged EXE missing: $srcExe"
             }
