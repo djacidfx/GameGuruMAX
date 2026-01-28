@@ -402,6 +402,12 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pExceptionInfo)
     {
         log << "Crash Ring Buffer and Debug Logs disabled with 'disablecrashlogsystem = 1'\r\n";
     }
+    extern int g_iEnablePIXMarkers;
+    if (g_iEnablePIXMarkers == 1)
+    {
+        log << "PIX Markers Enabled!\r\n";
+    }
+
     log << "=====================================\r\n";
 
     // Write to log
