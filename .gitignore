@@ -244,3 +244,5 @@ GameGuru Core/.vs/GameGuruWickedMAX/copilot-chat/6be43932/sessions/0a8b443a-5d98
 AI-CompileBuildDeployEXEOnly.bat
 GameGuru Core/Guru-WickedMAX/Template_Windows.vcxproj.user
 GameGuru Core/Guru-WickedMAX/Wicked-MAX/x64/ReleaseTEST/mipastu medieval.ipdb
+AI-CompileBuildDeployJustUPLOAD.bat
+AI-CompileBuildDeploy.bat
