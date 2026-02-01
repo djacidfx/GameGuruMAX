@@ -157,6 +157,10 @@ const XMFLOAT4 selectionColor = XMFLOAT4(0.9f, 0.7f, 0.2f, 1.0f); //PE: Outline 
 const XMFLOAT4 selectionColorRed = XMFLOAT4(0.7f, 0.0f, 0.0f, 1.0f); //PE: Outline color red. no transparent.
 const XMFLOAT4 selectionColorBlue = XMFLOAT4(0.3f, 0.6f, 0.8f, 1.0f); //PE: Outline color light blue. no transparent.
 
+// can use PIX markers here
+#include "../../../WICKEDREPO/packages/WinPixEventRuntime.1.0.240308001/Include/WinPixEventRuntime/pix3.h"
+// g_enablePixMarkers not duplicated in main EXE
+
 //
 // Master Functions
 //
@@ -1223,7 +1227,7 @@ void Master::Update(float dt)
 	if (g_iShowSplashForFirstFewCycles > 0)
 	{
 		// render splash screen here
-		CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
+		CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "Splash");
 		wiRenderer::GetDevice()->RenderPassBegin(&swapChain, cmd);
 		wiImage::SetCanvas(canvas, cmd);
 		wiFont::SetCanvas(canvas, cmd);
@@ -1351,7 +1355,7 @@ bool Master::ForceRender(void* rt)
 
 	Render( 0 );
 
-	CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
+	CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "Compose");
 	{
 		if (nrt)
 		{
@@ -1567,7 +1571,7 @@ void Master::RunCustom()
 			wiScene::CameraComponent &camera = wiScene::GetCamera();
 
 			// must be outside a render pass and only called once, even if VR renders twice
-			CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
+			CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "Particles");
 			auto range = wiProfiler::BeginRangeCPU("Update - Particles");
 			gpup_update(deltaTime, cmd);
 			wiProfiler::EndRange(range);
@@ -1576,10 +1580,13 @@ void Master::RunCustom()
 			#ifdef GGTERRAIN_USE_NEW_TERRAIN
 			extern bool bImGuiRenderTargetFocus;
 			extern int g_iDisableTerrainSystem;
+			PIXScopedEvent(PIX_COLOR_DEFAULT, "GGTerrain_Update");
 			GGTerrain_Update(camera.Eye.x, camera.Eye.y, camera.Eye.z, cmd, bImGuiRenderTargetFocus);
 			if (g_iDisableTerrainSystem == 0)
 			{
+				PIXScopedEvent(PIX_COLOR_DEFAULT, "GGTrees_Update");
 				GGTrees_Update(camera.Eye.x, camera.Eye.y, camera.Eye.z, cmd, bImGuiRenderTargetFocus);
+				PIXScopedEvent(PIX_COLOR_DEFAULT, "GGGrass_Update");
 				GGGrass_Update(&camera, cmd, bImGuiRenderTargetFocus);
 			}
 			#endif
@@ -1779,7 +1786,7 @@ void Master::RunCustom()
 
 				// compose left eye
 				ID3D11RenderTargetView* leftView = OpenXRStartRender(OPENXR_RENDER_LEFT);
-				CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
+				CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "LeftEye");
 				wiRenderer::GetDevice()->SetRenderTarget(cmd, leftView);
 				Viewport vp;
 				vp.Width = (float)masterrenderer.GetWidth3D() * resolutionScale;
@@ -1809,7 +1816,7 @@ void Master::RunCustom()
 
 				// compose right eye
 				ID3D11RenderTargetView* rightView = OpenXRStartRender(OPENXR_RENDER_RIGHT);
-				cmd = wiRenderer::GetDevice()->BeginCommandList();
+				cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "RightEye");
 				wiRenderer::GetDevice()->SetRenderTarget(cmd, rightView);
 				vp.Width = (float)masterrenderer.GetWidth3D() * resolutionScale;
 				vp.Height = (float)masterrenderer.GetHeight3D() * resolutionScale;
@@ -1819,7 +1826,7 @@ void Master::RunCustom()
 
 				// present final to device
 				wiScene::GetCamera().SetCustomProjectionEnabled(false);
-				cmd = wiRenderer::GetDevice()->BeginCommandList();
+				cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "PresentFinal");
 				wiRenderer::GetDevice()->RenderPassBegin( &swapChain, cmd );
 				{
 					wiImage::SetCanvas(canvas, cmd);
@@ -2109,7 +2116,7 @@ void MasterRenderer::Update(float dt)
 			wiScene::CameraComponent &camera = wiScene::GetCamera();
 
 			// must be outside a render pass and only called once, even if VR renders twice
-			CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
+			CommandList cmd = wiRenderer::GetDevice()->BeginCommandList(QUEUE_GRAPHICS, "Particles");
 			auto range = wiProfiler::BeginRangeCPU("Update - Particles");
 			gpup_update(dt, cmd);
 			wiProfiler::EndRange(range);
@@ -2120,11 +2127,14 @@ void MasterRenderer::Update(float dt)
 				extern int g_iDisableTerrainSystem;
 				auto range3 = wiProfiler::BeginRangeCPU("Update - Terrain");
 				extern bool bImGuiRenderTargetFocus;
+				PIXScopedEvent(PIX_COLOR_DEFAULT, "GGTerrain_Update");
 				GGTerrain_Update(camera.Eye.x, camera.Eye.y, camera.Eye.z, cmd, bImGuiRenderTargetFocus);
 				if (g_iDisableTerrainSystem == 0)
 				{
+					PIXScopedEvent(PIX_COLOR_DEFAULT, "GGTrees_Update");
 					GGTrees_Update(camera.Eye.x, camera.Eye.y, camera.Eye.z, cmd, bImGuiRenderTargetFocus);
 					GGTrees_UpdateFrustumCulling(&camera);
+					PIXScopedEvent(PIX_COLOR_DEFAULT, "GGGrass_Update");
 					GGGrass_Update(&camera, cmd, bImGuiRenderTargetFocus);
 				}
 				wiProfiler::EndRange(range3);
@@ -2132,6 +2142,7 @@ void MasterRenderer::Update(float dt)
 			else
 			{
 				// still need for terrain globals to update local params (for editable_size reading)
+				PIXScopedEvent(PIX_COLOR_DEFAULT, "GGTerrain_Update_EmptyLevel");
 				GGTerrain_Update_EmptyLevel(camera.Eye.x, camera.Eye.y, camera.Eye.z, cmd);
 			}
 			
@@ -2361,7 +2372,7 @@ void MasterRenderer::RenderOutlineHighlighers(CommandList cmd) const
 			if (GetDepthStencil() != nullptr)
 			{
 				GraphicsDevice* device = wiRenderer::GetDevice();
-				CommandList cmd = device->BeginCommandList();
+				CommandList cmd = device->BeginCommandList(QUEUE_GRAPHICS, "OutlineMask1");
 
 				device->EventBegin("GGMax - Selection Outline Mask", cmd);
 
@@ -2438,7 +2449,7 @@ void MasterRenderer::RenderOutlineHighlighers(CommandList cmd) const
 			if (GetDepthStencil() != nullptr)
 			{
 				GraphicsDevice* device = wiRenderer::GetDevice();
-				CommandList cmd = device->BeginCommandList();
+				CommandList cmd = device->BeginCommandList(QUEUE_GRAPHICS, "OutlineMask2");
 
 				device->EventBegin("GGMax - Selection Outline Mask", cmd);
 

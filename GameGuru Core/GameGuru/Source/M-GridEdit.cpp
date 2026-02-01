@@ -325,8 +325,8 @@ int g_iDisableTerrainSystem = 0;
 int g_iDisableJustGrassSystem = 0;
 int g_iDisableWParticleSystem = 0;
 int g_iDisableCrashLogSystem = 0;
+int g_iEnablePIXMarkers = 0;
 bool bSprayMoveWithMouse = false;
-
 
 bool bTrashcanIconActive = false, bTrashcanIconActive2 = false;
 int current_sort_order = 0;

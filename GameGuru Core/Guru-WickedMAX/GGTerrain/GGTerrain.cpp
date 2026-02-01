@@ -9647,75 +9647,96 @@ void GGTerrain_Update( float playerX, float playerY, float playerZ, wiGraphics::
 	if ( !bImGuiGotFocus && ggterrain_initialised)
 	{
 		GGTerrain_CheckKeys();
-
 		if (GGTerrain_GetKeyPressed(GGKEY_ESCAPE)) GGTerrain_CancelRamp();
-		/* hidden key functionality and undocumented feature
-		if (pref.iTerrainDebugMode)
-		{
-			if ( GGTerrain_GetKeyPressed( GGKEY_Q ) ) ggtrees_global_params.draw_enabled = 1 - ggtrees_global_params.draw_enabled;
-			if ( GGTerrain_GetKeyPressed( GGKEY_Z ) && !GGTerrain_GetKeyPressed(GGKEY_CONTROL)) gggrass_global_params.draw_enabled = 1 - gggrass_global_params.draw_enabled;
-			if ( GGTerrain_GetKeyPressed( GGKEY_J ) ) ggterrain_render_wireframe = 1 - ggterrain_render_wireframe;
-			if ( GGTerrain_GetKeyPressed( GGKEY_Y ) && !GGTerrain_GetKeyPressed(GGKEY_CONTROL)) ggterrain_render_debug = 1 - ggterrain_render_debug;
-			if ( GGTerrain_GetKeyPressed( GGKEY_U ) ) ggterrain_update_enabled = 1 - ggterrain_update_enabled;
-			//if ( GGTerrain_GetKeyPressed( GGKEY_E ) ) wiRenderer::SetToDrawDebugEnvProbes( !wiRenderer::GetToDrawDebugEnvProbes() );
-			// increase/decrease LOD
-			if (GGTerrain_GetKeyPressed(GGKEY_O))
-			{
-				if (ggterrain_global_params.lod_levels < 16)
-				{
-					ggterrain_global_params.lod_levels++;
-				}
-			}
-			if (GGTerrain_GetKeyPressed(GGKEY_L))
-			{
-				if (ggterrain_global_params.lod_levels > 1)
-				{
-					ggterrain_global_params.lod_levels--;
-				}
-			}
-			// increase/decrease num segments
-			if (GGTerrain_GetKeyPressed(GGKEY_I))
-			{
-				if (ggterrain_global_params.segments_per_chunk < 128)
-				{
-					ggterrain_global_params.segments_per_chunk *= 2;
-				}
-			}
-			if (GGTerrain_GetKeyPressed(GGKEY_K))
-			{
-				if (ggterrain_global_params.segments_per_chunk > 1)
-				{
-					ggterrain_global_params.segments_per_chunk /= 2;
-				}
-			}
-		}
-		*/
 	}
 
 	// Environmental Light Probe System
 	GGTerrain_EnvProbeWork(playerX, playerY, playerZ);
 
 	if ( !ggterrain_initialised ) return;
-	
-	terrainlock.lock();
-	if ( ggterrain_update_enabled ) 
+
+	// terrain generation and chunk updating
+	GGTerrainLODSet* pCurrLODs = nullptr;
+	if (true)
 	{
-		ggterrain.CheckParams();
-		ggterrain.UpdateChunks( playerX, playerZ );
-
-		// wait for the lowest level to complete
-		GGTerrainLODSet* pCurrLODs = ggterrain.GetCurrentLODs();
-		uint32_t timeout = 0;
-		while( pCurrLODs->IsGenerating() && !pCurrLODs->pLevels[ pCurrLODs->GetNumLevels()-1 ].IsReady() && timeout++ < 300 ) Sleep( 1 ); 
-		if (timeout >= 300)
+		// suspect this was the cause of GPU instability due to large stalls!
+		/*
+		terrainlock.lock();
+		if (ggterrain_update_enabled)
 		{
-			pCurrLODs->iFlags &= ~GGTERRAIN_LOD_GENERATING; // terrain is not looking correct after this.
-			ggterrain_global_params.bForceUpdate = 1 - ggterrain_global_params.bForceUpdate;
-		}
-	}
-	terrainlock.unlock();
+			ggterrain.CheckParams();
+			ggterrain.UpdateChunks(playerX, playerZ);
 
-	GGTerrainLODSet* pCurrLODs = ggterrain.GetCurrentLODs();
+			// wait for the lowest level to complete
+			GGTerrainLODSet* pCurrLODs = ggterrain.GetCurrentLODs();
+			uint32_t timeout = 0;
+			while (pCurrLODs->IsGenerating() && !pCurrLODs->pLevels[pCurrLODs->GetNumLevels() - 1].IsReady() && timeout++ < 300) Sleep(1);
+			if (timeout >= 300)
+			{
+				pCurrLODs->iFlags &= ~GGTERRAIN_LOD_GENERATING; // terrain is not looking correct after this.
+				ggterrain_global_params.bForceUpdate = 1 - ggterrain_global_params.bForceUpdate;
+			}
+		}
+		terrainlock.unlock();
+		*/
+		if (ggterrain_update_enabled)
+		{
+			terrainlock.lock();
+			ggterrain.CheckParams();
+			ggterrain.UpdateChunks(playerX, playerZ);
+			terrainlock.unlock();
+
+			// wait for the lowest level to complete
+			GGTerrainLODSet* pCurrLODs = ggterrain.GetCurrentLODs();
+			uint32_t timeout = 0;
+			while (pCurrLODs->IsGenerating() && !pCurrLODs->pLevels[pCurrLODs->GetNumLevels() - 1].IsReady() && timeout++ < 300) Sleep(1);
+			if (timeout >= 300)
+			{
+				pCurrLODs->iFlags &= ~GGTERRAIN_LOD_GENERATING; // terrain is not looking correct after this.
+				ggterrain_global_params.bForceUpdate = 1 - ggterrain_global_params.bForceUpdate;
+			}
+		}
+		pCurrLODs = ggterrain.GetCurrentLODs();
+	}
+	else
+	{
+		// replace with approach that does not wait inside a lock:
+		// HOWEVER THIS MESSES UP TERRAIN FOR NOW!!!
+		// --- only hold the lock for the minimum time ---
+		terrainlock.lock();
+		if (ggterrain_update_enabled)
+		{
+			ggterrain.CheckParams();
+			ggterrain.UpdateChunks(playerX, playerZ);
+
+			// Grab pointer/state while protected:
+			pCurrLODs = ggterrain.GetCurrentLODs();
+		}
+		terrainlock.unlock();
+		// --- any waiting happens OUTSIDE the lock ---
+		if (pCurrLODs)
+		{
+			uint32_t timeout = 0;
+			while (pCurrLODs->IsGenerating() &&
+				!pCurrLODs->pLevels[pCurrLODs->GetNumLevels() - 1].IsReady() &&
+				timeout++ < 300)
+			{
+				Sleep(0); // yield, don't force a 1ms sleep
+				// If you want to keep exactly the old behavior, use Sleep(1) here instead.
+			}
+			if (timeout >= 300)
+			{
+				// If other threads can touch iFlags, protect this write too:
+				terrainlock.lock();
+				pCurrLODs->iFlags &= ~GGTERRAIN_LOD_GENERATING;
+				terrainlock.unlock();
+				ggterrain_global_params.bForceUpdate = 1 - ggterrain_global_params.bForceUpdate;
+			}
+		}
+		if (pCurrLODs == nullptr) pCurrLODs = ggterrain.GetCurrentLODs();
+	}
+
+	// and continue
 	GGTerrainLODSet* pNewLODs = ggterrain.GetNewLODs();
 
 	// update terrain constants
@@ -11413,11 +11434,8 @@ void GGTerrain_CheckMaterialUsed(wiGraphics::CommandList cmd)
 		{
 			if(bMaterialUsed[i] == true && bTextureUploaded[i] == false)
 			{
-				//wiGraphics::CommandList cmd = wiRenderer::GetDevice()->BeginCommandList();
-
 				//PE: Check all material IDs if we need to update any.
 				char szDstRoot[MAX_PATH];
-				//sprintf_s(szDstRoot, MAX_PATH, "%sterraintextures/mat%d", FinalGameGuruMaxFolder.c_str(), i + 1);
 				sprintf_s(szDstRoot, MAX_PATH, "terraintextures/mat%d", i + 1);
 
 

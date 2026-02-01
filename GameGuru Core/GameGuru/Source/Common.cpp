@@ -3111,6 +3111,9 @@ void FPSC_LoadSETUPINI (bool bUseMySystemFolder)
 
 					extern int g_iDisableCrashLogSystem;
 					t.tryfield_s = "disablecrashlogsystem"; if (t.field_s == t.tryfield_s) g_iDisableCrashLogSystem = t.value1;
+
+					extern int g_iEnablePIXMarkers;
+					t.tryfield_s = "enablepixmarkers"; if (t.field_s == t.tryfield_s) g_iEnablePIXMarkers = t.value1;
 				}
 			}
 		}
@@ -6211,6 +6214,14 @@ void GetSetupIniEarly( void )
 					{
 						extern int g_iDisableCrashLogSystem;
 						g_iDisableCrashLogSystem = 1;
+					}
+				}
+				if (pestrcasestr(t, "enablepixmarkers"))
+				{
+					if (pestrcasestr(t, "1"))
+					{
+						extern int g_iEnablePIXMarkers;
+						g_iEnablePIXMarkers = 1;
 					}
 				}
 			}
