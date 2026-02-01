@@ -3379,6 +3379,25 @@ void mapfile_savestandalone_stage3 ( void )
 		SetDir (  ".." );
 	}
 
+	//PE: Ensure old navmesh cache is deleted.
+	if (PathExist("navbank") == 1)
+	{
+		SetDir("navbank");
+		ChecklistForFiles();
+		for (t.c = 1; t.c <= ChecklistQuantity(); t.c++)
+		{
+			t.tfile_s = ChecklistString(t.c);
+			if (Len(t.tfile_s.Get()) > 2)
+			{
+				if (FileExist(t.tfile_s.Get()) == 1)
+				{
+					DeleteAFile(t.tfile_s.Get());
+				}
+			}
+		}
+		SetDir("..");
+	}
+
 	//  Ensure file path exists (by creating folders)
 	createallfoldersincollection();
 
