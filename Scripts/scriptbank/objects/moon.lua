@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Moon v4 by Necrym59
+-- Moon v5 by Necrym59
 -- DESCRIPTION: Allows a moon object to rotate and orbit another named object
 -- DESCRIPTION: Attach this behavior to the moon object.
 -- DESCRIPTION: [#MOON_ADJUST_X=0.0(-20000.0,20000.0)]
@@ -10,7 +10,7 @@
 -- DESCRIPTION: [ORBIT_DISTANCE=0(-1000,1000)]
 -- DESCRIPTION: [ORBIT_MULTIPLIER=1(1,1000)]
 -- DESCRIPTION: [#ORBIT_SPEED=0.1(0.0,100.0)]
--- DESCRIPTION: [SENSE_RANGE=1000]
+-- DESCRIPTION: [#SENSE_RANGE=1000.00]
 -- DESCRIPTION: [SENSE_TEXT$="Detected in Range"]
 -- DESCRIPTION: [@SENSE_TRIGGER=1(1=Linked, 2=Video+ChangeLevel, 3=Video)]
 -- DESCRIPTION: [@VIDEO_SKIP=1(1=Yes, 2=No)]
@@ -113,6 +113,7 @@ function moon_init(e)
 	orbitadjust[e] = 0
 	doonce[e] = 0
 	endvid[e] = 0
+	SetEntityAlwaysActive(e,1)
 	status[e] = "moon_build"
 end
 
@@ -126,7 +127,7 @@ function moon_main(e)
 		moonposz[e] = moonposz[e] + moon[e].moon_adjust_z
 		ResetPosition(e,moonposx[e],moonposy[e],moonposz[e])
 		moonscalex[e],moonscaley[e],moonscalez[e] = GetEntityScales(e)
-		adjustrange[e] = moon[e].sense_range * GetEntityScales(e)
+		adjustrange[e] = moon[e].sense_range
 		if moon[e].orbit_planet_no == 0 and moon[e].orbit_planet_name > "" then
 			for p = 1, g_EntityElementMax do
 				if p ~= nil and g_Entity[p] ~= nil then
