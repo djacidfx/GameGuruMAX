@@ -145,6 +145,10 @@ function door_rotate_main(e)
 		g_door_rotate[ e ].originalx = g_Entity[e]['x']
 		g_door_rotate[ e ].originaly = g_Entity[e]['y']
 		g_door_rotate[ e ].originalz = g_Entity[e]['z']
+		CollisionOff( e )
+		ResetPosition ( e, g_Entity[e]['x'], g_Entity[e]['y'], g_Entity[e]['z'] )
+		ResetRotation ( e, g_Entity[e]['anglex'], g_Entity[e]['angley'], g_Entity[e]['anglez'] )
+		CollisionOn( e )
 		return
 	end
 

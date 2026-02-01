@@ -1314,6 +1314,7 @@ void mapeditorexecutable_init ( void )
 					g.projectfilename_s = t.returnstring_s;
 					gridedit_load_map();
 					g_EntityClipboard.clear(); //PE: Clear any old copy/paste.
+					undosys_clearall(); //PE: Clear undo redo system.
 					t.terrain.grassregionx1 = t.terrain.grassregionx2;
 					bUpdateVeg = true;
 
@@ -2155,6 +2156,7 @@ void mapeditorexecutable_loop(void)
 				g_bAllowBackwardCompatibleConversion = false;
 
 				g_EntityClipboard.clear(); //PE: Clear any old copy/paste.
+				undosys_clearall(); //PE: Clear undo redo system.
 
 
 				if(!bCloseStoryboardAfterLoad)
@@ -8169,7 +8171,63 @@ void mapeditorexecutable_loop(void)
 									ImGui::Indent(10);
 
 									{
-										// display custom material settings
+										if(!t.entityelement[iEntityIndex].eleprof.bUseFPESettings)
+										{
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex >= 5)
+												t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex = 0;
+
+											char material_sound_selection[256] = "\0";
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex <= 0)
+											{
+												strcpy(material_sound_selection, "None");
+											}
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 1)
+											{
+												strcpy(material_sound_selection, "Silent");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 2)
+											{
+												strcpy(material_sound_selection, "Stone");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 3)
+											{
+												strcpy(material_sound_selection, "Metal");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 4)
+											{
+												strcpy(material_sound_selection, "Wood");
+											}
+											char* cMaterialTypes[4] = { "Silent", "Stone", "Metal", "Wood" };
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 15));
+											ImGui::Text("Material Type");
+											ImGui::SameLine();
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
+											ImGui::PushItemWidth(-10);
+											if (ImGui::BeginCombo("##ImporterMaterialType", &material_sound_selection[0], ImGuiComboFlags_PopupAlignLeft | ImGuiComboFlags_HeightLarge))
+											{
+												for (int i = 0; i < 4; i++)
+												{
+													bool is_selected = false;
+													if (strcmp(material_sound_selection, cMaterialTypes[i]) == NULL)
+													{
+														is_selected = true;
+													}
+													if (ImGui::Selectable(cMaterialTypes[i], is_selected))
+													{
+														strcpy(material_sound_selection, cMaterialTypes[i]);
+														t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex = i + 1;
+														//t.slidersmenuvalue[t.importer.properties1Index][10].value = i + 1;
+													}
+													if (is_selected) ImGui::SetItemDefaultFocus();
+												}
+												ImGui::EndCombo();
+											}
+											if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select the material index for this object");
+											ImGui::PopItemWidth();
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 15));
+										}
+
+										//PE: display material settings
 										WickedSetEntityId(iMasterID);
 										WickedSetElementId(iEntityIndex);
 										Wicked_Change_Object_Material((void*)pObject, 0, &t.entityelement[iEntityIndex].eleprof,true, t.entityelement[iEntityIndex].eleprof.bUseFPESettings);
@@ -8474,8 +8532,8 @@ void mapeditorexecutable_loop(void)
 								}
 
 								// can never have a grid size below one
-								if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
-								if (pref.fEditorGridSizeZ <= 1) pref.fEditorGridSizeZ = 1.0f;
+								if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
+								if (pref.fEditorGridSizeZ <= 0.1f) pref.fEditorGridSizeZ = 0.1f;
 							}
 						}
 
@@ -26309,7 +26367,7 @@ void GridPopup(ImVec2 wpos)
 					ImGui::PopItemWidth();
 
 					// can never have a grid size below one
-					if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
+					if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
 
 					// and all grid dimensions the same!
 					pref.fEditorGridOffsetX = 0;
@@ -26416,9 +26474,9 @@ void GridPopup(ImVec2 wpos)
 					}
 
 					// can never have a grid size below one
-					if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
-					if (pref.fEditorGridSizeY <= 1) pref.fEditorGridSizeY = 1.0f;
-					if (pref.fEditorGridSizeZ <= 1) pref.fEditorGridSizeZ = 1.0f;
+					if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
+					if (pref.fEditorGridSizeY <= 0.1f) pref.fEditorGridSizeY = 0.1f;
+					if (pref.fEditorGridSizeZ <= 0.1f) pref.fEditorGridSizeZ = 0.1f;
 				}
 			}
 		}

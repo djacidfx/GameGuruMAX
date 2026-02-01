@@ -161,6 +161,30 @@ void entity_init ( void )
 							WickedSetEntityId(-1);
 							WickedSetElementId(0);
 						}
+						//PE: Make sure we keep additive blending.
+						cstr sEffectLower = Lower(t.entityprofile[t.entid].effect_s.Get());
+						if (sEffectLower == "effectbank\\reloaded\\decal_animate1_additive.fx")
+						{
+							//PE: AvengingEagle's Light Effects.
+							DisableObjectZWrite(t.tobj);
+							void WickedCall_SetObjectBlendMode(sObject * pObject, int iBlendmode);
+							sObject* pObject = g_ObjectList[t.tobj];
+							if (pObject)
+							{
+								WickedCall_SetObjectBlendMode(pObject, BLENDMODE_ADDITIVE);
+							}
+							t.entityprofile[t.entid].blendmode = BLENDMODE_ADDITIVE;
+							if (t.tte > 0)
+							{
+								t.entityelement[t.tte].eleprof.blendmode = BLENDMODE_ADDITIVE;
+							}
+							for (int iMesh = 0; iMesh < pObject->iMeshCount; iMesh++)
+							{
+								if (pObject->ppMeshList[iMesh]) pObject->ppMeshList[iMesh]->iCullMode = 0;
+							}
+							WickedCall_SetObjectCullmode(pObject);
+						}
+
 					}
 					// ensure correct zdepth when game level starts
 					entity_preparedepth(t.entid, t.tobj);
@@ -3211,7 +3235,13 @@ void entity_hasbulletrayhit(void)
 				t.bulletraylimbhit=0;
 				if (t.tfoundentityindexhit != -1)
 				{
-					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+					if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+						t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0 )
+					{
+						t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+					}
+					else
+						t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 				}
 			}
 			else
@@ -3236,7 +3266,13 @@ void entity_hasbulletrayhit(void)
 			// ChecklistValueA 9 not reliable, get material from entity properties!
 			if (t.tfoundentityindexhit != -1)
 			{
-				t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+				if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+					t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0)
+				{
+					t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+				}
+				else
+					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 			}
 			else
 			{
@@ -3270,7 +3306,13 @@ void entity_hasbulletrayhit(void)
 							t.tlimbhit = getlimbbyname(t.thitvalue, "Bip01_R_Foot");
 						}
 					}
-					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+					if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+						t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0)
+					{
+						t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+					}
+					else
+						t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 				}
 			}
 
@@ -3484,7 +3526,23 @@ void entity_hasbulletrayhit(void)
 	if (t.bulletrayhite > 0)
 	{
 		// if entity producing decal, ensure the right one being used
-		entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+		if (t.gun[t.gunid].weapontype >= 51 || t.gun[t.gunid].settings.ismelee != 0)
+		{
+			//PE: If melee make sure we did hit somethiong, t.bulletrayhite is resused so cant be used.
+			if (t.bulletrayhit > 0)
+			{
+				entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+			}
+			else
+			{
+				// default logic
+				entity_triggerdecalatimpact(t.brayx2_f, t.brayy2_f, t.brayz2_f);
+			}
+		}
+		else 
+		{
+			entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+		}
 	}
 	else
 	{
@@ -4279,7 +4337,8 @@ void entity_createobj ( void )
 								Master_WEMaterial->dwBaseColor[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.dwBaseColor[iMesh] ||
 								Master_WEMaterial->dwEmmisiveColor[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.dwEmmisiveColor[iMesh] ||
 								Master_WEMaterial->fNormal[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fNormal[iMesh] ||
-								Master_WEMaterial->fAlphaRef[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fAlphaRef[iMesh])
+								Master_WEMaterial->fAlphaRef[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fAlphaRef[iMesh] ||
+								Master_WEMaterial->fEmissive[iMesh] != t.entityelement[t.tupdatee].eleprof.WEMaterial.fEmissive[iMesh] )
 							{
 								bUseInstancing = false;
 								break;
@@ -4681,7 +4740,6 @@ void entity_prepareobj ( void )
 				if (pObject->ppMeshList[iMesh]) pObject->ppMeshList[iMesh]->iCullMode = 0;
 			}
 			WickedCall_SetObjectCullmode(pObject);
-
 		}
 
 		if (t.entityprofile[t.tentid].bIsDecal)
@@ -4689,6 +4747,7 @@ void entity_prepareobj ( void )
 			void SetupDecalObject(int obj, int elementID);
 			SetupDecalObject(t.tobj, t.tte);
 		}
+
 
 		if (t.entityprofile[t.tentid].ismarker == 0)
 		{

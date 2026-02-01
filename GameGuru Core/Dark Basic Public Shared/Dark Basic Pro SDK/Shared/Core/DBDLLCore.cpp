@@ -781,7 +781,7 @@ void ImGui_RenderLast(void)
 					if (ImGui::InputFloat("##XYZgridsizeXYZ", &pref.fEditorGridSizeX, 0.0f, 0.0f, precision.c_str()))
 					{
 						// can never have a grid size below one
-						if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
+						if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
 						// and all grid dimensions the same!
 						pref.fEditorGridOffsetX = 0;
 						pref.fEditorGridOffsetY = 0;
@@ -921,7 +921,7 @@ void ImGui_RenderLast(void)
 							ImGui::PopItemWidth();
 
 							// can never have a grid size below one
-							if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
+							if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
 
 							// and all grid dimensions the same!
 							pref.fEditorGridOffsetX = 0;
@@ -1040,9 +1040,9 @@ void ImGui_RenderLast(void)
 							}
 
 							// can never have a grid size below one
-							if (pref.fEditorGridSizeX <= 1) pref.fEditorGridSizeX = 1.0f;
-							if (pref.fEditorGridSizeY <= 1) pref.fEditorGridSizeY = 1.0f;
-							if (pref.fEditorGridSizeZ <= 1) pref.fEditorGridSizeZ = 1.0f;
+							if (pref.fEditorGridSizeX <= 0.1f) pref.fEditorGridSizeX = 0.1f;
+							if (pref.fEditorGridSizeY <= 0.1f) pref.fEditorGridSizeY = 0.1f;
+							if (pref.fEditorGridSizeZ <= 0.1f) pref.fEditorGridSizeZ = 0.1f;
 						}
 						ImGui::PopStyleVar();
 					}
@@ -1351,6 +1351,15 @@ void ShowMemDebug(void)
 		memupdatecount++;
 		if(memupdatecount % 10 == 0)
 			fGBMemUsed = (float)SMEMAvailable(1) / 1024.0 / 1024.0;
+
+		//PE: For debug to see cloned object ( not instanced ).
+		//#ifdef DISPLAYCLONES
+		//static bool bBoxDebug = false;
+		//static int iHiddenObjects = 0;
+		//int iSpot = 0, iPoint = 0;
+		//int occ = 0;
+		//int DrawOccludedObjects(bool bDebug, bool bBox = false, int* bHiddenObjects = nullptr, int* spot = nullptr, int* point = nullptr);
+		//occ = DrawOccludedObjects(true, bBoxDebug, &iHiddenObjects, &iSpot, &iPoint);
 
 #ifdef INCLUDEVRAM
 		//PE: Always show dedicated VRAM + system RAM GPU use.

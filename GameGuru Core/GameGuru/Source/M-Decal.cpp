@@ -1189,6 +1189,16 @@ void decal_activatedecalsfromentities ( void )
 							if (t.entityprofile[t.entid].bloodscorch == 0)
 								t.decal[t.tdecalid].newparticle.iMaxCache = 2; //PE: Only cache 2 custom decals.
 						}
+						else
+						{
+							//PE: Unless this is a impact from the fpe.
+							if ( t.entitydecal_s[t.entid][t.tq].Len() > 0)
+							{
+								t.decal[t.tdecalid].active = 1;
+								if (t.entityprofile[t.entid].bloodscorch == 0)
+									t.decal[t.tdecalid].newparticle.iMaxCache = 2; //PE: Only cache 2 custom decals.
+							}
+						}
 					}
 				}
 			}

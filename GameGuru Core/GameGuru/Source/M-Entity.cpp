@@ -4146,6 +4146,8 @@ void entity_fillgrideleproffromprofile ( void )
 	t.grideleprof.explodeheight =t.entityprofile[t.entid].explodeheight;
 	t.grideleprof.explodable_decalname = t.entityprofile[t.entid].explodable_decalname;
 	
+	//t.grideleprof.iMaterialSoundIndex
+	
 	// 301115 - data extracted from neighbors (LOD Modifiers are shared across all parent copies)
 	int iThisBankIndex = t.entid;
 	if ( t.entityprofile[iThisBankIndex].addhandlelimb==0 )
@@ -5545,8 +5547,8 @@ void c_entity_loadelementsdata ( void )
 						t.a = t.a_f = c_ReadFloat(1); t.entityelement[t.e].eleprof.light.fProbeBrightness = t.a_f;
 
 						t.a = c_ReadLong(1); t.entityelement[t.e].iAllowBuletHole = t.a;
-
-						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
+						t.a = c_ReadLong(1); t.entityelement[t.e].eleprof.iMaterialSoundIndex = t.a;
+						
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = c_ReadLong(1);
@@ -5709,6 +5711,8 @@ void c_entity_loadelementsdata ( void )
 							t.entityelement[t.e].eleprof.bUseFPESettings = false;
 						else
 							t.entityelement[t.e].eleprof.bUseFPESettings = true;
+
+						t.entityelement[t.e].eleprof.iMaterialSoundIndex = 0;
 					}
 					//t.entityelement[t.e].entitydammult_f=1.0; not used any more, reused field for iCanGoUnderwater and renamed entitydammult_f to reserved2
 					//t.entityelement[t.e].entityacc=1.0;
@@ -7161,8 +7165,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 
 					//writer.WriteFloat(0.0f);
 					writer.WriteLong(t.entityelement[ent].iAllowBuletHole);
+					//writer.WriteFloat(0.0f);
+					writer.WriteLong(t.entityelement[ent].eleprof.iMaterialSoundIndex);
+				
 
-					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteLong(t.entityelement[ent].eleprof.systemwide_lua);
@@ -8788,6 +8794,7 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 	}
 	if (iParticleEmitter != -1)
 	{
+		/*
 		if (pParticle->bWPE)
 		{
 			Scene& scene = wiScene::GetScene();
@@ -8806,6 +8813,52 @@ void newparticle_updateparticleemitter ( newparticletype* pParticle, float fScal
 					WickedCall_PerformEmitterAction(4, iParticleEmitter); //PE: Restart
 					WickedCall_PerformEmitterAction(5, iParticleEmitter); //PE: Visible
 					WickedCall_PerformEmitterAction(1, iParticleEmitter); //PE: Burst All
+					pParticle->bParticle_Fire = false;
+				}
+			}
+		}
+		*/
+
+		//PE: Make emitter always face camera.
+		if (pParticle->bWPE)
+		{
+			Scene& scene = wiScene::GetScene();
+			TransformComponent* root_tranform = scene.transforms.GetComponent(iParticleEmitter);
+
+			if (bShowThisParticle)
+			{
+				if (pParticle->bParticle_Fire == true)
+				{
+					if (root_tranform)
+					{
+						root_tranform->ClearTransform();
+						XMVECTOR cameraPos = XMVectorSet(CameraPositionX(0), CameraPositionY(0), CameraPositionZ(0), 0.0f);
+						XMVECTOR emitterPos = XMVectorSet(fX, fY, fZ, 0.0f);
+
+						XMVECTOR lookDir = XMVectorSubtract(cameraPos, emitterPos);
+						//PE: Invert drection - XMVECTOR lookDir = XMVectorSubtract(emitterPos, cameraPos);
+						lookDir = XMVectorSetY(lookDir, 0.0f);
+
+						if (XMVectorGetX(XMVector3LengthSq(lookDir)) > 0.0001f)
+						{
+							lookDir = XMVector3Normalize(lookDir);
+							XMVECTOR worldUp = XMVectorSet(0, 1, 0, 0);
+							XMMATRIX lookAtMat = XMMatrixLookToLH(emitterPos, lookDir, worldUp);
+							XMMATRIX worldMat = XMMatrixInverse(nullptr, lookAtMat);
+							root_tranform->MatrixTransform(worldMat);
+						}
+						else
+						{
+							root_tranform->Translate(XMFLOAT3(fX, fY, fZ));
+						}
+
+						root_tranform->UpdateTransform();
+					}
+
+					WickedCall_PerformEmitterAction(3, iParticleEmitter); // Resume
+					WickedCall_PerformEmitterAction(4, iParticleEmitter); // Restart
+					WickedCall_PerformEmitterAction(5, iParticleEmitter); // Visible
+					WickedCall_PerformEmitterAction(1, iParticleEmitter); // Burst All
 					pParticle->bParticle_Fire = false;
 				}
 			}
