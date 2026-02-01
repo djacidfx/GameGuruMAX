@@ -45211,7 +45211,7 @@ void GetProjectList(char *path, bool bGetThumbs)
 
 
 bool bWidgetMouseDraggin = false;
-void storyboard_control_widget(int nodeid, int index, ImVec2 pos, ImVec2 size, ImRect rMonitorArea, ImVec2 vMonitorStart, ImVec2 vScale)
+void storyboard_control_widget(int nodeid, int index, ImVec2 pos, ImVec2 size, ImRect rMonitorArea, ImVec2 vMonitorStart, ImVec2 vScale, ImVec2 vMonitorSize)
 {
 
 	ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -45401,19 +45401,51 @@ void storyboard_control_widget(int nodeid, int index, ImVec2 pos, ImVec2 size, I
 				}
 				else
 				{
-					vMovePos.x += ImGui::GetIO().MouseDelta.x * fMouseToPercent.x;
-					vMovePos.y += ImGui::GetIO().MouseDelta.y * fMouseToPercent.y;
 
 					if (Storyboard.Nodes[nodeid].screen_grid_size > 0)
 					{
-						int grid = Storyboard.Nodes[nodeid].screen_grid_size;
-						float adjustx = fmod(vMovePos.x, grid);
-						float adjusty = fmod(vMovePos.y, grid);
-						Storyboard.Nodes[nodeid].widget_pos[index].x = vMovePos.x - adjustx;
-						Storyboard.Nodes[nodeid].widget_pos[index].y = vMovePos.y - adjusty;
+						//PE: "Use Square Grid"
+						if (pref.square_storybord_grid)
+						{
+							vMovePos.x += ImGui::GetIO().MouseDelta.x * fMouseToPercent.x;
+							vMovePos.y += ImGui::GetIO().MouseDelta.y * fMouseToPercent.y;
+							
+							int grid = Storyboard.Nodes[nodeid].screen_grid_size;
+
+							float gridx = Storyboard.Nodes[nodeid].screen_grid_size * ( vMonitorSize.y / vMonitorSize.x );
+							
+							float finalx = std::floor(vMovePos.x / gridx) * gridx;
+
+							float finaly = ((int)vMovePos.y / grid) * grid;
+
+							ImVec2 fOnePercent = ImVec2(vMonitorSize.x / 100.0, vMonitorSize.y / 100.0);
+							//PE: Get nearest x cord in percent , based on y grid.
+							//PE: The percent system run from the center of the object, so cant always hit the right or left of the x grid, only center align to the grid perfectly.
+							float pixelToPercent = fOnePercent.y * fMouseToPercent.x;
+							finalx = std::floor(finalx / pixelToPercent) * pixelToPercent;
+
+							Storyboard.Nodes[nodeid].widget_pos[index].x = finalx;
+							Storyboard.Nodes[nodeid].widget_pos[index].y = finaly;
+						}
+						else
+						{
+							vMovePos.x += ImGui::GetIO().MouseDelta.x * fMouseToPercent.x;
+							vMovePos.y += ImGui::GetIO().MouseDelta.y * fMouseToPercent.y;
+
+							int grid = Storyboard.Nodes[nodeid].screen_grid_size;
+
+							float adjustx = fmod(vMovePos.x, grid);
+							float adjusty = fmod(vMovePos.y, grid);
+
+							Storyboard.Nodes[nodeid].widget_pos[index].x = vMovePos.x - adjustx;
+							Storyboard.Nodes[nodeid].widget_pos[index].y = vMovePos.y - adjusty;
+						}
 					}
 					else
 					{
+						vMovePos.x += ImGui::GetIO().MouseDelta.x * fMouseToPercent.x;
+						vMovePos.y += ImGui::GetIO().MouseDelta.y * fMouseToPercent.y;
+
 						Storyboard.Nodes[nodeid].widget_pos[index] = vMovePos;
 					}
 					bShowCenterLines = 1;
@@ -46999,24 +47031,52 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 			{
 				if (Storyboard.Nodes[nodeid].screen_grid_size > 0)
 				{
-					//ImVec2 vScale = vMonitorSize / ImVec2(1980.0, 1080);
-					ImVec2 vScale = vMonitorSize / vViewportSize;
-					ImVec4 tool_selected_col = ImVec4(0.75, 0.75, 0.75, 0.25); //ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram];
-					float grid_size = Storyboard.Nodes[nodeid].screen_grid_size;
-					ImVec2 fOnePercent = ImVec2(vMonitorSize.x / 100.0, vMonitorSize.y / 100.0); //PE: This can be changed in the future to support different screen ratio settings.
-					float grid_step = (grid_size * fOnePercent.x); // *vScale.x;
-					for (float fx = (image_bb.Min.x + padding.x); fx < (image_bb.Max.x - padding.x); fx += grid_step)
+					//PE: "Use Square Grid"
+					if (pref.square_storybord_grid)
 					{
-						ImVec2 linefrom = ImVec2(fx, image_bb.Min.y + padding.y);
-						ImVec2 lineto = ImVec2(fx, image_bb.Max.y - padding.y);
-						window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						ImVec2 vScale = vMonitorSize / vViewportSize;
+						ImVec4 tool_selected_col = ImVec4(0.75, 0.75, 0.75, 0.25); //ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram];
+						float grid_size = Storyboard.Nodes[nodeid].screen_grid_size;
+						ImVec2 fOnePercent = ImVec2(vMonitorSize.x / 100.0, vMonitorSize.y / 100.0);
+						float grid_step = (grid_size * fOnePercent.y); // Square
+
+						for (float fx = (image_bb.Min.x + padding.x); fx < (image_bb.Max.x - padding.x); fx += grid_step)
+						{
+							ImVec2 linefrom = ImVec2(fx, image_bb.Min.y + padding.y);
+							ImVec2 lineto = ImVec2(fx, image_bb.Max.y - padding.y);
+							window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						}
+						grid_step = (grid_size * fOnePercent.y); // *vScale.y;
+
+						for (float fy = (image_bb.Min.y + padding.y); fy < (image_bb.Max.y - padding.y); fy += grid_step)
+						{
+							ImVec2 linefrom = ImVec2(image_bb.Min.x + padding.x, fy);
+							ImVec2 lineto = ImVec2(image_bb.Max.x - padding.x, fy);
+							window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						}
+
+
 					}
-					grid_step = (grid_size * fOnePercent.y); // *vScale.y;
-					for (float fy = (image_bb.Min.y + padding.y); fy < (image_bb.Max.y - padding.y); fy += grid_step)
+					else
 					{
-						ImVec2 linefrom = ImVec2(image_bb.Min.x + padding.x, fy);
-						ImVec2 lineto = ImVec2(image_bb.Max.x - padding.x, fy);
-						window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						ImVec2 vScale = vMonitorSize / vViewportSize;
+						ImVec4 tool_selected_col = ImVec4(0.75, 0.75, 0.75, 0.25); //ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram];
+						float grid_size = Storyboard.Nodes[nodeid].screen_grid_size;
+						ImVec2 fOnePercent = ImVec2(vMonitorSize.x / 100.0, vMonitorSize.y / 100.0); //PE: This can be changed in the future to support different screen ratio settings.
+						float grid_step = (grid_size * fOnePercent.x); // *vScale.x;
+						for (float fx = (image_bb.Min.x + padding.x); fx < (image_bb.Max.x - padding.x); fx += grid_step)
+						{
+							ImVec2 linefrom = ImVec2(fx, image_bb.Min.y + padding.y);
+							ImVec2 lineto = ImVec2(fx, image_bb.Max.y - padding.y);
+							window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						}
+						grid_step = (grid_size * fOnePercent.y); // *vScale.y;
+						for (float fy = (image_bb.Min.y + padding.y); fy < (image_bb.Max.y - padding.y); fy += grid_step)
+						{
+							ImVec2 linefrom = ImVec2(image_bb.Min.x + padding.x, fy);
+							ImVec2 lineto = ImVec2(image_bb.Max.x - padding.x, fy);
+							window->DrawList->AddLine(linefrom, lineto, ImGui::GetColorU32(tool_selected_col));
+						}
 					}
 				}
 			}
@@ -48515,7 +48575,7 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 				{
 					if (!bReadOnly && iQuitWindowLoop <= 0 && !bPreviewScreen)
 					{
-						storyboard_control_widget(nodeid, index, widget_pos, widget_size, rMonitorArea, vMonitorStart, vScale);
+						storyboard_control_widget(nodeid, index, widget_pos, widget_size, rMonitorArea, vMonitorStart, vScale, vMonitorSize);
 					}
 				}
 
@@ -48919,6 +48979,10 @@ int screen_editor(int nodeid, bool standalone, char *screen)
 				if (Storyboard.Nodes[nodeid].screen_grid_size > 0)
 				{
 					ImGui::Checkbox("Show Grid", &bDisplayGrid);
+					//PE: "Use Square Grid"
+					bool bTmp = pref.square_storybord_grid;
+					ImGui::Checkbox("Use Square Grid", &bTmp);
+					pref.square_storybord_grid = bTmp;
 				}
 				else
 				{
