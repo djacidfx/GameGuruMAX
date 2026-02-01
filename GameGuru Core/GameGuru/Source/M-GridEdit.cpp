@@ -1313,6 +1313,7 @@ void mapeditorexecutable_init ( void )
 					g.projectfilename_s = t.returnstring_s;
 					gridedit_load_map();
 					g_EntityClipboard.clear(); //PE: Clear any old copy/paste.
+					undosys_clearall(); //PE: Clear undo redo system.
 					t.terrain.grassregionx1 = t.terrain.grassregionx2;
 					bUpdateVeg = true;
 
@@ -2154,6 +2155,7 @@ void mapeditorexecutable_loop(void)
 				g_bAllowBackwardCompatibleConversion = false;
 
 				g_EntityClipboard.clear(); //PE: Clear any old copy/paste.
+				undosys_clearall(); //PE: Clear undo redo system.
 
 
 				if(!bCloseStoryboardAfterLoad)
