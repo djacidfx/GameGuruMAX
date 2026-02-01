@@ -3235,7 +3235,13 @@ void entity_hasbulletrayhit(void)
 				t.bulletraylimbhit=0;
 				if (t.tfoundentityindexhit != -1)
 				{
-					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+					if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+						t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0 )
+					{
+						t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+					}
+					else
+						t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 				}
 			}
 			else
@@ -3260,7 +3266,13 @@ void entity_hasbulletrayhit(void)
 			// ChecklistValueA 9 not reliable, get material from entity properties!
 			if (t.tfoundentityindexhit != -1)
 			{
-				t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+				if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+					t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0)
+				{
+					t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+				}
+				else
+					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 			}
 			else
 			{
@@ -3294,7 +3306,13 @@ void entity_hasbulletrayhit(void)
 							t.tlimbhit = getlimbbyname(t.thitvalue, "Bip01_R_Foot");
 						}
 					}
-					t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
+					if (!t.entityelement[t.tfoundentityindexhit].eleprof.bUseFPESettings &&
+						t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex > 0)
+					{
+						t.tmaterialvalue = t.entityelement[t.tfoundentityindexhit].eleprof.iMaterialSoundIndex;
+					}
+					else
+						t.tmaterialvalue = t.entityprofile[t.tentid].materialindex;
 				}
 			}
 
@@ -3508,7 +3526,23 @@ void entity_hasbulletrayhit(void)
 	if (t.bulletrayhite > 0)
 	{
 		// if entity producing decal, ensure the right one being used
-		entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+		if (t.gun[t.gunid].weapontype >= 51 || t.gun[t.gunid].settings.ismelee != 0)
+		{
+			//PE: If melee make sure we did hit somethiong, t.bulletrayhite is resused so cant be used.
+			if (t.bulletrayhit > 0)
+			{
+				entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+			}
+			else
+			{
+				// default logic
+				entity_triggerdecalatimpact(t.brayx2_f, t.brayy2_f, t.brayz2_f);
+			}
+		}
+		else 
+		{
+			entity_applydecalfordamage(t.bulletrayhite, t.brayx2_f, t.brayy2_f, t.brayz2_f);
+		}
 	}
 	else
 	{
@@ -4706,7 +4740,6 @@ void entity_prepareobj ( void )
 				if (pObject->ppMeshList[iMesh]) pObject->ppMeshList[iMesh]->iCullMode = 0;
 			}
 			WickedCall_SetObjectCullmode(pObject);
-
 		}
 
 		if (t.entityprofile[t.tentid].bIsDecal)
@@ -4714,6 +4747,7 @@ void entity_prepareobj ( void )
 			void SetupDecalObject(int obj, int elementID);
 			SetupDecalObject(t.tobj, t.tte);
 		}
+
 
 		if (t.entityprofile[t.tentid].ismarker == 0)
 		{

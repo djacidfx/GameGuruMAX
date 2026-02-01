@@ -6369,6 +6369,7 @@ struct entityeleproftype
 	int systemwide_lua;
 	int isobjective_alwaysactive;
 	int isProjectGlobal;
+	int iMaterialSoundIndex;
 	// Constructor
 	entityeleproftype ( )
 	{
@@ -6522,6 +6523,7 @@ struct entityeleproftype
 		 systemwide_lua = 0;
 		 isobjective_alwaysactive = 0;
 		 isProjectGlobal = 0;
+		 iMaterialSoundIndex = 0;
 	}
 	// End of Constructor
 

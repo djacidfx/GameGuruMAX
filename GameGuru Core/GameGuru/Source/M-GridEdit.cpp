@@ -8170,7 +8170,63 @@ void mapeditorexecutable_loop(void)
 									ImGui::Indent(10);
 
 									{
-										// display custom material settings
+										if(!t.entityelement[iEntityIndex].eleprof.bUseFPESettings)
+										{
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex >= 5)
+												t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex = 0;
+
+											char material_sound_selection[256] = "\0";
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex <= 0)
+											{
+												strcpy(material_sound_selection, "None");
+											}
+											if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 1)
+											{
+												strcpy(material_sound_selection, "Silent");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 2)
+											{
+												strcpy(material_sound_selection, "Stone");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 3)
+											{
+												strcpy(material_sound_selection, "Metal");
+											}
+											else if (t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex == 4)
+											{
+												strcpy(material_sound_selection, "Wood");
+											}
+											char* cMaterialTypes[4] = { "Silent", "Stone", "Metal", "Wood" };
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 15));
+											ImGui::Text("Material Type");
+											ImGui::SameLine();
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 3));
+											ImGui::PushItemWidth(-10);
+											if (ImGui::BeginCombo("##ImporterMaterialType", &material_sound_selection[0], ImGuiComboFlags_PopupAlignLeft | ImGuiComboFlags_HeightLarge))
+											{
+												for (int i = 0; i < 4; i++)
+												{
+													bool is_selected = false;
+													if (strcmp(material_sound_selection, cMaterialTypes[i]) == NULL)
+													{
+														is_selected = true;
+													}
+													if (ImGui::Selectable(cMaterialTypes[i], is_selected))
+													{
+														strcpy(material_sound_selection, cMaterialTypes[i]);
+														t.entityelement[iEntityIndex].eleprof.iMaterialSoundIndex = i + 1;
+														//t.slidersmenuvalue[t.importer.properties1Index][10].value = i + 1;
+													}
+													if (is_selected) ImGui::SetItemDefaultFocus();
+												}
+												ImGui::EndCombo();
+											}
+											if (ImGui::IsItemHovered()) ImGui::SetTooltip("Select the material index for this object");
+											ImGui::PopItemWidth();
+											ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() + 15));
+										}
+
+										//PE: display material settings
 										WickedSetEntityId(iMasterID);
 										WickedSetElementId(iEntityIndex);
 										Wicked_Change_Object_Material((void*)pObject, 0, &t.entityelement[iEntityIndex].eleprof,true, t.entityelement[iEntityIndex].eleprof.bUseFPESettings);

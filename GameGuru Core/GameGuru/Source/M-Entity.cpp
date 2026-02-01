@@ -4146,6 +4146,8 @@ void entity_fillgrideleproffromprofile ( void )
 	t.grideleprof.explodeheight =t.entityprofile[t.entid].explodeheight;
 	t.grideleprof.explodable_decalname = t.entityprofile[t.entid].explodable_decalname;
 	
+	//t.grideleprof.iMaterialSoundIndex
+	
 	// 301115 - data extracted from neighbors (LOD Modifiers are shared across all parent copies)
 	int iThisBankIndex = t.entid;
 	if ( t.entityprofile[iThisBankIndex].addhandlelimb==0 )
@@ -5545,8 +5547,8 @@ void c_entity_loadelementsdata ( void )
 						t.a = t.a_f = c_ReadFloat(1); t.entityelement[t.e].eleprof.light.fProbeBrightness = t.a_f;
 
 						t.a = c_ReadLong(1); t.entityelement[t.e].iAllowBuletHole = t.a;
-
-						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
+						t.a = c_ReadLong(1); t.entityelement[t.e].eleprof.iMaterialSoundIndex = t.a;
+						
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = t.a_f = c_ReadFloat(1); fFiller = t.a_f;
 						t.a = c_ReadLong(1);
@@ -5709,6 +5711,8 @@ void c_entity_loadelementsdata ( void )
 							t.entityelement[t.e].eleprof.bUseFPESettings = false;
 						else
 							t.entityelement[t.e].eleprof.bUseFPESettings = true;
+
+						t.entityelement[t.e].eleprof.iMaterialSoundIndex = 0;
 					}
 					//t.entityelement[t.e].entitydammult_f=1.0; not used any more, reused field for iCanGoUnderwater and renamed entitydammult_f to reserved2
 					//t.entityelement[t.e].entityacc=1.0;
@@ -7161,8 +7165,10 @@ void entity_saveelementsdata (bool bForCollectionELE)
 
 					//writer.WriteFloat(0.0f);
 					writer.WriteLong(t.entityelement[ent].iAllowBuletHole);
+					//writer.WriteFloat(0.0f);
+					writer.WriteLong(t.entityelement[ent].eleprof.iMaterialSoundIndex);
+				
 
-					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteFloat(0.0f);
 					writer.WriteLong(t.entityelement[ent].eleprof.systemwide_lua);
