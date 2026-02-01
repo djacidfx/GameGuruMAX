@@ -161,6 +161,30 @@ void entity_init ( void )
 							WickedSetEntityId(-1);
 							WickedSetElementId(0);
 						}
+						//PE: Make sure we keep additive blending.
+						cstr sEffectLower = Lower(t.entityprofile[t.entid].effect_s.Get());
+						if (sEffectLower == "effectbank\\reloaded\\decal_animate1_additive.fx")
+						{
+							//PE: AvengingEagle's Light Effects.
+							DisableObjectZWrite(t.tobj);
+							void WickedCall_SetObjectBlendMode(sObject * pObject, int iBlendmode);
+							sObject* pObject = g_ObjectList[t.tobj];
+							if (pObject)
+							{
+								WickedCall_SetObjectBlendMode(pObject, BLENDMODE_ADDITIVE);
+							}
+							t.entityprofile[t.entid].blendmode = BLENDMODE_ADDITIVE;
+							if (t.tte > 0)
+							{
+								t.entityelement[t.tte].eleprof.blendmode = BLENDMODE_ADDITIVE;
+							}
+							for (int iMesh = 0; iMesh < pObject->iMeshCount; iMesh++)
+							{
+								if (pObject->ppMeshList[iMesh]) pObject->ppMeshList[iMesh]->iCullMode = 0;
+							}
+							WickedCall_SetObjectCullmode(pObject);
+						}
+
 					}
 					// ensure correct zdepth when game level starts
 					entity_preparedepth(t.entid, t.tobj);
