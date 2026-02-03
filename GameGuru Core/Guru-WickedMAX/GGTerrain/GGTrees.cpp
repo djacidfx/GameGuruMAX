@@ -2266,6 +2266,315 @@ void GGTrees_UpdateFrustumCulling( wiScene::CameraComponent* camera )
 	}
 }
 
+void GGTrees_Update(float camX, float camY, float camZ, CommandList cmd, bool bRenderTargetFocus)
+{
+	if (!ggtrees_initialised) return;
+#ifdef OPTICK_ENABLE
+	OPTICK_EVENT();
+#endif
+
+	if (!ggtrees_global_params.draw_enabled && ggtrees_global_params.hide_until_update == 0) return;
+
+#ifdef ONLYLOADWHENUSED
+	if (last_paint_tree_bitfield != ggtrees_global_params.paint_tree_bitfield)
+	{
+		last_paint_tree_bitfield = ggtrees_global_params.paint_tree_bitfield;
+		GGTrees_LoadTextures(false);
+	}
+#endif
+
+	if (ggtrees_global_params.hide_until_update)
+	{
+		// Trees are not drawn when choosing a new biome, so need check if we can draw them again.
+		if (ggterrain_extra_params.iUpdateTrees > 0)
+		{
+			ggterrain_extra_params.iUpdateTrees--;
+			if (ggterrain_extra_params.iUpdateTrees == 0)
+			{
+				if (!GGTrees_UpdateInstances(0)) ggterrain_extra_params.iUpdateTrees = 5;
+			}
+		}
+		return;
+	}
+
+	auto range = wiProfiler::BeginRangeCPU("Max - Tree Update");
+
+	// GUARD: Validate numTreeChunks before processing
+	const uint32_t MAX_SAFE_TREE_CHUNKS = 100000;
+	if (numTreeChunks > MAX_SAFE_TREE_CHUNKS)
+	{
+		char buf[256];
+		sprintf(buf, "GGTrees_Update GUARD: numTreeChunks=%u exceeds safe limit %u, skipping update\n", numTreeChunks, MAX_SAFE_TREE_CHUNKS);
+		OutputDebugStringA(buf);
+		wiProfiler::EndRange(range);
+		return;
+	}
+
+	// GUARD: Validate numTreeTypes before processing
+	const uint32_t MAX_SAFE_TREE_TYPES = 256;
+	if (numTreeTypes > MAX_SAFE_TREE_TYPES || numTreeTypes == 0)
+	{
+		char buf[256];
+		sprintf(buf, "GGTrees_Update GUARD: numTreeTypes=%u is invalid (max=%u), skipping update\n", numTreeTypes, MAX_SAFE_TREE_TYPES);
+		OutputDebugStringA(buf);
+		wiProfiler::EndRange(range);
+		return;
+	}
+
+	if (ggterrain_extra_params.edit_mode == GGTERRAIN_EDIT_TREES && !bImGuiGotFocus)
+	{
+		wiInput::MouseState mouseState = wiInput::GetMouseState();
+		ggtrees_internal_params.mouseLeftState = mouseState.left_button_press;
+		ggtrees_internal_params.mouseLeftPressed = (mouseState.left_button_press && !ggtrees_internal_params.prevMouseLeft) ? 1 : 0;
+		ggtrees_internal_params.mouseLeftReleased = (!mouseState.left_button_press && ggtrees_internal_params.prevMouseLeft) ? 1 : 0;
+		ggtrees_internal_params.prevMouseLeft = mouseState.left_button_press ? 1 : 0;
+		ggtrees_internal_params.mouseY = (int)mouseState.position.y;
+
+		if (bRenderTargetFocus)
+		{
+			RAY pickRay = wiRenderer::GetPickRay((long)mouseState.position.x, (long)mouseState.position.y, master.masterrenderer);
+			GGTrees_Update_Painting(pickRay);
+
+			// need to do this for the editor to update highlighting, can be skipped in standalone game
+			// stagger it to improve performance
+			uint32_t start = ggtrees_internal_params.treeChunkUpdate;
+			uint32_t end = start + 16;
+			if (end >= numTreeChunks) end = numTreeChunks - 1;
+			for (uint32_t i = start; i < end; i++)
+			{
+				TreeChunk* pChunk = &pTreeChunks[i];
+				pChunk->Update();
+			}
+
+			ggtrees_internal_params.treeChunkUpdate = end;
+			if (end == numTreeChunks - 1) ggtrees_internal_params.treeChunkUpdate = 0;
+		}
+	}
+
+	if (ggterrain_extra_params.iUpdateTrees > 0)
+	{
+		ggterrain_extra_params.iUpdateTrees--;
+		if (ggterrain_extra_params.iUpdateTrees == 0)
+		{
+			// something changed so adjust tree heights
+			if (!GGTrees_UpdateInstances(0)) ggterrain_extra_params.iUpdateTrees = 5;
+		}
+	}
+
+	// find close trees for shadows only, do normal trees in GGTrees_UpdateFrustumCulling()
+	for (uint32_t i = 0; i < numTreeTypes; i++)
+	{
+		numTreeInstancesHighShadow[i] = 0;
+	}
+
+	// GUARD: Track total instances processed to detect runaway loops
+	uint32_t totalInstancesProcessed = 0;
+	const uint32_t MAX_TOTAL_INSTANCES = 500000;
+	bool bLoopGuardTriggered = false;
+
+	for (uint32_t i = 0; i < numTreeChunks; i++)
+	{
+		TreeChunk* pChunk = &pTreeChunks[i];
+
+		// GUARD: Validate chunk pointer
+		if (pChunk == nullptr)
+		{
+			char buf[256];
+			sprintf(buf, "GGTrees_Update GUARD: pTreeChunks[%u] is NULL, skipping chunk\n", i);
+			OutputDebugStringA(buf);
+			continue;
+		}
+
+		uint32_t numInstances = pChunk->pInstances.NumItems();
+
+		// GUARD: Validate instance count for this chunk
+		const uint32_t MAX_INSTANCES_PER_CHUNK = 50000;
+		if (numInstances > MAX_INSTANCES_PER_CHUNK)
+		{
+			char buf[256];
+			sprintf(buf, "GGTrees_Update GUARD: Chunk %u has %u instances (max=%u), skipping chunk\n", i, numInstances, MAX_INSTANCES_PER_CHUNK);
+			OutputDebugStringA(buf);
+			continue;
+		}
+
+		if (numInstances == 0) continue;
+
+		float sqrDist = 0;
+		AABB aabb;
+		pChunk->GetBounds(&aabb);
+		if (camX > aabb._max.x) sqrDist = (camX - aabb._max.x) * (camX - aabb._max.x);
+		else if (camX < aabb._min.x) sqrDist = (camX - aabb._min.x) * (camX - aabb._min.x);
+
+		if (camY > aabb._max.y) sqrDist += (camY - aabb._max.y) * (camY - aabb._max.y);
+		else if (camY < aabb._min.y) sqrDist += (camY - aabb._min.y) * (camY - aabb._min.y);
+
+		if (camZ > aabb._max.z) sqrDist += (camZ - aabb._max.z) * (camZ - aabb._max.z);
+		else if (camZ < aabb._min.z) sqrDist += (camZ - aabb._min.z) * (camZ - aabb._min.z);
+
+		float distLODShadow = ggtrees_global_params.lod_dist_shadow + (float)GGTREES_LOD_SHADOW_TRANSITION * 2 + treeMaxHeight;
+		float sqrDistLODShadow = distLODShadow * distLODShadow;
+
+		if (sqrDist > sqrDistLODShadow) continue;
+
+		// check individual trees
+		for (uint32_t j = 0; j < numInstances; j++)
+		{
+			// GUARD: Check total instances processed
+			totalInstancesProcessed++;
+			if (totalInstancesProcessed > MAX_TOTAL_INSTANCES)
+			{
+				if (!bLoopGuardTriggered)
+				{
+					char buf[256];
+					sprintf(buf, "GGTrees_Update GUARD: Processed %u instances, exceeds limit %u, aborting loops\n", totalInstancesProcessed, MAX_TOTAL_INSTANCES);
+					OutputDebugStringA(buf);
+					bLoopGuardTriggered = true;
+				}
+				break;
+			}
+
+			InstanceTree* pInstance = pChunk->pInstances[j];
+
+			// GUARD: Validate instance pointer
+			if (pInstance == nullptr)
+			{
+				continue;
+			}
+
+			if (!pInstance->IsVisible() || pInstance->IsFlattened() || pInstance->IsInvalid()) continue;
+
+			sqrDist = 0;
+			sqrDist += (pInstance->x - camX) * (pInstance->x - camX);
+			sqrDist += (pInstance->y - camY) * (pInstance->y - camY);
+			sqrDist += (pInstance->z - camZ) * (pInstance->z - camZ);
+
+			uint32_t treeType = pInstance->GetType();
+
+			// error trap if data held exceeds latest tree choices
+			if (treeType >= numTreeTypes)
+			{
+				treeType = numTreeTypes - 1;
+			}
+
+			float scale = pInstance->GetScaleFloat();
+			float height = g_GGTrees[treeType].height * scale;
+			float halfHeight = height / 2.0f;
+
+			XMFLOAT3 pos;
+			pos.x = pInstance->x;
+			pos.y = pInstance->y + halfHeight;
+			pos.z = pInstance->z;
+
+			if (sqrDist <= sqrDistLODShadow)
+			{
+				// add tree to shadow draw list
+				uint32_t index = numTreeInstancesHighShadow[treeType];
+				if (index < 999)
+				{
+					// only if fit within dynamic array
+					treeInstancesHighShadow[treeType][index].x = pInstance->x;
+					treeInstancesHighShadow[treeType][index].y = pInstance->y;
+					treeInstancesHighShadow[treeType][index].z = pInstance->z;
+					treeInstancesHighShadow[treeType][index].data = pInstance->data;
+					numTreeInstancesHighShadow[treeType]++;
+				}
+			}
+		}
+
+		// GUARD: Break outer loop too if guard was triggered
+		if (bLoopGuardTriggered) break;
+	}
+
+	// DIAGNOSTIC: Log shadow tree counts periodically
+	static int frameCounter = 0;
+	frameCounter++;
+	if (frameCounter % 500 == 0 || bLoopGuardTriggered)
+	{
+		uint32_t totalShadowTrees = 0;
+		for (uint32_t i = 0; i < numTreeTypes; i++)
+		{
+			totalShadowTrees += numTreeInstancesHighShadow[i];
+		}
+		char buf[512];
+		sprintf(buf, "GGTrees_Update DIAG: frame=%d, numTreeTypes=%u, numTreeChunks=%u, totalInstancesProcessed=%u, totalShadowTrees=%u, lodDistShadow=%.1f\n",
+			frameCounter, numTreeTypes, numTreeChunks, totalInstancesProcessed, totalShadowTrees, ggtrees_global_params.lod_dist_shadow);
+		OutputDebugStringA(buf);
+	}
+
+	for (uint32_t i = 0; i < numTreeTypes; i++)
+	{
+		if (numTreeInstancesHighShadow[i] > 0)
+		{
+			GPUBufferDesc bufferDesc = {};
+			SubresourceData data = {};
+			data.pSysMem = treeInstancesHighShadow[i];
+			bufferDesc.ByteWidth = sizeof(InstanceTreeGPU) * numTreeInstancesHighShadow[i];
+			bufferDesc.BindFlags = BIND_VERTEX_BUFFER;
+			bufferDesc.CPUAccessFlags = 0;
+			bufferDesc.MiscFlags = 0;
+			wiRenderer::GetDevice()->CreateBuffer(&bufferDesc, &data, &bufferInstancesHighShadow[i]);
+		}
+	}
+
+	// update shader constants buffer
+	float ang = 0.785398f; // (2.0 * pi) / 8.0
+	for (int i = 0; i < 8; i++)
+	{
+		float c = cos(ang * i);
+		float s = sin(ang * i);
+		treeConstantData.tree_rotMat[i].x = c;
+		treeConstantData.tree_rotMat[i].y = -s;
+		treeConstantData.tree_rotMat[i].z = s;
+		treeConstantData.tree_rotMat[i].w = c;
+	}
+
+	wiScene::LightComponent* lightSun = wiScene::GetScene ().lights.GetComponent (g_entitySunLight);
+
+	// GUARD: Validate sun light component
+	if (lightSun == nullptr)
+	{
+		OutputDebugStringA("GGTrees_Update GUARD: lightSun is NULL, skipping shadow rotation calc\n");
+		wiProfiler::EndRange(range);
+		return;
+	}
+
+	float dirX = lightSun->direction.x;
+	float dirZ = lightSun->direction.z;
+
+	// GUARD: Prevent division by zero
+	float dirMagSq = dirX * dirX + dirZ * dirZ;
+	if (dirMagSq < 0.0001f)
+	{
+		OutputDebugStringA("GGTrees_Update GUARD: Sun direction XZ magnitude near zero, using default\n");
+		dirMagSq = 1.0f;
+	}
+	float invV = 1.0f / sqrt(dirMagSq);
+
+	treeConstantData.tree_rotMatShadow.x = dirZ * invV;
+	treeConstantData.tree_rotMatShadow.y = dirX * invV;
+	treeConstantData.tree_rotMatShadow.z = -dirX * invV;
+	treeConstantData.tree_rotMatShadow.w = dirZ * invV;
+
+	for (uint32_t i = 0; i < numTreeTypes; i++)
+	{
+		float height = g_GGTrees[i].height;
+		treeConstantData.tree_type[i].scaleX = g_GGTrees[i].billboardScaleX * height;
+		treeConstantData.tree_type[i].scaleY = g_GGTrees[i].height;
+	}
+
+	treeConstantData.tree_playerPos.x = camX;
+	treeConstantData.tree_playerPos.y = camY;
+	treeConstantData.tree_playerPos.z = camZ;
+
+	treeConstantData.tree_lodDist = ggtrees_global_params.lod_dist;
+	treeConstantData.tree_lodDistShadow = ggtrees_global_params.lod_dist_shadow;
+
+	wiRenderer::GetDevice()->UpdateBuffer(&treeConstantBuffer, &treeConstantData, cmd, sizeof(TreeCB));
+
+	wiProfiler::EndRange(range);
+}
+
+/* old version with possible root cause of driver hang due to too many demands on the GPU
 void GGTrees_Update( float camX, float camY, float camZ, CommandList cmd, bool bRenderTargetFocus )
 {
 	if (!ggtrees_initialised) return;
@@ -2467,6 +2776,7 @@ void GGTrees_Update( float camX, float camY, float camZ, CommandList cmd, bool b
 
 	wiProfiler::EndRange( range );
 }
+*/
 
 void GGTrees_HideAll()
 {
