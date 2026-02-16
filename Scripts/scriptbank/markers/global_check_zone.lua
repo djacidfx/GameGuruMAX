@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Global Check Zone v2 by Necrym59
+-- Global Check Zone v3 by Necrym59
 -- DESCRIPTION: Will compare/check two user globals to action a result to a third user global value when zone is entered by player or designated entity type.
 -- DESCRIPTION: [@ENTITY_TYPE=5(1=Active Object Only, 2=Active Character Only, 3=Active Non-Character Only, 4=Non-Static Objects, 5=Player Character Only)]
 -- DESCRIPTION: [@@CHECK_GLOBAL1$=""(0=globallist)] eg; MyValue
@@ -13,6 +13,7 @@
 -- DESCRIPTION: [SpawnAtStart!=1] if unchecked use a switch or other trigger to spawn this zone
 -- DESCRIPTION: [ActivateLogic!=0] if checked will trigger linked or IfUSed entities
 -- DESCRIPTION: <Sound0> - When entering zone Sound
+-- DESCRIPTION: <Sound1> - Action Sound
 
 local glcheckzone 		= {}
 local entity_type 		= {}
@@ -105,10 +106,11 @@ function global_check_zone_main(e)
 						if glcheckzone[e].result_action == 2 then --Deduct
 							_G["g_UserGlobal['"..glcheckzone[e].result_global.."']"] = currentvalue[e] - glcheckzone[e].result_value
 						end						
-					end
-					if glcheckzone[e].activatelogic == 1 then
-						ActivateIfUsed(e)
-						PerformLogicConnections(e)
+						if glcheckzone[e].activatelogic == 1 then
+							ActivateIfUsed(e)
+							PerformLogicConnections(e)
+						end
+						PlaySound(e,1)
 					end
 					doonce[e] = 1
 				end	
@@ -144,10 +146,11 @@ function global_check_zone_main(e)
 						if glcheckzone[e].result_action == 2 then --Deduct
 							_G["g_UserGlobal['"..glcheckzone[e].result_global.."']"] = currentvalue[e] - glcheckzone[e].result_value
 						end						
-					end
-					if glcheckzone[e].activatelogic == 1 then
-						ActivateIfUsed(e)
-						PerformLogicConnections(e)
+						if glcheckzone[e].activatelogic == 1 then
+							ActivateIfUsed(e)
+							PerformLogicConnections(e)
+						end
+						PlaySound(e,1)
 					end
 					doonce[e] = 1
 				end	
