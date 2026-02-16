@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Weather Event v8 by Necrym59 with special thanks to Bolt Action Gaming
+-- Weather Event v9 by Necrym59 with special thanks to Bolt Action Gaming
 -- DESCRIPTION: Apply to an object and can be activated by switch or zone.
 -- DESCRIPTION: [#EVENT_PACE=0.01(0.01,60.0)] Higher = Slower
 -- DESCRIPTION: [CLOUD_DENSITY=1(1,400)]
@@ -54,6 +54,7 @@ local original_thickness= {}
 local original_speed 	= {}
 local original_wind 	= {}
 local original_sun      = {}
+local total_ms			= {}	
 
 -- Unique velocities for each property
 local v_den = {}
@@ -120,6 +121,7 @@ function weather_event_main(e)
 		trigonce[e] = 0
 		warnonce[e] = 0
 		pace[e] = 0
+		total_ms[e] = 0
 		timedelay[e] = 0		
 		status[e] = "do_event"
 	end
@@ -135,34 +137,32 @@ function weather_event_main(e)
 			original_wind[e] = GetTreeWind()
 			original_sun[e] = GetExposure() * 100
 
-			-- Recalculate duration: Pace 60 = 150 seconds. Logic runs every 100ms.
-			local duration_sec = weather_event[e].event_pace * 2.5
-			if duration_sec < 0.1 then duration_sec = 0.1 end
-			local total_steps = duration_sec * 10
+			-- Velocity is now (Target - Start) / Total Milliseconds
+			total_ms[e] = (weather_event[e].event_pace * 2.5) * 100
+			if total_ms[e] < 1 then total_ms[e] = 1 end
 
-			-- Calculate individual velocities (Target - Start) / Steps
-			v_den[e] = ((weather_event[e].cloud_density / 100) - original_density[e]) / total_steps
-			v_cov[e] = ((weather_event[e].cloud_coverage / 100) - original_coverage[e]) / total_steps
-			v_hei[e] = ((weather_event[e].cloud_height * 39.36) - original_height[e]) / total_steps
-			v_thi[e] = ((weather_event[e].cloud_thickness * 393.6) - original_thickness[e]) / total_steps
-			v_spd[e] = (weather_event[e].cloud_speed - original_speed[e]) / total_steps
-			v_win[e] = (weather_event[e].wind_speed - original_wind[e]) / total_steps
-			v_sun[e] = ((weather_event[e].sun_exposure / 100) - original_sun[e]/100) / total_steps
+			v_den[e] = ((weather_event[e].cloud_density / 100) - original_density[e]) / total_ms[e]
+			v_cov[e] = ((weather_event[e].cloud_coverage / 100) - original_coverage[e]) / total_ms[e]
+			v_hei[e] = ((weather_event[e].cloud_height * 39.36) - original_height[e]) / total_ms[e]
+			v_thi[e] = ((weather_event[e].cloud_thickness * 393.6) - original_thickness[e]) / total_ms[e]
+			v_spd[e] = (weather_event[e].cloud_speed - original_speed[e]) / total_ms[e]
+			v_win[e] = (weather_event[e].wind_speed - original_wind[e]) / total_ms[e]
+			v_sun[e] = ((weather_event[e].sun_exposure / 100) - (original_sun[e]/100)) / total_ms[e]
 
 			if weather_event[e].warning_user_global ~= "" then
 				_G["g_UserGlobal['"..weather_event[e].warning_user_global.."']"] = ""
 			end
 
-			pace[e] = g_Time + 100
 			doonce[e] = 1
 		end
 
-		if status[e] == "do_event" and g_Time > pace[e] then
-			pace[e] = g_Time + 100
-
+		if status[e] == "do_event" then
+			-- Frame-rate independent increments
+			local delta = g_TimePassed or 1
+			
 			-- Density
 			if endval1[e] == 0 then
-				SetCloudDensity(GetCloudDensity() + v_den[e])
+				SetCloudDensity(GetCloudDensity() + (v_den[e] * delta))
 				if (v_den[e] >= 0 and GetCloudDensity()*100 >= weather_event[e].cloud_density) or (v_den[e] < 0 and GetCloudDensity()*100 <= weather_event[e].cloud_density) or v_den[e] == 0 then
 					SetCloudDensity(weather_event[e].cloud_density/100)
 					endval1[e] = 1
@@ -170,7 +170,7 @@ function weather_event_main(e)
 			end
 			-- Coverage
 			if endval2[e] == 0 then
-				SetCloudCoverage(GetCloudCoverage() + v_cov[e])
+				SetCloudCoverage(GetCloudCoverage() + (v_cov[e] * delta))
 				if (v_cov[e] >= 0 and GetCloudCoverage()*100 >= weather_event[e].cloud_coverage) or (v_cov[e] < 0 and GetCloudCoverage()*100 <= weather_event[e].cloud_coverage) or v_cov[e] == 0 then
 					SetCloudCoverage(weather_event[e].cloud_coverage/100)
 					endval2[e] = 1
@@ -178,7 +178,7 @@ function weather_event_main(e)
 			end
 			-- Height
 			if endval3[e] == 0 then
-				SetCloudHeight(GetCloudHeight() + v_hei[e])
+				SetCloudHeight(GetCloudHeight() + (v_hei[e] * delta))
 				local target_h = weather_event[e].cloud_height * 39.36
 				if (v_hei[e] >= 0 and GetCloudHeight() >= target_h) or (v_hei[e] < 0 and GetCloudHeight() <= target_h) or v_hei[e] == 0 then
 					SetCloudHeight(target_h)
@@ -187,7 +187,7 @@ function weather_event_main(e)
 			end
 			-- Thickness
 			if endval4[e] == 0 then
-				SetCloudThickness(GetCloudThickness() + v_thi[e])
+				SetCloudThickness(GetCloudThickness() + (v_thi[e] * delta))
 				local target_t = weather_event[e].cloud_thickness * 393.6
 				if (v_thi[e] >= 0 and GetCloudThickness() >= target_t) or (v_thi[e] < 0 and GetCloudThickness() <= target_t) or v_thi[e] == 0 then
 					SetCloudThickness(target_t)
@@ -196,7 +196,7 @@ function weather_event_main(e)
 			end
 			-- Speed
 			if endval5[e] == 0 then
-				SetCloudSpeed(GetCloudSpeed() + v_spd[e])
+				SetCloudSpeed(GetCloudSpeed() + (v_spd[e] * delta))
 				if (v_spd[e] >= 0 and GetCloudSpeed() >= weather_event[e].cloud_speed) or (v_spd[e] < 0 and GetCloudSpeed() <= weather_event[e].cloud_speed) or v_spd[e] == 0 then
 					SetCloudSpeed(weather_event[e].cloud_speed)
 					endval5[e] = 1
@@ -205,7 +205,7 @@ function weather_event_main(e)
 			-- Exposure
 			if endval6[e] == 0 then
 				if weather_event[e].sun_exposure ~= 0 then
-					SetExposure(GetExposure() + v_sun[e])
+					SetExposure(GetExposure() + (v_sun[e] * delta))
 					if (v_sun[e] >= 0 and GetExposure()*100 >= weather_event[e].sun_exposure) or (v_sun[e] < 0 and GetExposure()*100 <= weather_event[e].sun_exposure) then
 						SetExposure(weather_event[e].sun_exposure/100)
 						endval6[e] = 1
@@ -216,7 +216,7 @@ function weather_event_main(e)
 			end
 			-- Wind
 			if endval7[e] == 0 then
-				SetTreeWind(GetTreeWind() + v_win[e])
+				SetTreeWind(GetTreeWind() + (v_win[e] * delta))
 				if (v_win[e] >= 0 and GetTreeWind() >= weather_event[e].wind_speed) or (v_win[e] < 0 and GetTreeWind() <= weather_event[e].wind_speed) or v_win[e] == 0 then
 					SetTreeWind(weather_event[e].wind_speed)
 					endval7[e] = 1
@@ -244,33 +244,33 @@ function weather_event_main(e)
 		end
 
 		if status[e] == "start_fade" then
-			-- Reverse velocities for fade back
-			local duration_sec = weather_event[e].event_pace * 2.5
-			local total_steps = (duration_sec > 0.1 and duration_sec or 0.1) * 10
-			v_den[e] = (original_density[e] - GetCloudDensity()) / total_steps
-			v_cov[e] = (original_coverage[e] - GetCloudCoverage()) / total_steps
-			v_hei[e] = (original_height[e] - GetCloudHeight()) / total_steps
-			v_thi[e] = (original_thickness[e] - GetCloudThickness()) / total_steps
-			v_spd[e] = (original_speed[e] - GetCloudSpeed()) / total_steps
-			v_win[e] = (original_wind[e] - GetTreeWind()) / total_steps
-			v_sun[e] = ((original_sun[e]/100) - GetExposure()) / total_steps
+			total_ms[e] = (weather_event[e].event_pace * 2.5) * 100
+			if total_ms[e] < 1 then total_ms[e] = 1 end
+			
+			v_den[e] = (original_density[e] - GetCloudDensity()) / total_ms[e]
+			v_cov[e] = (original_coverage[e] - GetCloudCoverage()) / total_ms[e]
+			v_hei[e] = (original_height[e] - GetCloudHeight()) / total_ms[e]
+			v_thi[e] = (original_thickness[e] - GetCloudThickness()) / total_ms[e]
+			v_spd[e] = (original_speed[e] - GetCloudSpeed()) / total_ms[e]
+			v_win[e] = (original_wind[e] - GetTreeWind()) / total_ms[e]
+			v_sun[e] = ((original_sun[e]/100) - GetExposure()) / total_ms[e]
+			
+			timedelay[e] = 0
 			status[e] = "fade_back"
 		end
 
-		if status[e] == "fade_back" and g_Time > pace[e] then
-			pace[e] = g_Time + 100
-			-- (Applying same logic in reverse)
-			SetCloudDensity(GetCloudDensity() + v_den[e])
-			SetCloudCoverage(GetCloudCoverage() + v_cov[e])
-			SetCloudHeight(GetCloudHeight() + v_hei[e])
-			SetCloudThickness(GetCloudThickness() + v_thi[e])
-			SetCloudSpeed(GetCloudSpeed() + v_spd[e])
-			SetTreeWind(GetTreeWind() + v_win[e])
-			SetExposure(GetExposure() + v_sun[e])
+		if status[e] == "fade_back" then
+			local delta = g_TimePassed or 1
+			SetCloudDensity(GetCloudDensity() + (v_den[e] * delta))
+			SetCloudCoverage(GetCloudCoverage() + (v_cov[e] * delta))
+			SetCloudHeight(GetCloudHeight() + (v_hei[e] * delta))
+			SetCloudThickness(GetCloudThickness() + (v_thi[e] * delta))
+			SetCloudSpeed(GetCloudSpeed() + (v_spd[e] * delta))
+			SetTreeWind(GetTreeWind() + (v_win[e] * delta))
+			SetExposure(GetExposure() + (v_sun[e] * delta))
 
-			timedelay[e] = timedelay[e] + 100
+			timedelay[e] = timedelay[e] + delta
 			if timedelay[e] >= (weather_event[e].event_pace * 2.5 * 1000) then
-				-- Cleanup and snap to original
 				SetCloudDensity(original_density[e])
 				SetCloudCoverage(original_coverage[e])
 				SetCloudHeight(original_height[e])
@@ -282,10 +282,11 @@ function weather_event_main(e)
 				StartTimer(e)
 			end
 		end
-		if weather_event[e].diagnostic == 1 then
+		-- (Diagnostic Text blocks remain same)
+		if weather_event[e].diagnostic == 1 then			
 			Text(5,44,3,"Status: " ..status[e])
 			Text(5,46,3,"Time: " ..g_Time)
-			Text(5,48,3,"Event Pace: " ..pace[e])
+			Text(5,48,3,"Event Pace: " ..weather_event[e].event_pace)
 			Text(5,50,3,"Cloud Density: " .. GetCloudDensity()*100 .." Original : " .. original_density[e])
 			Text(5,52,3,"Cloud Cover: " ..GetCloudCoverage()*100 .. " Original : " .. original_coverage[e])
 			Text(5,54,3,"Cloud Height: " ..GetCloudHeight()/39.36 .. " Original : " .. original_height[e]/39.36)
