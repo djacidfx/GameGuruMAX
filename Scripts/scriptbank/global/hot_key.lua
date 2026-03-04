@@ -1,9 +1,12 @@
+-- LUA Script - precede every function and global member with lowercase name of script + '_main'
 -- Hot_Key v6 by Necrym59
--- DESCRIPTION: A global behavior that will display an icon image on screen for a specified resource and allow use of an activation key
+-- DESCRIPTION: Will display an icon image on screen for a specified resource and activation key
+-- DESCRIPTION: Attach to an entity. Set to AlwaysActive
 -- DESCRIPTION: [SCREEN_POSITION_X=2(0,100)]
 -- DESCRIPTION: [SCREEN_POSITION_Y=10(0,100)]
 -- DESCRIPTION: [SCREEN_SCALE=10(1,100)]
 -- DESCRIPTION: [ICON1_IMAGEFILE$=""] Inactive icon image
+-- DESCRIPTION: [ICON1_ALPHA=1(0,255)]
 -- DESCRIPTION: [ICON2_IMAGEFILE$=""] Active icon image
 -- DESCRIPTION: [RESOURCE_NAME$=""] eg: "Potion" has to collectable
 -- DESCRIPTION: [RESOURCE_AMOUNT=10(0,100)] Amount to add
@@ -18,6 +21,7 @@ local screen_position_x 		= {}
 local screen_position_y 		= {}
 local screen_scale 				= {}
 local icon1_imagefile 			= {}
+local icon1_alpha				= {}
 local icon2_imagefile 			= {}
 local resource_name				= {}
 local resource_amount			= {}
@@ -41,11 +45,12 @@ local doonce			= {}
 local icontimer			= {}
 local keypressed		= {}
 
-function hot_key_properties(e, screen_position_x, screen_position_y, screen_scale, icon1_imagefile, icon2_imagefile, resource_name, resource_amount, applied_to, user_global_affected, activation_key)
+function hot_key_properties(e, screen_position_x, screen_position_y, screen_scale, icon1_imagefile, icon1_alpha, icon2_imagefile, resource_name, resource_amount, applied_to, user_global_affected, activation_key)
 	hotkey[e].screen_position_x = screen_position_x
 	hotkey[e].screen_position_y = screen_position_y
 	hotkey[e].screen_scale = screen_scale
 	hotkey[e].icon1_imagefile = icon1_imagefile
+	hotkey[e].icon1_alpha = icon1_alpha
 	hotkey[e].icon2_imagefile = icon2_imagefile
 	hotkey[e].resource_name = string.lower(resource_name)
 	hotkey[e].resource_amount = resource_amount
@@ -60,6 +65,7 @@ function hot_key_init(e)
 	hotkey[e].screen_position_y = screen_position_y
 	hotkey[e].screen_scale = screen_scale	
 	hotkey[e].icon1_imagefile = ""
+	hotkey[e].icon1_alpha = 25
 	hotkey[e].icon2_imagefile = ""
 	hotkey[e].resource_name = ""
 	hotkey[e].resource_amount = 0
@@ -115,7 +121,7 @@ function hot_key_main(e)
 		
 		if hotkey[e].icon1_imagefile ~= "" then
 			if tobeused[e] == 0 then
-				SetSpriteColor(sp_hsicon1[e],255,255,255,80)
+				SetSpriteColor(sp_hsicon1[e],255,255,255,hotkey[e].icon1_alpha)
 				PasteSpritePosition(sp_hsicon1[e],hotkey[e].screen_position_x,hotkey[e].screen_position_y)
 			end			
 			if tobeused[e] > 0 then
