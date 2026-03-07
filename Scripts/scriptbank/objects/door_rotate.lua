@@ -1,4 +1,4 @@
--- Door Rotate v29 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v30 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -145,6 +145,10 @@ function door_rotate_main(e)
 		g_door_rotate[ e ].originalx = g_Entity[e]['x']
 		g_door_rotate[ e ].originaly = g_Entity[e]['y']
 		g_door_rotate[ e ].originalz = g_Entity[e]['z']
+		CollisionOff( e )
+		ResetPosition ( e, g_Entity[e]['x'], g_Entity[e]['y'], g_Entity[e]['z'] )
+		ResetRotation ( e, g_Entity[e]['anglex'], g_Entity[e]['angley'], g_Entity[e]['anglez'] )
+		CollisionOn( e )
 		return
 	end
 
@@ -157,7 +161,7 @@ function door_rotate_main(e)
 			timeLastFrame = timeThisFrame
 			timeDiff = 1
 		else
-			timeDiff = ( timeThisFrame - timeLastFrame ) / 20
+			timeDiff = ( timeThisFrame - timeLastFrame ) / 10
 			timeLastFrame = timeThisFrame
 		end
 	end
@@ -227,7 +231,7 @@ function door_rotate_main(e)
 					PlaySound( e, 0 )
 					PerformLogicConnections(e)
 					door.state = 'Knob'
-					door.timer = timeThisFrame + 500
+					door.timer = timeThisFrame + 250
 				end
 			end
 		elseif door.state == 'Open' then
