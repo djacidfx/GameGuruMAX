@@ -1,4 +1,4 @@
--- Door Rotate v30 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v31 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -241,6 +241,7 @@ function door_rotate_main(e)
 				if g_KeyPressE == 1 then
 					if not keyPressed then
 						door.state = 'Closing'
+						PerformLogicConnections(e)
 						keyPressed = true
 					end
 				else
@@ -276,7 +277,7 @@ function door_rotate_main(e)
 
 	if door.state == 'Closing' then
 		if door.angle > 0 then
-			door.angle = door.angle - timeDiff
+			door.angle = door.angle - timeDiff			
 			if door.angle < 0 then door.angle = 0 end
 			local rotAng = door.angle
 			if names[ e ] == 'Right' or door.opening_style == 2 then rotAng = -rotAng end
@@ -287,7 +288,7 @@ function door_rotate_main(e)
 			CollisionOn( e )
 		else
 			door.state = 'Closed'
-			PlaySound( e, 1 )
+			PlaySound( e, 1 )			
 			door.blocking = 1
 		end
 	end
