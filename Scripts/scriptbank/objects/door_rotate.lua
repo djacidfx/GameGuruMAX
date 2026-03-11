@@ -1,4 +1,4 @@
--- Door Rotate v32 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v33 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -10,7 +10,7 @@
 -- DESCRIPTION: [@PROMPT_DISPLAY=2(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
 -- DESCRIPTION: [HIGHLIGHT_ICON_IMAGEFILE$="imagebank\\icons\\hand.png"]
--- DESCRIPTION: [@LOGIC_TRIGGER=1(1=None,2=On Opening,3=On Closing, 4=On Opening+Closing)]
+-- DESCRIPTION: [@LOGIC_TRIGGER=1(1=None,2=On Opening,3=On Closing,4=On Opening+Closing, 5=On Opening+Closed)]
 
 local module_misclib = require "scriptbank\\module_misclib"
 local Q = require "scriptbank\\quatlib"
@@ -235,7 +235,7 @@ function door_rotate_main(e)
 					PlaySound( e, 0 )
 					door.state = 'Knob'
 					door.timer = timeThisFrame + 150
-					if door.logic_trigger == 2 or door.logic_trigger == 4 then
+					if door.logic_trigger == 2 or door.logic_trigger == 4 or door.logic_trigger == 5 then
 						ActivateIfUsed(e)
 						PerformLogicConnections(e)
 					end						
@@ -248,10 +248,10 @@ function door_rotate_main(e)
 				if g_KeyPressE == 1 then
 					if not keyPressed then
 						door.state = 'Closing'
-						--if door.logic_trigger == 3 or door.logic_trigger == 4 then
-						--	ActivateIfUsed(e)
-						--	PerformLogicConnections(e)
-						--end
+						if door.logic_trigger == 3 or door.logic_trigger == 4 then
+							ActivateIfUsed(e)
+							PerformLogicConnections(e)
+						end
 						keyPressed = true
 					end
 				else
@@ -300,7 +300,7 @@ function door_rotate_main(e)
 			door.state = 'Closed'
 			PlaySound( e, 1 )			
 			door.blocking = 1
-			if door.logic_trigger == 3 or door.logic_trigger == 4 then
+			if door.logic_trigger == 5 then
 				ActivateIfUsed(e)
 				PerformLogicConnections(e)
 			end
