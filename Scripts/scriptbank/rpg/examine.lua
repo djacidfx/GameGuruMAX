@@ -1,4 +1,4 @@
--- Examine v9 by Necrym59
+-- Examine v10 by Necrym59
 -- DESCRIPTION: Allows to examine an object.
 -- DESCRIPTION: [PICKUP_RANGE=90(0,100)]
 -- DESCRIPTION: [PICKUP_MESSAGE$="E to Examine object"]
@@ -7,6 +7,7 @@
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
 -- DESCRIPTION: [HIGHLIGHT_ICON_IMAGEFILE$="imagebank\\icons\\pickup.png"]
+-- DESCRIPTION: [@PICKUP_TRIGGER=1(1=Off,2=On)]
 
 local module_misclib = require "scriptbank\\module_misclib"
 local U = require "scriptbank\\utillib"
@@ -26,6 +27,7 @@ local examine_speed			= {}
 local prompt_display 		= {}
 local item_highlight 		= {}
 local highlight_icon 		= {}
+local pickup_trigger		= {}
 
 local exminetime		= {}
 local status 			= {}
@@ -46,8 +48,9 @@ local hl_icon 			= {}
 local hl_imgwidth 		= {}
 local hl_imgheight 		= {}
 local last_gun			= {}
+local doonce			= {}
 
-function examine_properties(e, pickup_range, pickup_message, examine_message, examine_speed, prompt_display, item_highlight, highlight_icon_imagefile)
+function examine_properties(e, pickup_range, pickup_message, examine_message, examine_speed, prompt_display, item_highlight, highlight_icon_imagefile, pickup_trigger)
 	examine[e].pickup_range = pickup_range
 	examine[e].pickup_message =  pickup_message
 	examine[e].examine_message = examine_message
@@ -55,6 +58,7 @@ function examine_properties(e, pickup_range, pickup_message, examine_message, ex
 	examine[e].prompt_display = prompt_display
 	examine[e].item_highlight = item_highlight
 	examine[e].highlight_icon = highlight_icon_imagefile
+	examine[e].pickup_trigger = pickup_trigger or 1	
 end
 
 function examine_init(e)
@@ -66,6 +70,7 @@ function examine_init(e)
 	examine[e].prompt_display = 1
 	examine[e].item_highlight = 0
 	examine[e].highlight_icon = "imagebank\\icons\\pickup.png"
+	examine[e].pickup_trigger = 1	
 
 	status[e] = "init"
 	exminetime[e] = 0
@@ -75,6 +80,7 @@ function examine_init(e)
 	hl_icon[e] = 0
 	hl_imgwidth[e] = 0
 	hl_imgheight[e] = 0
+	doonce[e] = 0
 	last_gun[e] = g_PlayerGunName
 end
 
@@ -113,6 +119,11 @@ function examine_main(e)
 			if examine[e].prompt_display == 1 then PromptLocal(e,examine[e].pickup_message) end
 			if examine[e].prompt_display == 2 then Prompt(examine[e].pickup_message) end
 			if g_KeyPressE == 1 then
+				if examine[e].pickup_trigger == 2 and doonce[e] == 0 then
+					ActivateIfUsed(e)
+					PerformLogicConnections(e)
+					doonce[e] = 1
+				end
 				GravityOff(e)
 				CollisionOff(e)
 				local xmin, ymin, zmin, xmax, ymax, zmax = GetObjectColBox(g_Entity[tEnt[e]]['obj'])
@@ -127,7 +138,6 @@ function examine_main(e)
 				RotateObject(g_Entity[tEnt[e]]['obj'],0,g_Entity[tEnt[e]]['angley'],g_PlayerAngZ)
 				SetCameraOverride(3)
 				exminetime[e] = 0
-
 				last_gun[e] = g_PlayerGunName
 				if g_PlayerGunID > 0 then
 					CurrentlyHeldWeaponID = GetPlayerWeaponID()
