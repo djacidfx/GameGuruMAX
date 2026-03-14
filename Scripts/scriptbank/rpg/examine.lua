@@ -2,7 +2,7 @@
 -- DESCRIPTION: Allows to examine an object.
 -- DESCRIPTION: [PICKUP_RANGE=90(0,100)]
 -- DESCRIPTION: [PICKUP_MESSAGE$="E to Examine object"]
--- DESCRIPTION: [EXAMINE_MESSAGE$="Hmmm..."]
+-- DESCRIPTION: [EXAMINE_MESSAGE$="WASD or MB1+Move, MMW=Up/Dn, Q to Exit"]
 -- DESCRIPTION: [EXAMINE_SPEED=50]
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
@@ -152,7 +152,6 @@ function examine_main(e)
 		ActivateMouse()
 		if examine[e].prompt_display == 1 then PromptLocal(e,examine[e].examine_message) end
 		if examine[e].prompt_display == 2 then Prompt(examine[e].examine_message) end
-		TextCenterOnX(50,95,3,"WASD or MB1+Move, MMW=Up/Dn, Q to Exit")
 		exminetime[e] = GetElapsedTime() * 100
 		PositionObject(g_Entity[tEnt[e]]['obj'],prop_x[tEnt[e]],prop_y[tEnt[e]]-prop_h[e]/2,prop_z[tEnt[e]])
 		RotateObject(g_Entity[tEnt[e]]['obj'],g_Entity[tEnt[e]]['anglex'],g_Entity[tEnt[e]]['angley'],g_Entity[tEnt[e]]['anglez'])
