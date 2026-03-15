@@ -2358,6 +2358,7 @@ void entity_loaddata ( void )
 					if (  matched  )  t.entityprofile[t.entid].ignoredefanim = t.value1;
 
 					//  materialindex
+					// -1    = Can happen when Model Importer batch converts before global material manually set (bug-so repair below)!
 					//  0    = - GenericSoft
 					//  1    = S Stone
 					//  2    = M Metal
@@ -2378,7 +2379,11 @@ void entity_loaddata ( void )
 					//  17   = W Shallow Water
 					//  18   = U Underwater
 					cmpStrConst( t_field_s, "materialindex" );
-					if (  matched  )  t.entityprofile[t.entid].materialindex = t.value1;
+					if (matched)
+					{
+						t.entityprofile[t.entid].materialindex = t.value1;
+						if (t.entityprofile[t.entid].materialindex == -1) t.entityprofile[t.entid].materialindex = 0; // repair!
+					}
 
 					//  LOD and BITBOB system
 					cmpStrConst( t_field_s, "disablebatch" );
