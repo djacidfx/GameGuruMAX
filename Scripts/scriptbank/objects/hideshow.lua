@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- HideShow v15
+-- HideShow v16
 -- DESCRIPTION: Will Hide or Show an object activated from a linked Trigger Zone or Switch
 -- DESCRIPTION: Attach to the object(s) to be hidden/shown. Physics=ON, IsImobile=YES
 -- DESCRIPTION: [PROMPT_TEXT$="What was that"]
@@ -126,7 +126,6 @@ function hideshow_main(e)
 					PlaySound(e,0)
 					played[e] = 1
 				end
-				SetActivated(e,0)
 				g_Entity[e]['activated'] = 0
 			end
 		end		
@@ -151,7 +150,6 @@ function hideshow_main(e)
 					PlaySound(e,1)
 					played[e] = 1
 				end
-				SetActivated(e,0)
 				g_Entity[e]['activated'] = 0
 			end				
 		end		
