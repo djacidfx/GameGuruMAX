@@ -7910,6 +7910,20 @@ int DisplayScreen(lua_State* L)
 	lua_pushnumber(L, iSpecialLuaReturn);
 	return 1;
 }
+int ForceMouseXYClick(lua_State* L)
+{
+	// called by cursorcontrol.lua so that when controller moves pointer in screen
+	// the changes are carried into the engine so they can move the actual LUA mouse pointer and handle the click
+	extern float LuaMousePosPercentX;
+	extern float LuaMousePosPercentY;
+	extern int LuaMouseClick;
+	LuaMousePosPercentX = lua_tonumber(L, 1);
+	LuaMousePosPercentY = lua_tonumber(L, 2);
+	LuaMouseClick = lua_tonumber(L, 3);
+	g.LUAMouseX = (GetDisplayWidth() / 100.0f) * LuaMousePosPercentX;
+	g.LUAMouseY = (GetDisplayHeight() / 100.0f) * LuaMousePosPercentY;
+	return 0;
+}
 int DisplayCurrentScreen(lua_State* L)
 {
 	int screen_editor(int nodeid, bool standalone = false, char* screen = NULL);
@@ -14334,6 +14348,7 @@ void addFunctions()
 	lua_register(lua, "SetScreenHUDGlobalScale", SetScreenHUDGlobalScale);
 	lua_register(lua, "InitScreen", InitScreen);
 	lua_register(lua, "DisplayScreen", DisplayScreen);
+	lua_register(lua, "ForceMouseXYClick", ForceMouseXYClick);
 	lua_register(lua, "DisplayCurrentScreen", DisplayCurrentScreen);
 	lua_register(lua, "GetCurrentScreen", GetCurrentScreen);
 	lua_register(lua, "GetCurrentScreenName", GetCurrentScreenName);
