@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Moon v5 by Necrym59
+-- Moon v6 by Necrym59
 -- DESCRIPTION: Allows a moon object to rotate and orbit another named object
 -- DESCRIPTION: Attach this behavior to the moon object.
 -- DESCRIPTION: [#MOON_ADJUST_X=0.0(-20000.0,20000.0)]
@@ -147,11 +147,16 @@ function moon_main(e)
 	end
 	if status[e] == "moon_process" then
 		RotateY(e,GetAnimationSpeed(e)*moon[e].moon_rotation/5)
-		if moon[e].orbit_planet_no ~= 0 then	
+		if moon[e].orbit_planet_no ~= 0 then
+			-- UPDATE PLANET POSITION
+			planetposx[e],planetposy[e],planetposz[e],planetangx[e],planetangy[e],planetangz[e] = GetEntityPosAng(moon[e].orbit_planet_no)
+			moonposx[e] = planetposx[e]
+			moonposy[e] = planetposy[e]+ moon[e].moon_adjust_y
+			moonposz[e] = planetposz[e]+(moon[e].orbit_distance*moon[e].orbit_multiplier)
 			-- ORBITAL ROTATION --
 			if orbit[e] < 100 then 				
 				local new_x = moonposx[e] + math.sin(orbit[e]) * (moon[e].orbit_distance*moon[e].orbit_multiplier)
-				local new_y = moonposy[e]
+				local new_y = moonposy[e] 
 				local new_z = planetposz[e] + math.cos(orbit[e]) * (moon[e].orbit_distance*moon[e].orbit_multiplier)
 				
 				orbit[e] = orbit[e] + moon[e].orbit_speed/10000

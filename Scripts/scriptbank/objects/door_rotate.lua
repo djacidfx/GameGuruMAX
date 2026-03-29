@@ -1,4 +1,4 @@
--- Door Rotate v29 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v33 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -10,6 +10,7 @@
 -- DESCRIPTION: [@PROMPT_DISPLAY=2(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
 -- DESCRIPTION: [HIGHLIGHT_ICON_IMAGEFILE$="imagebank\\icons\\hand.png"]
+-- DESCRIPTION: [@LOGIC_TRIGGER=1(1=None,2=On Opening,3=On Closing,4=On Opening+Closing, 5=On Opening+Closed)]
 
 local module_misclib = require "scriptbank\\module_misclib"
 local Q = require "scriptbank\\quatlib"
@@ -32,6 +33,7 @@ local status 			= {}
 local hl_icon			= {}
 local hl_imgwidth		= {}
 local hl_imgheight		= {}
+local logic_trigger		= {}
 
 local defaultLockedText		= "Door is locked. Find a way to open it"
 local defaultIsUnlocked		= 1
@@ -47,7 +49,7 @@ g_door_rotate = {}
 
 local doorTypesRotation = { 'Auto', 'Manual' }
 
-function door_rotate_properties( e, lockedtext, isunlocked, unlockedtext, closetext, door_type, door_range, opening_style, prompt_display, item_highlight, highlight_icon_imagefile)
+function door_rotate_properties( e, lockedtext, isunlocked, unlockedtext, closetext, door_type, door_range, opening_style, prompt_display, item_highlight, highlight_icon_imagefile, logic_trigger)
 	local door = g_door_rotate[ e ]
 	if door == nil then return end
 	if lockedtext ~= nil then
@@ -70,6 +72,7 @@ function door_rotate_properties( e, lockedtext, isunlocked, unlockedtext, closet
 	door.prompt_display = prompt_display or defaultPromptDisplay	
 	door.item_highlight = item_highlight or defaultItemHighlight
 	door.highlight_icon = highlight_icon_imagefile or defaultHighlightIcon
+	door.logic_trigger = logic_trigger
 end
 
 function door_rotate_init_name( e, name )
@@ -94,7 +97,8 @@ function door_rotate_init_name( e, name )
 							opening_style = opening_style,
 							prompt_display = prompt_display,
 							item_highlight = item_highlight,
-							highlight_icon = highlight_icon_imagefile
+							highlight_icon = highlight_icon_imagefile,
+							logic_trigger = logic_trigger
 					      }
 	tEnt[e] = 0
 	status[e] = "init"
@@ -161,7 +165,7 @@ function door_rotate_main(e)
 			timeLastFrame = timeThisFrame
 			timeDiff = 1
 		else
-			timeDiff = ( timeThisFrame - timeLastFrame ) / 20
+			timeDiff = ( timeThisFrame - timeLastFrame ) / 10
 			timeLastFrame = timeThisFrame
 		end
 	end
@@ -229,9 +233,12 @@ function door_rotate_main(e)
 				end
 				if tdotheopennow == 1 then
 					PlaySound( e, 0 )
-					PerformLogicConnections(e)
 					door.state = 'Knob'
-					door.timer = timeThisFrame + 500
+					door.timer = timeThisFrame + 150
+					if door.logic_trigger == 2 or door.logic_trigger == 4 or door.logic_trigger == 5 then
+						ActivateIfUsed(e)
+						PerformLogicConnections(e)
+					end						
 				end
 			end
 		elseif door.state == 'Open' then
@@ -241,6 +248,10 @@ function door_rotate_main(e)
 				if g_KeyPressE == 1 then
 					if not keyPressed then
 						door.state = 'Closing'
+						if door.logic_trigger == 3 or door.logic_trigger == 4 then
+							ActivateIfUsed(e)
+							PerformLogicConnections(e)
+						end
 						keyPressed = true
 					end
 				else
@@ -259,7 +270,7 @@ function door_rotate_main(e)
 		door.blocking = 2
 		door.blocking = NAVMESH.HandleBlocker(e,door.blocking, door.originalx,door.originaly, door.originalz)
 		if door.angle < 90 then
-			door.angle = door.angle + timeDiff
+			door.angle = door.angle + timeDiff*1.5
 			if door.angle > 90 then door.angle = 90 end
 			local rotAng = door.angle
 			if names[ e ] == 'Right' or door.opening_style == 2 then rotAng = -rotAng end
@@ -276,7 +287,7 @@ function door_rotate_main(e)
 
 	if door.state == 'Closing' then
 		if door.angle > 0 then
-			door.angle = door.angle - timeDiff
+			door.angle = door.angle - timeDiff*1.5			
 			if door.angle < 0 then door.angle = 0 end
 			local rotAng = door.angle
 			if names[ e ] == 'Right' or door.opening_style == 2 then rotAng = -rotAng end
@@ -287,8 +298,12 @@ function door_rotate_main(e)
 			CollisionOn( e )
 		else
 			door.state = 'Closed'
-			PlaySound( e, 1 )
+			PlaySound( e, 1 )			
 			door.blocking = 1
+			if door.logic_trigger == 5 then
+				ActivateIfUsed(e)
+				PerformLogicConnections(e)
+			end
 		end
 	end
 
