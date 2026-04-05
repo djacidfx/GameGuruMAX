@@ -1,8 +1,9 @@
--- Healthbar v11 - by Necrym,59
+-- Healthbar v12 - by Necrym,59
 -- DESCRIPTION: A global behavior that will display a viewed enemys health in a bar or text.
 -- DESCRIPTION: [DISPLAY_RANGE=200(100,1000)]
 -- DESCRIPTION: [@DISPLAY_MODE=1(1=Health Bar, 2=Health Text, 3=Health Text+Bar, 4=Identity Text, 5=Identity Text+Bar)]
 -- DESCRIPTION: [Y_ADJUSTMENT=10(0,50)]
+-- DESCRIPTION: [FIXED_Y!=0]
 -- DESCRIPTION: [HEALTH_TEXT$="Health:"]
 -- DESCRIPTION: [HEALTH_BAR_IMAGEFILE$="imagebank\\buttons\\slider-bar-full.png"]
 -- DESCRIPTION: [HEALTH_COLOR_CHANGE=150(1,1000)]
@@ -14,6 +15,7 @@ local healthbar = {}
 local display_range = {}
 local display_mode = {}
 local y_adjustment = {}
+local fixed_y = {}
 local health_text = {}
 local health_bar = {}
 local health_color_change = {}
@@ -29,10 +31,11 @@ local checktimer = {}
 local entrange = {}
 local enemies = {}
 
-function healthbar_properties(e, display_range, display_mode, y_adjustment, health_text,health_bar, health_color_change)
+function healthbar_properties(e, display_range, display_mode, y_adjustment, fixed_y, health_text,health_bar, health_color_change)
 	healthbar[e].display_range = display_range or 500
 	healthbar[e].display_mode = display_mode or 1
 	healthbar[e].y_adjustment = y_adjustment
+	healthbar[e].fixed_y = fixed_y or 0
 	healthbar[e].health_text = health_text
 	healthbar[e].health_bar = health_bar
 	healthbar[e].health_color_change = health_color_change
@@ -43,6 +46,7 @@ function healthbar_init(e)
 	healthbar[e].display_range = 500
 	healthbar[e].display_mode = 1
 	healthbar[e].y_adjustment = 0
+	healthbar[e].fixed_y = 0
 	healthbar[e].health_text = "Health:"
 	healthbar[e].health_bar = "imagebank\\buttons\\slider-bar-full.png"
 	healthbar[e].health_color_change = 150
@@ -92,13 +96,14 @@ function healthbar_main(e)
 				if g_Entity[a] ~= nil then
 					entrange[e] = math.ceil(GetFlatDistanceToPlayer(a))	
 					GetEntityPlayerVisibility(a)
-					if U.PlayerLookingNear(a,healthbar[e].display_range,fov) == true then
+					if U.PlayerLookingNear(a,healthbar[e].display_range,120) == true and GetEntityVisibility(a) ==  1 then
 						if g_Entity[a]["health"] > 0 and entrange[e] < healthbar[e].display_range then
 							tagreadout[e] = GetEntityName(a)
 							--Entity dimensions check--
 							Ent = g_Entity[a]
 							local dims = P.GetObjectDimensions(Ent.obj)
-							rotheight[e] = (dims.h + healthbar[e].y_adjustment)
+							if healthbar[e].fixed_y == 0 then rotheight[e] = (dims.h + healthbar[e].y_adjustment) end
+							if healthbar[e].fixed_y == 1 then rotheight[e] = healthbar[e].y_adjustment end
 							--3dto2d check--
 							ScreenPosX = -1
 							ScreenPosX,ScreenPosY = Convert3DTo2D(g_Entity[a]['x'],g_Entity[a]['y']+rotheight[e],g_Entity[a]['z'])
@@ -166,7 +171,7 @@ function healthbar_main(e)
 					end
 				end
 			end
-			checktimer[e] = g_Time + 2
+			checktimer[e] = g_Time + 0.5
 		end
 	end
 end
