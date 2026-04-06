@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Dispenser v3 by Necrym59
+-- Dispenser v4 by Necrym59
 -- DESCRIPTION: Attach to an object to act as a dispenser for required attribute.
 -- DESCRIPTION: [USE_RANGE=80(1,200)]
 -- DESCRIPTION: [USE_PROMPT$="Hold E to use"]
@@ -150,6 +150,7 @@ function dispenser_main(e)
 			playonce[e] = 1
 		end
 		if dispenser[e].when_empty == 1 then
+			SetEntityEmissiveStrength(e,0)
 			SwitchScript(e,"no_behavior_selected.lua")
 		end
 		if dispenser[e].when_empty == 2 then
