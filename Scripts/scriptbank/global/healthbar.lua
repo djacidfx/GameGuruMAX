@@ -1,4 +1,4 @@
--- Healthbar v12 - by Necrym,59
+-- Healthbar v14 - by Necrym,59
 -- DESCRIPTION: A global behavior that will display a viewed enemys health in a bar or text.
 -- DESCRIPTION: [DISPLAY_RANGE=200(100,1000)]
 -- DESCRIPTION: [@DISPLAY_MODE=1(1=Health Bar, 2=Health Text, 3=Health Text+Bar, 4=Identity Text, 5=Identity Text+Bar)]
@@ -10,6 +10,7 @@
 
 local P = require "scriptbank\\physlib"
 local U = require "scriptbank\\utillib"
+
 g_LegacyNPC = {}
 local healthbar = {}
 local display_range = {}
@@ -25,11 +26,13 @@ local status = {}
 local hbarsize = {}
 local hreadout = {}
 local hbarsprite = {}
+local sprwidth = {}
 local tagreadout = {}
 local tableName = {}
 local checktimer = {}
 local entrange = {}
 local enemies = {}
+local doonce = {}
 
 function healthbar_properties(e, display_range, display_mode, y_adjustment, fixed_y, health_text,health_bar, health_color_change)
 	healthbar[e].display_range = display_range or 500
@@ -56,8 +59,10 @@ function healthbar_init(e)
 	hbarsize[e] = 0
 	hreadout[e] = 0
 	hbarsprite[e] = 0
+	sprwidth[e] = 0
 	tagreadout[e] = ""	
 	g_LegacyNPC = 0
+	doonce[e] = 0
 	enemies[e] = 0
 	checktimer[e] =	math.huge
 	tableName[e] = "hbenemies" ..tostring(e)
@@ -86,6 +91,7 @@ function healthbar_main(e)
 			CollisionOff(e)
 			Hide(e)
 		end
+		sprwidth[e] = 100 + (GetDesktopWidth()/GetDesktopHeight())		
 		checktimer[e] = g_Time + 2
 		status[e] = "active"
 	end
@@ -93,7 +99,7 @@ function healthbar_main(e)
 	if status[e] == "active" then
 		if g_Time > checktimer[e] then
 			for _,a in pairs (_G[tableName[e]]) do
-				if g_Entity[a] ~= nil then
+				if g_Entity[a] ~= nil then													
 					entrange[e] = math.ceil(GetFlatDistanceToPlayer(a))	
 					GetEntityPlayerVisibility(a)
 					if U.PlayerLookingNear(a,healthbar[e].display_range,120) == true and GetEntityVisibility(a) ==  1 then
@@ -114,10 +120,15 @@ function healthbar_main(e)
 								percentx,percenty = ScreenCoordsToPercent(ScreenPosX,ScreenPosY)
 							end
 							--Health and Healthbar check--
+							if g_Entity[a]['health'] > 1000 then
+								g_LegacyNPC = 1
+							else
+								g_LegacyNPC = 0
+							end
 							if g_LegacyNPC == 0 then hreadout[e] = g_Entity[a]['health'] end
-							if g_LegacyNPC == 1 then hreadout[e] = g_Entity[a]['health']-1000 end
+							if g_LegacyNPC == 1 then hreadout[e] = (g_Entity[a]['health']-1000) end	
 							if g_Entity[a]['health'] < 9000 then
-								hbarsize[e] = hreadout[e]/200
+								hbarsize[e] = (hreadout[e]/sprwidth[e])									
 								SetSpriteSize(hbarsprite[e],hbarsize[e],3)
 								if hreadout[e] > healthbar[e].health_color_change then SetSpriteColor(hbarsprite[e],0,255,0,255) end
 								if hreadout[e] < healthbar[e].health_color_change then SetSpriteColor(hbarsprite[e],255,0,0,255) end
@@ -158,6 +169,7 @@ function healthbar_main(e)
 							end								
 							if g_LegacyNPC == 1 and g_Entity[a]['health'] < 1000 then
 								g_LegacyNPC = 0
+								g_Entity[a]['health'] = 0
 							end
 						end
 					end	
