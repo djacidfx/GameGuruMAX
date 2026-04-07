@@ -60,7 +60,7 @@ function healthbar_init(e)
 	hreadout[e] = 0
 	hbarsprite[e] = 0
 	sprwidth[e] = 0
-	tagreadout[e] = ""	
+	tagreadout[e] = ""
 	g_LegacyNPC = 0
 	doonce[e] = 0
 	enemies[e] = 0
@@ -86,12 +86,12 @@ function healthbar_main(e)
 					enemies[e] = enemies[e]+1
 				end
 			end
-		end	
+		end
 		if healthbar[e].hide_this_entity == 1 then
 			CollisionOff(e)
 			Hide(e)
 		end
-		sprwidth[e] = 100 + (GetDesktopWidth()/GetDesktopHeight())		
+		sprwidth[e] = 100 + (GetDesktopWidth()/GetDesktopHeight())
 		checktimer[e] = g_Time + 2
 		status[e] = "active"
 	end
@@ -99,10 +99,10 @@ function healthbar_main(e)
 	if status[e] == "active" then
 		if g_Time > checktimer[e] then
 			for _,a in pairs (_G[tableName[e]]) do
-				if g_Entity[a] ~= nil then													
-					entrange[e] = math.ceil(GetFlatDistanceToPlayer(a))	
+				if g_Entity[a] ~= nil then
+					entrange[e] = math.ceil(GetFlatDistanceToPlayer(a))
 					GetEntityPlayerVisibility(a)
-					if U.PlayerLookingNear(a,healthbar[e].display_range,120) == true and GetEntityVisibility(a) ==  1 then
+					if U.PlayerLookingNear(a,healthbar[e].display_range,120) == true and GetEntityVisibility(a) == 1 and g_Entity[a]['health'] ~= 999 then
 						if g_Entity[a]["health"] > 0 and entrange[e] < healthbar[e].display_range then
 							tagreadout[e] = GetEntityName(a)
 							--Entity dimensions check--
@@ -126,9 +126,9 @@ function healthbar_main(e)
 								g_LegacyNPC = 0
 							end
 							if g_LegacyNPC == 0 then hreadout[e] = g_Entity[a]['health'] end
-							if g_LegacyNPC == 1 then hreadout[e] = (g_Entity[a]['health']-1000) end	
+							if g_LegacyNPC == 1 then hreadout[e] = (g_Entity[a]['health']-1000) end
 							if g_Entity[a]['health'] < 9000 then
-								hbarsize[e] = (hreadout[e]/sprwidth[e])									
+								hbarsize[e] = (hreadout[e]/sprwidth[e])
 								SetSpriteSize(hbarsprite[e],hbarsize[e],3)
 								if hreadout[e] > healthbar[e].health_color_change then SetSpriteColor(hbarsprite[e],0,255,0,255) end
 								if hreadout[e] < healthbar[e].health_color_change then SetSpriteColor(hbarsprite[e],255,0,0,255) end
@@ -166,19 +166,19 @@ function healthbar_main(e)
 									if g_Entity[a]['health'] == g_PlayerHealth then TextCenterOnXColor(percentx,percenty,1,tagreadout[e],255,255,0) end
 									if g_Entity[a]['health'] < g_PlayerHealth then TextCenterOnXColor(percentx,percenty,1,tagreadout[e],0,255,0) end
 								end
-							end								
+							end
 							if g_LegacyNPC == 1 and g_Entity[a]['health'] < 1000 then
 								g_LegacyNPC = 0
-								g_Entity[a]['health'] = 0
 							end
 						end
-					end	
+					end
 				end
 			end
 			--Destroy Dead Entities check--
 			for _,a in pairs (_G[tableName[e]]) do
 				if g_Entity[a] ~= nil then
-					if g_Entity[a]['health'] <= 0 then						
+					if g_Entity[a]['health'] <= 0 then
+						SetEntityHealth(a,0)
 						table.remove(_G[tableName[e]], tableFind(_G[tableName[e]],a))
 					end
 				end
