@@ -1,15 +1,15 @@
--- Booster v4 by Necrym 59
+-- Booster v5 by Necrym 59
 -- DESCRIPTION: The object will give the player a booster or deduction if used.
 -- DESCRIPTION: [PROMPT_TEXT$="E to consume"]
 -- DESCRIPTION: [PROMPT_IF_COLLECTABLE$="E to collect"]
 -- DESCRIPTION: [USEAGE_TEXT$="Boost consumed"]
 -- DESCRIPTION: [QUANTITY=10(1,500)]
 -- DESCRIPTION: [PICKUP_RANGE=80(1,100)]
--- DESCRIPTION: [@PICKUP_STYLE=2(1=Ranged, 2=Accurate)]
--- DESCRIPTION: [@EFFECT=1(1=Add, 2=Deduct)]
+-- DESCRIPTION: [@PICKUP_STYLE=2(1=Ranged, 2=Accurate,3=External Trigger)]
+-- DESCRIPTION: [@PICKUP_EFFECT=1(1=Add, 2=Deduct)]
 -- DESCRIPTION: [@BOOST_STYLE=1(1=Health Applied, 2=Stamina Timed, 3=Jumping Timed, 4=Speed Timed, 5=User Global Timed)]
 -- DESCRIPTION: [BOOST_TIME=5(0,60)] Seconds
--- DESCRIPTION: [@BOOST_DISPLAY=1(1=None, 2=Statusbar, 3=Text)] boost time display
+-- DESCRIPTION: [@BOOST_DISPLAY=1(1=None, 2=Bar, 3=Text)] boost time display
 -- DESCRIPTION: [STATUSBAR_IMAGEFILE$="imagebank\\HUD Library\\MISC\\progress-bar.png"]
 -- DESCRIPTION: [@@USER_GLOBAL_AFFECTED$=""(0=globallist)] eg: MyMana
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
@@ -29,7 +29,7 @@ local useage_text = {}
 local quantity = {}
 local pickup_range = {}
 local pickup_style = {}
-local effect = {}
+local pickup_effect = {}
 local boost_style = {}
 local boost_time = {}
 local boost_display = {}
@@ -60,17 +60,17 @@ local boostbarsprite = {}
 local boostbarwidth	= {}
 local boostbarheight = {}
 
-function booster_properties(e, prompt_text, prompt_if_collectable, useage_text, quantity, pickup_range, pickup_style, effect, boost_style, boost_time, boost_display, statusbar_imagefile, user_global_affected, prompt_display, item_highlight, highlight_icon_imagefile)
+function booster_properties(e, prompt_text, prompt_if_collectable, useage_text, quantity, pickup_range, pickup_style, pickup_effect, boost_style, boost_time, boost_display, statusbar_imagefile, user_global_affected, prompt_display, item_highlight, highlight_icon_imagefile)
 	booster[e].prompt_text = prompt_text
 	booster[e].prompt_if_collectable = prompt_if_collectable
 	booster[e].useage_text = useage_text
 	booster[e].quantity = quantity
 	booster[e].pickup_range = pickup_range
-	booster[e].pickup_style = pickup_style or 1
-	booster[e].effect = effect or 1
-	booster[e].boost_style = boost_style or 1
+	booster[e].pickup_style = pickup_style
+	booster[e].pickup_effect = pickup_effect
+	booster[e].boost_style = boost_style
 	booster[e].boost_time = boost_time
-	booster[e].boost_display = boost_display or 1
+	booster[e].boost_display = boost_display
 	booster[e].statusbar_imagefile = statusbar_imagefile
 	booster[e].user_global_affected = user_global_affected
 	booster[e].prompt_display = prompt_display
@@ -86,7 +86,7 @@ function booster_init(e)
 	booster[e].quantity = 10
 	booster[e].pickup_range = 80
 	booster[e].pickup_style = 1
-	booster[e].effect = 1
+	booster[e].pickup_effect = 1
 	booster[e].boost_style = 1
 	booster[e].boost_time = 1
 	booster[e].boost_display = 1
@@ -141,7 +141,7 @@ function booster_main(e)
 			SetSpriteDepth(boostbarsprite[e],100)
 			SetSpriteOffset(boostbarsprite[e],boostbarwidth[e]/2.0,boostbarheight[e]/2.0)
 			SetSpritePosition(boostbarsprite[e],500,500)			
-		end		
+		end
 		booster_timer[e] = math.huge
 		SetGamePlayerControlJumpmax(defaultjump[e])
 		status[e] = "endinit"
@@ -179,16 +179,18 @@ function booster_main(e)
 			end
 		end
 	end
+	if booster[e].pickup_style == 3 then
+		if g_Entity[e]['activated'] == 1 then
+			use_item_now[e] = 1
+		end		
+	end
 	local tusedvalue = GetEntityUsed(e)
 	if tusedvalue > 0 then
 		-- if this is a resource, it will deplete qty and set used to zero
 		SetEntityUsed(e,tusedvalue*-1)
 		use_item_now[e] = 1		
 	end	
-	local addquantity = 0
 	if use_item_now[e] == 1 then		
-		if booster[e].effect == 1 then addquantity = 1 end
-		if booster[e].effect == 2 then addquantity = 2 end
 		if item_used[e] == 0 then
 			PromptDuration(booster[e].useage_text,3000)
 			PlaySound(e,0)
@@ -199,7 +201,7 @@ function booster_main(e)
 			Hide(e)
 			item_used[e] = 1
 			-- Set boosts calculations
-			if addquantity == 1 then
+			if booster[e].pickup_effect == 1 then --Add
 				if booster[e].boost_style == 1 then
 					calchealth[e] = g_PlayerHealth + booster[e].quantity
 					if calchealth[e] > g_PlayerStartStrength then calchealth[e] = g_PlayerStartStrength end
@@ -225,7 +227,7 @@ function booster_main(e)
 					calcglobal[e] = currentvalue[e] + booster[e].quantity
 				end	
 			end	
-			if addquantity == 2 then
+			if booster[e].pickup_effect == 2 then --Deduct
 				if booster[e].boost_style == 1 then
 					calchealth[e] = g_PlayerHealth - booster[e].quantity
 					if calchealth[e] <= 0 then calchealth[e] = 0 end
@@ -244,6 +246,7 @@ function booster_main(e)
 				end	
 				if booster[e].boost_style == 4 then	
 					calcspeed[e] = defaultspeed[e] - booster[e].quantity/100
+					if calcspeed[e] <= 0 then calcspeed[e] = 0.5 end
 				end
 				if booster[e].user_global_affected ~= "" then
 					if _G["g_UserGlobal['"..booster[e].user_global_affected.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..booster[e].user_global_affected.."']"] end
@@ -257,7 +260,7 @@ function booster_main(e)
 	if g_Time < booster_timer[e] and item_used[e] == 1 then
 		SetPosition(e,g_PlayerPosX,g_PlayerPosY+500,g_PlayerPosZ)
 		local currentvalue = 0
-		if addquantity == 1 then
+		if booster[e].pickup_effect == 1 then --Add
 			if booster[e].boost_style == 1 then				
 				SetPlayerHealthCore(calchealth[e])
 			end
@@ -279,7 +282,7 @@ function booster_main(e)
 				end
 			end
 		end
-		if addquantity == 2 then
+		if booster[e].pickup_effect == 2 then --Deduct
 			if booster[e].boost_style == 1 then
 				if calchealth[e] > 0 then SetPlayerHealthCore(calchealth[e]) end
 				if calchealth[e] <= 0 then HurtPlayer(-1,g_PlayerHealth) end
@@ -293,7 +296,7 @@ function booster_main(e)
 			if booster[e].boost_style == 3 then
 				SetGamePlayerControlJumpmax(calcjump[e])
 			end
-			if booster[e].boost_style == 4 then
+			if booster[e].boost_style == 4 then				
 				SetGamePlayerControlSpeedRatio(calcspeed[e])
 			end				
 			if booster[e].boost_style == 5 then	
@@ -311,7 +314,7 @@ function booster_main(e)
 			end
 			if booster[e].boost_display == 3 then
 				local btime = math.floor((booster_timer[e]-g_Time)/1000)
-				Prompt("Boost Time: " ..btime)
+				Prompt("Effect Time: " ..btime)
 			end	
 		end		
 	end
