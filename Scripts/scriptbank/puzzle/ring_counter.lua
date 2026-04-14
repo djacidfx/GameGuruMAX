@@ -51,9 +51,9 @@ local emr = {}
 local emg = {}
 local emb = {}
 local emst = {}
-local effects = {}
 local rspinspeed = {}
 local closestent = {}
+local fadetimer = {}
 local played = {}
 local doonce = {}
 local repair = {}
@@ -103,9 +103,9 @@ function ring_counter_init(e)
 	played[e] = 0
 	rspinspeed[e] = 0
 	currentvalue[e] = 0
-	effects[e]=0
 	doonce[e] = 0
 	repair[e] = 0
+	fadetimer[e] = math.huge
 	status[e] = "init"
 	state[e] = "safe"
 	emlevel[e] = ring[e].pulse_strength
@@ -165,33 +165,10 @@ function ring_counter_main(e)
 					repair[e] = 1
 				end
 			end
-			if current_level[e] > 0 then
-				SetEntityBaseAlpha(e,current_level[e])
-				current_level[e] = current_level[e] - 1
-			end
-			if current_level[e] <= 0 then
-				CollisionOff(e)
-				Hide(e)
-				SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
-				SetEntityEmissiveStrength(e,emst[e])
-				Destroy(e)
-			end
+			status[e] = "destroy"
 		end
 	end
 	
-	if ring[e].ring_type == 2 then --Alternating
-		if g_Time > alttimer[e] and state[e] == "safe" then
-			state[e] = "unsafe"
-			SetEntityEmissiveColor(e,255,0,0)
-			alttimer[e] = g_Time + (ring[e].alternating_time*1000)
-		end
-		if g_Time > alttimer[e] and state[e] == "unsafe" then
-			state[e] = "safe"
-			SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
-			alttimer[e] = g_Time + (ring[e].alternating_time*1000)
-		end
-	end
-
 	if ring[e].ring_type == 2 and PlayerDist < ring[e].ring_count_range then
 		if state[e] == "safe" then
 			if played[e] == 0 then
@@ -227,17 +204,7 @@ function ring_counter_main(e)
 					repair[e] = 1
 				end
 			end
-			if current_level[e] > 0 then
-				SetEntityBaseAlpha(e,current_level[e])
-				current_level[e] = current_level[e] - 1
-			end
-			if current_level[e] <= 0 then
-				CollisionOff(e)
-				Hide(e)
-				SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
-				SetEntityEmissiveStrength(e,emst[e])
-				Destroy(e)
-			end
+			status[e] = "destroy"
 		end
 
 		if state[e] == "unsafe" then
@@ -256,17 +223,20 @@ function ring_counter_main(e)
 				_G["g_UserGlobal['"..ring[e].user_global_affected.."']"] = currentvalue[e] - ring[e].affect_amount
 				doonce[e] = 1
 			end
-			if current_level[e] > 0 then
-				SetEntityBaseAlpha(e,current_level[e])
-				current_level[e] = current_level[e] - 1
-			end
-			if current_level[e] <= 0 then
-				CollisionOff(e)
-				Hide(e)
-				SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
-				SetEntityEmissiveStrength(e,emst[e])
-				Destroy(e)
-			end
+			status[e] = "destroy"
+		end
+	end
+	
+	if ring[e].ring_type == 2 then --Alternating
+		if g_Time > alttimer[e] and state[e] == "safe" then
+			state[e] = "unsafe"
+			SetEntityEmissiveColor(e,255,0,0)
+			alttimer[e] = g_Time + (ring[e].alternating_time*1000)
+		end
+		if g_Time > alttimer[e] and state[e] == "unsafe" then
+			state[e] = "safe"
+			SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
+			alttimer[e] = g_Time + (ring[e].alternating_time*1000)
 		end
 	end
 
@@ -306,5 +276,20 @@ function ring_counter_main(e)
 				CollisionOn(e)
 			end
 		end
-	end	
+	end
+
+	if status[e] == "destroy" then
+		if current_level[e] > 0 then
+			SetEntityBaseAlpha(e,current_level[e])
+			current_level[e] = current_level[e] - 1
+		end
+		if current_level[e] <= 0 then
+			CollisionOff(e)
+			Hide(e)
+			SetEntityEmissiveColor(e,emr[e],emg[e],emb[e])
+			SetEntityEmissiveStrength(e,emst[e])
+			Destroy(e)
+			status[e] = "end"
+		end
+	end		
 end
