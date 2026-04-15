@@ -1,4 +1,4 @@
--- Flashlight v34: by Necrym59
+-- Flashlight v35: by Necrym59
 -- DESCRIPTION: Will give the player a Flashlight.
 -- DESCRIPTION: [PICKUP_TEXT$="E to pickup"]
 -- DESCRIPTION: [PICKUP_RANGE=100(1,200)]
@@ -20,7 +20,7 @@
 -- DESCRIPTION: [@LIGHT_ACTIVATION=1(1=Off, 2=On Pickup)]
 -- DESCRIPTION: [@PICKUP_TRIGGER=1(1=Off, 2=On)]
 -- DESCRIPTION: [@DEPLETION_TRIGGER=1(1=None, 2=ActivateIfUsed, 3=Lose Game)]
--- DESCRIPTION: [@UltravioletMode=0(0=Off, 1=On)]
+-- DESCRIPTION: [@UltravioletMode=0(0=Off, 1=On)] will show any transparent entity
 -- DESCRIPTION: [@LightRangeKill=0(0=Off, 1=On)] will kill entity within light range and radius.
 -- DESCRIPTION: [@@USER_GLOBAL_AFFECTED$=""(0=globallist)] eg:MyBatteryEnergy
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
@@ -74,6 +74,7 @@ local played			= {}
 local flashswitch		= {}
 local currentvalue		= {}
 local tEnt				= {}
+local tEntallegiance	= {}
 local selectobj			= {}
 local nearestEnt		= {}
 local spottedEnt		= {}
@@ -146,6 +147,7 @@ function flashlight_init(e)
 	status[e] = 'init'
 	tEnt[e] = 0
 	g_tEnt = 0
+	tEntallegiance[e] = nil
 	played[e] = 0
 	currentvalue[e] = 0
 	flashswitch[e] = 0
@@ -205,10 +207,9 @@ function flashlight_main(e)
 				PlaySound(e,0)
 				played[e] = 1
 			end
-			Hide(e)
+			Hide(e)			
 			CollisionOff(e)
-			Hide(e)
-			ResetPosition(e,g_PlayerPosX,g_PlayerPosY+500,g_PlayerPosZ)
+			ResetPosition(e,0,-5000,0)
 			have_flashlight[e] = 1
 			if flashlight[e].user_global_affected > "" then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = currentvalue[e] + flashlight[e].battery_level end
 			if flashlight[e].pickup_trigger == 2 then
@@ -253,8 +254,7 @@ function flashlight_main(e)
 	end
 
 	if can_use[e] == 1 then
-		if have_flashlight[e] == 1 then
-			ResetPosition(e,g_PlayerPosX,g_PlayerPosY+500,g_PlayerPosZ)
+		if have_flashlight[e] == 1 then			
 			SetGamePlayerStatePlrKeyForceKeystate(0)
 			if CG_GetActiveCamera == nil or CG_GetActiveCamera() == nil then  -- allows for Cine Guru interaction
 				SetFlashLightKeyEnabled(1)
@@ -308,21 +308,21 @@ function flashlight_main(e)
 				status[e] = 'OFF'
 			end
 			------------------------------------------------------------------------------------------------------------------------
-			if flashlight[e].ultravioletmode ==	1 then
-				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,flashlight[e].flashlight_range/1.5)
-				local allegiance = GetEntityAllegiance(nearestEnt[e])
-				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['animating'] == 1 and allegiance == 0 then
+			if flashlight[e].ultravioletmode ==	1 then				
+				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,flashlight[e].flashlight_range/1.5)								
+				tEntallegiance[e] = GetEntityAllegiance(nearestEnt[e])
+				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['health'] > 0 and tEntallegiance[e] == 0 or tEntallegiance[e] == -1 then	
 					spottedEnt[e] = nearestEnt[e]
 					spottedDist[e] = GetPlayerDistance(spottedEnt[e])
 					spottedTran[e] = GetEntityTransparency(spottedEnt[e])
-					if spottedTran[e] ~= 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
+					if spottedTran[e] == 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
 					if spottedDist[e] < flashlight[e].flashlight_range/1.5 then
-						if PlayerLooking(spottedEnt[e],spottedDist[e],80) == 1 then
-							Show(spottedEnt[e])
+						if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
+							SetActivated(e,spottedEnt[e])
 							SetEntityBaseAlpha(spottedEnt[e],100-spottedDist[e])
 						else
 							SetEntityBaseAlpha(spottedEnt[e],0)
-							Hide(spottedEnt[e])
+							SetActivated(e,spottedEnt[e])
 						end
 					end
 					if spottedDist[e] > flashlight[e].flashlight_range/1.5 then
@@ -332,13 +332,13 @@ function flashlight_main(e)
 				else
 					spottedEnt[e] = 0
 					nearestEnt[e] = 0
-				end
-			end
+				end				
+			end			
 			------------------------------------------------------------------------------------------------------------------------
 			if flashlight[e].lightrangekill == 1 then
-				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,(flashlight[e].flashlight_range/1.5)+GetGamePlayerStateFlashlightRadius())
-				local allegiance = GetEntityAllegiance(nearestEnt[e])
-				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['animating'] == 1 and g_Entity[nearestEnt[e]]['health'] >= 0 and allegiance == 0 then
+				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,(flashlight[e].flashlight_range/1.5)+GetGamePlayerStateFlashlightRadius())							
+				tEntallegiance[e] = GetEntityAllegiance(nearestEnt[e])
+				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['health'] > 0 and tEntallegiance[e] == 0 then
 					spottedEnt[e] = nearestEnt[e]
 					if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
 						SetEntityHealth(spottedEnt[e],0)
@@ -348,7 +348,7 @@ function flashlight_main(e)
 					nearestEnt[e] = 0
 				end
 			end
-			------------------------------------------------------------------------------------------------------------------------
+			------------------------------------------------------------------------------------------------------------------------			
 		end
 		if status[e] == 'OFF' then
 			flashlight[e].battery_level = flashlight[e].battery_level + (flashlight[e].battery_recharge/20)
