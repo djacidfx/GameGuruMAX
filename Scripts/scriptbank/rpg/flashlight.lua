@@ -315,20 +315,22 @@ function flashlight_main(e)
 					spottedEnt[e] = nearestEnt[e]
 					spottedDist[e] = GetPlayerDistance(spottedEnt[e])
 					spottedTran[e] = GetEntityTransparency(spottedEnt[e])
-					if spottedTran[e] == 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
-					if spottedDist[e] < flashlight[e].flashlight_range/1.5 then
-						if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
-							SetActivated(e,spottedEnt[e])
-							SetEntityBaseAlpha(spottedEnt[e],100-spottedDist[e])
-						else
-							SetEntityBaseAlpha(spottedEnt[e],0)
-							SetActivated(e,spottedEnt[e])
+					if spottedTran[e] == 1 then
+						if spottedTran[e] == 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
+						if spottedDist[e] < flashlight[e].flashlight_range/1.5 then
+							if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
+								SetActivated(e,spottedEnt[e])
+								SetEntityBaseAlpha(spottedEnt[e],100-spottedDist[e])
+							else
+								SetEntityBaseAlpha(spottedEnt[e],0)
+								SetActivated(e,spottedEnt[e])
+							end
 						end
-					end
-					if spottedDist[e] > flashlight[e].flashlight_range/1.5 then
-						SetEntityBaseAlpha(spottedEnt[e],0)
-						SetEntityBaseColor(spottedEnt[e],255,255,255)
-					end
+						if spottedDist[e] > flashlight[e].flashlight_range/1.5 then
+							SetEntityBaseAlpha(spottedEnt[e],0)
+							SetEntityBaseColor(spottedEnt[e],255,255,255)
+						end
+					end	
 				else
 					spottedEnt[e] = 0
 					nearestEnt[e] = 0
