@@ -148,6 +148,8 @@ function ring_counter_main(e)
 				doonce[e] = 1
 			end
 			if ring[e].augments == 1 then
+			end
+			if ring[e].augments == 2 then
 				if repair[e] == 0 then
 					SetPlayerHealth(g_PlayerHealth + ring[e].affect_amount)
 					if g_PlayerHealth > g_PlayerStartStrength then g_PlayerHealth = g_PlayerStartStrength end
@@ -155,7 +157,7 @@ function ring_counter_main(e)
 					repair[e] = 1
 				end
 			end
-			if ring[e].augments == 2 then
+			if ring[e].augments == 3 then
 				if repair[e] == 0 then
 					closestent[e] = U.ClosestEntToPlayer(90)
 					SetEntityHealth(closestent[e],g_Entity[closestent[e]]['health'] + ring[e].affect_amount)
@@ -187,6 +189,8 @@ function ring_counter_main(e)
 				doonce[e] = 1
 			end
 			if ring[e].augments == 1 then
+			end
+			if ring[e].augments == 2 then
 				if repair[e] == 0 then
 					SetPlayerHealth(g_PlayerHealth + ring[e].affect_amount)
 					if g_PlayerHealth > g_PlayerStartStrength then g_PlayerHealth = g_PlayerStartStrength end
@@ -194,7 +198,7 @@ function ring_counter_main(e)
 					repair[e] = 1
 				end
 			end
-			if ring[e].augments == 2 then
+			if ring[e].augments == 3 then
 				if repair[e] == 0 then
 					closestent[e] = U.ClosestEntToPlayer(90)
 					SetEntityHealth(closestent[e],g_Entity[closestent[e]]['health'] + ring[e].affect_amount)
