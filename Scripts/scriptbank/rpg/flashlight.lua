@@ -1,4 +1,4 @@
--- Flashlight v35: by Necrym59
+-- Flashlight v36: by Necrym59
 -- DESCRIPTION: Will give the player a Flashlight.
 -- DESCRIPTION: [PICKUP_TEXT$="E to pickup"]
 -- DESCRIPTION: [PICKUP_RANGE=100(1,200)]
@@ -308,8 +308,8 @@ function flashlight_main(e)
 				status[e] = 'OFF'
 			end
 			------------------------------------------------------------------------------------------------------------------------
-			if flashlight[e].ultravioletmode ==	1 then				
-				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,flashlight[e].flashlight_range/1.5)								
+			if flashlight[e].ultravioletmode ==	1 and status[e] == 'ON' then				
+				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,flashlight[e].flashlight_range/1.5)
 				tEntallegiance[e] = GetEntityAllegiance(nearestEnt[e])
 				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['health'] > 0 and tEntallegiance[e] == 0 or tEntallegiance[e] == -1 then	
 					spottedEnt[e] = nearestEnt[e]
@@ -319,22 +319,22 @@ function flashlight_main(e)
 						if spottedTran[e] == 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
 						if spottedDist[e] < flashlight[e].flashlight_range/1.5 then
 							if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
-								SetActivated(e,spottedEnt[e])
 								SetEntityBaseAlpha(spottedEnt[e],100-spottedDist[e])
 							else
 								SetEntityBaseAlpha(spottedEnt[e],0)
-								SetActivated(e,spottedEnt[e])
+								SetEntityBaseColor(spottedEnt[e],255,255,255)
 							end
 						end
 						if spottedDist[e] > flashlight[e].flashlight_range/1.5 then
 							SetEntityBaseAlpha(spottedEnt[e],0)
 							SetEntityBaseColor(spottedEnt[e],255,255,255)
 						end
-					end	
+					end		
 				else
 					spottedEnt[e] = 0
 					nearestEnt[e] = 0
-				end				
+					spottedTran[e] = 0
+				end
 			end			
 			------------------------------------------------------------------------------------------------------------------------
 			if flashlight[e].lightrangekill == 1 then
@@ -352,12 +352,17 @@ function flashlight_main(e)
 			end
 			------------------------------------------------------------------------------------------------------------------------			
 		end
+		
 		if status[e] == 'OFF' then
 			flashlight[e].battery_level = flashlight[e].battery_level + (flashlight[e].battery_recharge/20)
 			if flashlight[e].battery_level > 100 then flashlight[e].battery_level = 100 end
 			if flashlight[e].user_global_affected > "" then
 				_G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = flashlight[e].battery_level
 				if _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] > 100 then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = 100 end
+			end
+			if flashlight[e].ultravioletmode ==	1 and spottedEnt[e] > 0 then
+				SetEntityBaseAlpha(spottedEnt[e],0)
+				SetEntityBaseColor(spottedEnt[e],255,255,255)
 			end
 		end
 		if g_batteryenergy > 0 then
