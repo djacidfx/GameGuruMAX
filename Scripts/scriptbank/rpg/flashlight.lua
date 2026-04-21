@@ -22,7 +22,7 @@
 -- DESCRIPTION: [@DEPLETION_TRIGGER=1(1=None, 2=ActivateIfUsed, 3=Lose Game)]
 -- DESCRIPTION: [@UltravioletMode=0(0=Off, 1=On)] will show any transparent entity
 -- DESCRIPTION: [@LightRangeKill=0(0=Off, 1=On)] will kill entity within light range and radius.
--- DESCRIPTION: [@@USER_GLOBAL_AFFECTED$=""(0=globallist)] eg:MyBatteryEnergy
+-- DESCRIPTION: [@@BATTERY_LEVEL_GLOBAL$=""(0=globallist)] for use with user global display of battery level (eg:MyBatteryEnergy) 
 -- DESCRIPTION: [@PROMPT_DISPLAY=1(1=Local,2=Screen)]
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
 -- DESCRIPTION: [HIGHLIGHT_ICON_IMAGEFILE$="imagebank\\icons\\pickup.png"]
@@ -58,7 +58,7 @@ local pickup_trigger		= {}
 local depletion_trigger		= {}
 local ultravioletmode		= {}
 local lightrangekill		= {}
-local user_global_affected	= {}
+local battery_level_global	= {}
 local prompt_display 		= {}
 local item_highlight 		= {}
 local highlight_icon 		= {}
@@ -78,12 +78,13 @@ local tEntallegiance	= {}
 local selectobj			= {}
 local nearestEnt		= {}
 local spottedEnt		= {}
+local lastspottedEnt		= {}
 local spottedDist		= {}
 local spottedTran		= {}
 local cleanuptime		= {}
 local can_use			= {}
 
-function flashlight_properties(e, pickup_text, pickup_range, pickup_style, useage_style, useage_weapon, useage_text, flashlight_range, flashlight_radius, flashlight_r, flashlight_g, flashlight_b, flashlight_shadows, battery_level, battery_drain, battery_recharge, battery_indicator, indicator_text, light_activation, pickup_trigger, depletion_trigger, ultravioletmode, lightrangekill, user_global_affected, prompt_display, item_highlight, highlight_icon_imagefile)
+function flashlight_properties(e, pickup_text, pickup_range, pickup_style, useage_style, useage_weapon, useage_text, flashlight_range, flashlight_radius, flashlight_r, flashlight_g, flashlight_b, flashlight_shadows, battery_level, battery_drain, battery_recharge, battery_indicator, indicator_text, light_activation, pickup_trigger, depletion_trigger, ultravioletmode, lightrangekill, battery_level_global, prompt_display, item_highlight, highlight_icon_imagefile)
 	flashlight[e].pickup_text = pickup_text
 	flashlight[e].pickup_range = pickup_range
 	flashlight[e].pickup_style = pickup_style
@@ -106,7 +107,7 @@ function flashlight_properties(e, pickup_text, pickup_range, pickup_style, useag
 	flashlight[e].depletion_trigger = depletion_trigger
 	flashlight[e].ultravioletmode = ultravioletmode or 0
 	flashlight[e].lightrangekill = lightrangekill or 0
-	flashlight[e].user_global_affected = user_global_affected or ""
+	flashlight[e].battery_level_global = battery_level_global or ""
 	flashlight[e].prompt_display = prompt_display
 	flashlight[e].item_highlight = item_highlight
 	flashlight[e].highlight_icon = highlight_icon_imagefile
@@ -136,7 +137,7 @@ function flashlight_init(e)
 	flashlight[e].depletion_trigger = 1
 	flashlight[e].ultravioletmode =	0
 	flashlight[e].lightrangekill = 0
-	flashlight[e].user_global_affected = ""
+	flashlight[e].battery_level_global = ""
 	flashlight[e].prompt_display = 1
 	flashlight[e].item_highlight = 0
 	flashlight[e].highlight_icon = "imagebank\\icons\\pickup.png"
@@ -153,6 +154,7 @@ function flashlight_init(e)
 	flashswitch[e] = 0
 	cleanuptime[e] = 0
 	selectobj[e] = 0
+	lastspottedEnt[e] = 0
 	SetFlashLightKeyEnabled(0)
 	SetEntityAlwaysActive(e,1)
 	g_batteryenergy = 0
@@ -211,7 +213,7 @@ function flashlight_main(e)
 			CollisionOff(e)
 			ResetPosition(e,0,-5000,0)
 			have_flashlight[e] = 1
-			if flashlight[e].user_global_affected > "" then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = currentvalue[e] + flashlight[e].battery_level end
+			if flashlight[e].battery_level_global > "" then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = currentvalue[e] + flashlight[e].battery_level end
 			if flashlight[e].pickup_trigger == 2 then
 				SetActivatedWithMP(e,201)
 				PerformLogicConnections(e)
@@ -237,7 +239,7 @@ function flashlight_main(e)
 				CollisionOff(e)
 				ResetPosition(e,0,-5000,0)
 				have_flashlight[e] = 1
-				if flashlight[e].user_global_affected > "" then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = currentvalue[e] + flashlight[e].battery_level end
+				if flashlight[e].battery_level_global > "" then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = currentvalue[e] + flashlight[e].battery_level end
 				if flashlight[e].pickup_trigger == 2 then
 					SetActivatedWithMP(e,201)
 					PerformLogicConnections(e)
@@ -249,10 +251,10 @@ function flashlight_main(e)
 			CollisionOff(e)
 			ResetPosition(e,0,-5000,0)
 			have_flashlight[e] = 1
-			if flashlight[e].user_global_affected > "" then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = currentvalue[e] + flashlight[e].battery_level end
+			if flashlight[e].battery_level_global > "" then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = currentvalue[e] + flashlight[e].battery_level end
 		end
 	end
-
+	
 	if can_use[e] == 1 then
 		if have_flashlight[e] == 1 then			
 			SetGamePlayerStatePlrKeyForceKeystate(0)
@@ -291,7 +293,7 @@ function flashlight_main(e)
 		if status[e] == 'ON' then
 			if flashlight[e].battery_level > 0 then
 				flashlight[e].battery_level = flashlight[e].battery_level - (flashlight[e].battery_drain/10)
-				if flashlight[e].user_global_affected > "" then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = flashlight[e].battery_level end
+				if flashlight[e].battery_level_global > "" then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = flashlight[e].battery_level end
 				if flashlight[e].battery_indicator == 1 then TextCenterOnXColor(50,95,3,flashlight[e].indicator_text.. " " ..math.floor(flashlight[e].battery_level).. "%",100,255,100) end
 				if flashlight[e].battery_indicator == 2 then TextCenterOnXColor(50,5,3,flashlight[e].indicator_text.. " " ..math.floor(flashlight[e].battery_level).. "%",100,255,100) end
 			end
@@ -310,15 +312,17 @@ function flashlight_main(e)
 			------------------------------------------------------------------------------------------------------------------------
 			if flashlight[e].ultravioletmode ==	1 and status[e] == 'ON' then				
 				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,flashlight[e].flashlight_range/1.5)
-				tEntallegiance[e] = GetEntityAllegiance(nearestEnt[e])
+				tEntallegiance[e] = GetEntityAllegiance(nearestEnt[e])				
 				if nearestEnt[e] ~= nil and nearestEnt[e] > 0 and g_Entity[nearestEnt[e]]['health'] > 0 and tEntallegiance[e] == 0 or tEntallegiance[e] == -1 then	
-					spottedEnt[e] = nearestEnt[e]
+					lastspottedEnt[e] = nearestEnt[e]
+					spottedEnt[e] = nearestEnt[e]					
 					spottedDist[e] = GetPlayerDistance(spottedEnt[e])
 					spottedTran[e] = GetEntityTransparency(spottedEnt[e])
 					if spottedTran[e] == 1 then
 						if spottedTran[e] == 0 then SetEntityBaseColor(spottedEnt[e],155,0,155) end
 						if spottedDist[e] < flashlight[e].flashlight_range/1.5 then
 							if PlayerLooking(spottedEnt[e],flashlight[e].flashlight_range/1.5,GetGamePlayerStateFlashlightRadius()/1.5) == 1 then
+								SetEntityBaseColor(spottedEnt[e],155,0,155)
 								SetEntityBaseAlpha(spottedEnt[e],100-spottedDist[e])
 							else
 								SetEntityBaseAlpha(spottedEnt[e],0)
@@ -329,13 +333,13 @@ function flashlight_main(e)
 							SetEntityBaseAlpha(spottedEnt[e],0)
 							SetEntityBaseColor(spottedEnt[e],255,255,255)
 						end
-					end		
+					end
 				else
 					spottedEnt[e] = 0
 					nearestEnt[e] = 0
 					spottedTran[e] = 0
 				end
-			end			
+			end
 			------------------------------------------------------------------------------------------------------------------------
 			if flashlight[e].lightrangekill == 1 then
 				nearestEnt[e] = U.ClosestEntToPos(g_PlayerPosX, g_PlayerPosZ,(flashlight[e].flashlight_range/1.5)+GetGamePlayerStateFlashlightRadius())							
@@ -349,29 +353,30 @@ function flashlight_main(e)
 					spottedEnt[e] = 0
 					nearestEnt[e] = 0
 				end
-			end
+			end			
 			------------------------------------------------------------------------------------------------------------------------			
 		end
 		
 		if status[e] == 'OFF' then
 			flashlight[e].battery_level = flashlight[e].battery_level + (flashlight[e].battery_recharge/20)
 			if flashlight[e].battery_level > 100 then flashlight[e].battery_level = 100 end
-			if flashlight[e].user_global_affected > "" then
-				_G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = flashlight[e].battery_level
-				if _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] > 100 then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = 100 end
+			if flashlight[e].battery_level_global > "" then
+				_G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = flashlight[e].battery_level
+				if _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] > 100 then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = 100 end
 			end
-			if flashlight[e].ultravioletmode ==	1 and spottedEnt[e] > 0 then
-				SetEntityBaseAlpha(spottedEnt[e],0)
-				SetEntityBaseColor(spottedEnt[e],255,255,255)
+			if flashlight[e].ultravioletmode ==	1 and lastspottedEnt[e] > 0 then
+				SetEntityBaseAlpha(lastspottedEnt[e],0)
+				SetEntityBaseColor(lastspottedEnt[e],255,255,255)
+				lastspottedEnt[e] = 0
 			end
 		end
 		if g_batteryenergy > 0 then
 			flashlight[e].battery_level = flashlight[e].battery_level + g_batteryenergy
 			if flashlight[e].battery_level > 100 then flashlight[e].battery_level = 100 end
-			if flashlight[e].user_global_affected > "" then
-				if _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] end
-				_G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = currentvalue[e] + flashlight[e].battery_level
-				if _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] > 100 then _G["g_UserGlobal['"..flashlight[e].user_global_affected.."']"] = 100 end
+			if flashlight[e].battery_level_global > "" then
+				if _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] end
+				_G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = currentvalue[e] + flashlight[e].battery_level
+				if _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] > 100 then _G["g_UserGlobal['"..flashlight[e].battery_level_global.."']"] = 100 end
 			end
 			g_batteryenergy = 0
 		end
