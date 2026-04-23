@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Countdown v20 by Necrym59
+-- Countdown v21 by Necrym59
 -- DESCRIPTION: A Countdown timer to count down to an end action. 
 -- DESCRIPTION: Attach to an object. Set Always Active ON. Trigger from a zone or switch.
 -- DESCRIPTION: [#MAXIMUM_TIME=1.00(0.01,600.00)] minutes
@@ -17,8 +17,10 @@
 -- DESCRIPTION: [START_DISARMED!=1]
 -- DESCRIPTION: [START_FREEZE!=1]
 -- DESCRIPTION: [@GoToLevelMode=1(1=Use Storyboard Logic,2=Go to Specific Level)] controls whether the next level in the Storyboard, or another level is loaded after the switch is turned on.
--- DESCRIPTION: <Sound0> for commence sound
--- DESCRIPTION: <Sound1> for end sound
+-- DESCRIPTION: <Sound0> for launch "Ready" sound
+-- DESCRIPTION: <Sound1> for launch "Set" sound
+-- DESCRIPTION: <Sound2> for launch "Go" sound
+-- DESCRIPTION: <Sound3> for end warning sound
 
 g_countdown = {}
 
@@ -140,17 +142,31 @@ function countdown_main(e)
 				TransportToFreezePositionOnly()
 			end	
 			if launch_stage[e] == 0 then 
-				if launch_count[e] > 400 then TextCenterOnX(50,50,5,"READY") end
-				if launch_count[e] > 200 and launch_count[e] <= 400 then TextCenterOnX(50,50,5,"SET") end
-				if launch_count[e] <= 200 then TextCenterOnX(50,50,5,"GO") end
-				if launch_count[e] <= 100 then
-					launch_stage[e] = 1					
+				if launch_count[e] > 400 then
+					TextCenterOnX(50,50,5,"READY")
 					if played[e] == 0 then
 						PlaySound(e,0)
 						played[e] = 1
-					end
-					PerformLogicConnections(e)
+					end					
 				end
+				if launch_count[e] > 200 and launch_count[e] <= 400 then
+					TextCenterOnX(50,50,5,"SET")
+					if played[e] == 1 then
+						PlaySound(e,1)
+						played[e] = 2
+					end						
+				end
+				if launch_count[e] <= 200 then
+					TextCenterOnX(50,50,5,"GO")
+					if played[e] == 2 then
+						PlaySound(e,2)
+						played[e] = 3
+					end						
+				end
+				if launch_count[e] <= 100 then
+					launch_stage[e] = 1					
+					PerformLogicConnections(e)
+				end			
 				launch_count[e] = launch_count[e] - 1
 				g_countdown = launch_count[e]
 				if g_countdown <= 100 then g_countdown = 0 end
@@ -163,16 +179,30 @@ function countdown_main(e)
 			end	
 			if launch_stage[e] == 0 then 
 				if _G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] ~= nil then
-					if launch_count[e] > 400 then _G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "READY" end
-					if launch_count[e] > 200 and launch_count[e] <= 400 then _G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "SET" end
-					if launch_count[e] <= 200 then _G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "GO" end
+					if launch_count[e] > 400 then
+						_G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "READY"
+						if played[e] == 0 then
+							PlaySound(e,0)
+							played[e] = 1
+						end
+					end	
+					if launch_count[e] > 200 and launch_count[e] <= 400 then
+						_G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "SET"
+						if played[e] == 1 then
+							PlaySound(e,1)
+							played[e] = 2
+						end
+					end
+					if launch_count[e] <= 200 then
+						_G["g_UserGlobal['"..countdown[e].launch_display_global.."']"] = "GO"
+						if played[e] == 2 then
+							PlaySound(e,2)
+							played[e] = 3
+						end	
+					end
 				end	
 				if launch_count[e] <= 100 then
 					launch_stage[e] = 1					
-					if played[e] == 0 then
-						PlaySound(e,0)
-						played[e] = 1
-					end
 					PerformLogicConnections(e)
 				end
 				launch_count[e] = launch_count[e] - 1
@@ -231,12 +261,14 @@ function countdown_main(e)
 					if minutesleft[e] > 0 and secondsleft[e] < 10 then _G["g_UserGlobal['"..countdown[e].time_display_global.."']"] = (countdown[e].display_text.. " " ..minutesleft[e].. " : 0" ..timeleftsec[e]) end
 					if minutesleft[e] == 0 and secondsleft[e] < 10 then _G["g_UserGlobal['"..countdown[e].time_display_global.."']"] = (countdown[e].display_text.. " 0 : 0" ..timeleftsec[e]) end					
 				end			
-			end			
-			if secondsleft[e] == 0 then
+			end
+			if secondsleft[e] <= 10 then
 				if played[e] == 0 then
-					PlaySound(e,1)
+					PlaySound(e,3)
 					played[e] = 1
 				end
+			end		
+			if secondsleft[e] == 0 then
 				if countdown[e].end_action == 1 then
 					HurtPlayer(e,g_PlayerHealth)
 				end
