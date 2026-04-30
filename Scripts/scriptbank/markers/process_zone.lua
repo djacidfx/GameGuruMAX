@@ -91,7 +91,7 @@ function process_zone_main(e)
 				end
 			end
 			PerformLogicConnections(e)
-			Prompt(process_zone[e].process_text)
+			PromptDuration(process_zone[e].process_text,3000)
 			Destroy(e)			
 		end
 	end
