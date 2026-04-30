@@ -1,9 +1,9 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Process Zone v2
--- DESCRIPTION: Will allow to activate/decativate all of a named entity when entering in this zone then destroy the zone.
+-- Process Zone v3
+-- DESCRIPTION: Will allow to activate/decativate/destroy all of a named entity when entering in this zone then destroy the zone.
 -- DESCRIPTION: Attach to a trigger zone
 -- DESCRIPTION: [ENTITY_NAME$=""]
--- DESCRIPTION: [@PROCESS_MODE=1(1=Activate,2=Deactivate)]
+-- DESCRIPTION: [@PROCESS_MODE=1(1=Activate,2=Deactivate,3=Destroy)]
 -- DESCRIPTION: [PROCESS_TEXT$="All Entities Activated/Deactivated"]
 -- DESCRIPTION: [ZONEHEIGHT=100(0,1000)]
 -- DESCRIPTION: [SpawnAtStart!=1] if unchecked use a switch or other trigger to spawn this zone
@@ -51,7 +51,7 @@ function process_zone_main(e)
 		if process_zone[e].entity_name > "" then
 			for n = 1, g_EntityElementMax do
 				if n ~= nil and g_Entity[n] ~= nil then				
-					if lower(GetEntityName(n)) == lower(process_zone[e].entity_name) then
+					if lower(GetEntityName(n)) == process_zone[e].entity_name then
 						table.insert(_G[tableName[e]],n)
 						tableEnts[e] = tableEnts[e] + 1
 					end
@@ -72,13 +72,21 @@ function process_zone_main(e)
 			------------------------
 			if tableEnts[e] > 0 then
 				if process_zone[e].process_mode == 1 then --Activate
-					for a,b in pairs(_G[tableName[e]]) do
+					for a,b in pairs(_G[tableName[e]]) do						
 						SetActivated(b,1)
+						SetEntityIfUsed(e,process_zone[e].entity_name)
+						ActivateIfUsed(e)
 					end
 				end
 				if process_zone[e].process_mode == 2 then --DeActivate
-					for a,b in pairs(_G[tableName[e]]) do
+					for a,b in pairs(_G[tableName[e]]) do						
 						SetActivated(b,0)
+					end
+				end
+				if process_zone[e].process_mode == 3 then --Destroy
+					for a,b in pairs(_G[tableName[e]]) do						
+						SetActivated(b,0)
+						Destroy(b)
 					end
 				end
 			end
