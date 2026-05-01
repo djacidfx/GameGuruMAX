@@ -53105,8 +53105,10 @@ bool Shadows_Settings(float fTabColumnWidth, bool bVisualUpdated)
 		}
 		//ImGui::PopItemWidth(); //PE: This looks wrong, try removing it.
 
+		//LB: This flag is used inside WICKED ENGINE as a hack, mark it as a debug only feature as this is not an officially stored setting
 		extern bool bShadowsInFrontTakesPriority;
 		ImGui::Checkbox("Front Shadows Priority", &bShadowsInFrontTakesPriority);
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", "This flag is used only for shadow debug purposes");
 
 		ImGui::Indent(-10);
 	}

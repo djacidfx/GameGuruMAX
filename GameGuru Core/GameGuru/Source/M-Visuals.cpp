@@ -2458,7 +2458,8 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			if (t.visuals.skyindex == 0)
 			{
 				//PE: Dont change if user have selected "none"
-				if (!t.visuals.bDisableSkybox)
+				//LB: toggling LOW then HIGHEST messed this logic - lets assume standalone players can OVERRIDE sky settings if they want simulated sky
+				if (t.visuals.bDisableSkybox==true)
 				{
 					t.visuals.bDisableSkybox = false;
 					iChangeSkyType = 0;
@@ -2486,7 +2487,7 @@ void visuals_shaderlevels_update_core (bool bUpdateEngine)
 			if (t.visuals.skyindex == 0)
 			{
 				//PE: Dont change if user have selected "none"
-				if (!t.visuals.bDisableSkybox)
+				if (t.visuals.bDisableSkybox == false)
 				{
 					t.visuals.bDisableSkybox = true;
 					iChangeSkyType = 1;

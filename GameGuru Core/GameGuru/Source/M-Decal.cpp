@@ -443,6 +443,9 @@ void decal_loadonlyactivedecals ( void )
 		if (  t.decal[t.decalid].active == 1 ) 
 		{
 			t.decal_s=t.decal[t.decalid].name_s;
+			char pProgressPrompt[256];
+			sprintf(pProgressPrompt, "Loading decal %d of %d : %s", t.decalid, g.decalmax, t.decal_s.Get());
+			if (t.game.gameisexe == 0)  printscreenprompt(pProgressPrompt); else loadingpageprogress(2);
 			decal_load ( );
 		}
 	}

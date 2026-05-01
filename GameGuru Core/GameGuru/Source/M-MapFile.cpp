@@ -3626,6 +3626,11 @@ void mapfile_savestandalone_stage4 ( void )
 	t.dest_s = t.exepath_s + t.exename_s + "\\" + pCritDLLFilename;
 	if (FileExist(pCritDLLFilename) == 1) CopyAFile(pCritDLLFilename, t.dest_s.Get());
 
+	// if exist, copy the WinPixEventRuntime.dll so we can performance tune!
+	strcpy(pCritDLLFilename, "WinPixEventRuntime.dll");
+	t.dest_s = t.exepath_s + t.exename_s + "\\" + pCritDLLFilename;
+	if (FileExist(pCritDLLFilename) == 1) CopyAFile(pCritDLLFilename, t.dest_s.Get());
+
 	// copy the version.ini file over (helps with crash triage system)
 	strcpy(pCritDLLFilename, "version.ini");
 	t.dest_s = t.exepath_s + t.exename_s + "\\" + pCritDLLFilename;
