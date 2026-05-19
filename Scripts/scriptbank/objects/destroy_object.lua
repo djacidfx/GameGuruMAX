@@ -1,4 +1,4 @@
--- Destroy Object v11 by Necrym59
+-- Destroy Object v12 by Necrym59
 -- DESCRIPTION: Attached object can monitor a Named Objects health or destroy instantly when triggered by a linked switch or zone.
 -- DESCRIPTION: [MESSAGE$="Destroyed"]
 -- DESCRIPTION: [OBJECT_NAME$=""]
@@ -118,7 +118,7 @@ function destroy_object_main(e)
 			if destroy_delay[e] > 0 then 
 				if GetTimer(e) > destroy_delay[e] then
 					if desobject[e].object_no > 0 then
-						if desobject[e].user_global_affected > "" then 
+						if desobject[e].user_global_affected ~= "" then 
 							if _G["g_UserGlobal['"..desobject[e].user_global_affected.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..desobject[e].user_global_affected.."']"] end
 							if desobject[e].affect_type == 1 then _G["g_UserGlobal['"..desobject[e].user_global_affected.."']"] = currentvalue[e] + desobject[e].affect_value end
 							if desobject[e].affect_type == 2 then _G["g_UserGlobal['"..desobject[e].user_global_affected.."']"] = currentvalue[e] - desobject[e].affect_value end
