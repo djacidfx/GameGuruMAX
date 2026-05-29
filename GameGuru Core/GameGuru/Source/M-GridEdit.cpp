@@ -4914,7 +4914,11 @@ void mapeditorexecutable_loop(void)
 							strcpy(cTmp, "entitybank\\");
 							strcat(cTmp, pref.last_import_files[i]);
 							CreateBackBufferCacheName(pref.last_import_files[i], 512, 288);
-							GG_SetWritablesToRoot(true);
+							extern StoryboardStruct Storyboard;
+							if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+							{
+								GG_SetWritablesToRoot(true);
+							}
 							if (FileExist(BackBufferCacheName.Get()) && FileExist(cTmp) )
 							{
 								SetMipmapNum(1);

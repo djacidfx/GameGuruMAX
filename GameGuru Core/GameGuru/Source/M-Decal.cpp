@@ -1159,11 +1159,13 @@ void decal_activatedecalsfromentities ( void )
 		if (t.entityelement[t.e].eleprof.explodable_decalname.Len() > 0)
 		{
 			cstr explodename = t.entityelement[t.e].eleprof.explodable_decalname;
-			if (explodename.Len() > 0)
+			cstr lexplodename = explodename.Lower();
+			if (lexplodename.Len() > 0)
 			{
 				for (int i = 1; i <= g.decalmax; i++)
 				{
-					if (t.decal[i].name_s == explodename)
+					cstr ldecal = t.decal[i].name_s.Lower();
+					if (ldecal == lexplodename)
 					{
 						t.decal[i].active = 1;
 						t.decal[i].newparticle.iMaxCache = 2; //PE: For now only 2 cached custom explosions.
