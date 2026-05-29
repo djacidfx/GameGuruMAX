@@ -13354,15 +13354,29 @@ void GrabBackBufferCopy(void)
 			// ensure we save to writables area only
 			if (ImageExist(iIconImageID))
 			{
-				char pRealICONFile[MAX_PATH];
-				strcpy(pRealICONFile, BackBufferSaveCacheName.Get());
-				pRealICONFile[strlen(pRealICONFile) - 4] = 0;
-				strcat(pRealICONFile, ".png");
-				GG_SetWritablesToRoot(true);
-				GG_GetRealPath(pRealICONFile, 1);
-				if (FileExist(pRealICONFile) == 1) DeleteAFile(pRealICONFile);
-				SaveImage(pRealICONFile, iIconImageID);
-				GG_SetWritablesToRoot(false);
+				if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+				{
+					//PE: Use remote project folder.
+					char pRealICONFile[MAX_PATH];
+					strcpy(pRealICONFile, BackBufferSaveCacheName.Get());
+					pRealICONFile[strlen(pRealICONFile) - 4] = 0;
+					strcat(pRealICONFile, ".png");
+					GG_GetRealPath(pRealICONFile, 1);
+					if (FileExist(pRealICONFile) == 1) DeleteAFile(pRealICONFile);
+					SaveImage(pRealICONFile, iIconImageID);
+				}
+				else
+				{
+					char pRealICONFile[MAX_PATH];
+					strcpy(pRealICONFile, BackBufferSaveCacheName.Get());
+					pRealICONFile[strlen(pRealICONFile) - 4] = 0;
+					strcat(pRealICONFile, ".png");
+					GG_SetWritablesToRoot(true);
+					GG_GetRealPath(pRealICONFile, 1);
+					if (FileExist(pRealICONFile) == 1) DeleteAFile(pRealICONFile);
+					SaveImage(pRealICONFile, iIconImageID);
+					GG_SetWritablesToRoot(false);
+				}
 			}
 		}
 	}
@@ -13466,14 +13480,26 @@ void GrabBackBufferCopy(void)
 		{
 			if (ImageExist(BackBufferImageID))
 			{
-				// ensure we save to writables area only
-				char pRealThumbFile[MAX_PATH];
-				strcpy(pRealThumbFile, BackBufferSaveCacheName.Get());
-				GG_SetWritablesToRoot(true);
-				GG_GetRealPath(pRealThumbFile, 1);
-				if (FileExist(pRealThumbFile) == 1) DeleteAFile(pRealThumbFile);
-				SaveImage(pRealThumbFile, BackBufferImageID);
-				GG_SetWritablesToRoot(false);
+				if (strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0)
+				{
+					//PE: Use remote project folder.
+					char pRealThumbFile[MAX_PATH];
+					strcpy(pRealThumbFile, BackBufferSaveCacheName.Get());
+					GG_GetRealPath(pRealThumbFile, 1);
+					if (FileExist(pRealThumbFile) == 1) DeleteAFile(pRealThumbFile);
+					SaveImage(pRealThumbFile, BackBufferImageID);
+				}
+				else
+				{
+					// ensure we save to writables area only
+					char pRealThumbFile[MAX_PATH];
+					strcpy(pRealThumbFile, BackBufferSaveCacheName.Get());
+					GG_SetWritablesToRoot(true);
+					GG_GetRealPath(pRealThumbFile, 1);
+					if (FileExist(pRealThumbFile) == 1) DeleteAFile(pRealThumbFile);
+					SaveImage(pRealThumbFile, BackBufferImageID);
+					GG_SetWritablesToRoot(false);
+				}
 			}
 			BackBufferSaveCacheName = "";
 		}
@@ -14450,7 +14476,10 @@ void process_entity_library(void)
 
 																CreateBackBufferCacheName(t.addentityfile_s.Get(), 512, 512);
 																BackBufferSaveCacheName = BackBufferCacheName;
-																GG_SetWritablesToRoot(true);
+																if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+																{
+																	GG_SetWritablesToRoot(true);
+																}
 																if (FileExist(BackBufferCacheName.Get()))
 																{
 																	SetMipmapNum(1); //PE: mipmaps not needed.
@@ -16082,7 +16111,10 @@ void process_entity_library_v2(void)
 						bool bGetOut = false;
 
 						// delete old thumb image and give chance for new one to be saved (g_bThumbBankCopyMode)
-						GG_SetWritablesToRoot(true);
+						if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+						{
+							GG_SetWritablesToRoot(true);
+						}
 						if (FileExist(BackBufferCacheName.Get()))
 						{
 							DeleteAFile(BackBufferCacheName.Get());
@@ -18269,7 +18301,10 @@ void process_entity_library_v2(void)
 										}
 										// perhaps make this a common define!
 										CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-										GG_SetWritablesToRoot(true);
+										if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+										{
+											GG_SetWritablesToRoot(true);
+										}
 										image_setlegacyimageloading(true);
 										if (FileExist(BackBufferCacheName.Get()))
 										{
@@ -19542,7 +19577,10 @@ void process_entity_library_v2(void)
 										{
 											//Start rotate instant.
 											CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-											GG_SetWritablesToRoot(true);
+											if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+											{
+												GG_SetWritablesToRoot(true);
+											}
 											if (FileExist(BackBufferCacheName.Get()) == 0)
 											{
 												// only save new thumb if not exist in root
@@ -19576,7 +19614,10 @@ void process_entity_library_v2(void)
 												sFpeName = sFpeName + "\\" + myfiles->m_sName.Get();
 												t.addentityfile_s = sFpeName.c_str();
 												CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-												GG_SetWritablesToRoot(true);
+												if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+												{
+													GG_SetWritablesToRoot(true);
+												}
 												if (FileExist(BackBufferCacheName.Get()) == 0)
 												{
 													// only save new thumb if not exist in root
@@ -19692,7 +19733,10 @@ void process_entity_library_v2(void)
 											sFpeName = sFpeName + "\\" + myfiles->m_sName.Get();
 											t.addentityfile_s = sFpeName.c_str();
 											CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-											GG_SetWritablesToRoot(true);
+											if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+											{
+												GG_SetWritablesToRoot(true);
+											}
 											if (!FileExist(BackBufferCacheName.Get()))
 											{
 												bLoadedInNewFormat = false; //Try it.
@@ -19726,7 +19770,10 @@ void process_entity_library_v2(void)
 									if (!bDoBackbufferUpdate && !bLoadedInNewFormat)
 									{
 										CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-										GG_SetWritablesToRoot(true);
+										if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+										{
+											GG_SetWritablesToRoot(true);
+										}
 										if (FileExist(BackBufferCacheName.Get()) == 0)
 										{
 											// only save new thumb if not exist in root
@@ -19812,7 +19859,10 @@ void process_entity_library_v2(void)
 													{
 														//PE: Drop rotate if we already got the original group thumb.
 														CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-														GG_SetWritablesToRoot(true);
+														if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+														{
+															GG_SetWritablesToRoot(true);
+														}
 														if (FileExist(BackBufferCacheName.Get()))
 														{
 															update = false;
@@ -19922,7 +19972,10 @@ void process_entity_library_v2(void)
 												{
 													//PE: Drop rotate if we already got the original group thumb.
 													CreateBackBufferCacheName(t.addentityfile_s.Get(), thumb_x, thumb_y);
-													GG_SetWritablesToRoot(true);
+													if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+													{
+														GG_SetWritablesToRoot(true);
+													}
 													if (FileExist(BackBufferCacheName.Get()))
 													{
 														update = false;
@@ -22835,7 +22888,10 @@ bool SaveGroup(int iGroupID, LPSTR pObjectSavedFilename)
 			{
 				cstr fname = (find + 11);
 				CreateBackBufferCacheNameEx(fname.Get(), 512, 288, true);
-				GG_SetWritablesToRoot(true);
+				if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+				{
+					GG_SetWritablesToRoot(true);
+				}
 				SaveImage(BackBufferCacheName.Get(), iEntityGroupListImage[current_selected_group]);
 				GG_SetWritablesToRoot(false);
 			}
@@ -25247,7 +25303,10 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 				CreateBackBufferCacheName(img.Get(), 512, 288);
 				SetMipmapNum(1); //PE: mipmaps not needed.
 				image_setlegacyimageloading(true);
-				GG_SetWritablesToRoot(true);
+				if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+				{
+					GG_SetWritablesToRoot(true);
+				}
 				if (FileExist(BackBufferCacheName.Get()))
 				{
 					LoadImage((char *)BackBufferCacheName.Get(), Predefined_Particle_Image[i]);
@@ -25319,7 +25378,10 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 					img = img + cstr(".arx");
 
 					CreateBackBufferCacheName(img.Get(), 512, 288);
-					GG_SetWritablesToRoot(true);
+					if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+					{
+						GG_SetWritablesToRoot(true);
+					}
 					SetMipmapNum(1); //PE: mipmaps not needed.
 					image_setlegacyimageloading(true);
 					if (FileExist(BackBufferCacheName.Get()))
@@ -26610,7 +26672,10 @@ void DisplayFPEBehavior(bool readonly, int entid, entityeleproftype* edit_gridel
 						bool CreateBackBufferCacheName(char *file, int width, int height);
 						extern cstr BackBufferCacheName;
 						CreateBackBufferCacheName((char *)stmp.c_str(), 512, 288);
-						GG_SetWritablesToRoot(true);
+						if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+						{
+							GG_SetWritablesToRoot(true);
+						}
 						SetMipmapNum(1); //PE: mipmaps not needed.
 						image_setlegacyimageloading(true);
 						if (FileExist(BackBufferCacheName.Get()))
@@ -30387,7 +30452,10 @@ void GetFilesListForLibrary(char *path, bool bCreateThumbs, int win, int iThumbW
 				//PE: Skip cached thumbs for now.
 				CreateBackBufferCacheName(g_LibraryFileList[n].cFile.Get(), iThumbWidth, iThumbHeight);
 				g_LibraryFileList[n].iImage = 0;
-				GG_SetWritablesToRoot(true);
+				if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+				{
+					GG_SetWritablesToRoot(true);
+				}
 				if (1==2 && FileExist(BackBufferCacheName.Get()))
 				{
 					SetMipmapNum(1); //PE: mipmaps not needed.
@@ -51442,10 +51510,16 @@ int DrawOccludedObjects(bool bDebug,bool bBox, int* iHiddenObjects, int* spot, i
 						if (pFrame && pFrame->pMesh)
 						{
 							bool bShowClones = false;
+							bool bShowTransparent = false;
 #ifdef DISPLAYCLONES
 							if (!pFrame->pMesh->bInstanced)
 							{
 								bShowClones = true;
+							}
+							if (pFrame->pMesh->bTransparency == true)
+							{
+								//material.userBlendMode = BLENDMODE_ALPHA;
+								bShowTransparent = true;
 							}
 #endif							
 
@@ -51453,7 +51527,7 @@ int DrawOccludedObjects(bool bDebug,bool bBox, int* iHiddenObjects, int* spot, i
 							ObjectComponent* object = wiScene::GetScene().objects.GetComponent(rootEntity);
 							if (object)
 							{
-								if (object->IsOccluded() || object->IsCulled() || bShowClones)
+								if (object->IsOccluded() || object->IsCulled() || bShowClones || bShowTransparent)
 								{
 									if(object->IsOccluded())
 										total++;
@@ -51462,16 +51536,62 @@ int DrawOccludedObjects(bool bDebug,bool bBox, int* iHiddenObjects, int* spot, i
 
 										XMFLOAT3 center = object->center; // aabb.getCenter();
 										void DrawDot(char* text, float x, float y, float z);
-										if (bShowClones)
+										if (!(object->IsOccluded() || object->IsCulled()))
 										{
-											DrawDot("CLONE", center.x, center.y, center.z);
+
+											if (bShowTransparent)
+											{
+												char tmp[256];
+												float ypos = center.y + (i * 16);
+												ImGui::SetWindowFontScale(0.75);
+												if (pFrame->pMesh->dwIndexCount > 0)
+												{
+													if (bShowClones)
+														sprintf(tmp, "CTI:%ld", pFrame->pMesh->dwIndexCount / 3);
+													else
+														sprintf(tmp, "TI:%ld", pFrame->pMesh->dwIndexCount / 3);
+													DrawDot(tmp, center.x, ypos, center.z);
+												}
+												else
+												{
+													if (bShowClones)
+														sprintf(tmp, "CTV:%ld", pFrame->pMesh->dwVertexCount / 3);
+													else
+														sprintf(tmp, "TV:%ld", pFrame->pMesh->dwVertexCount / 3);
+													DrawDot(tmp, center.x, ypos, center.z);
+												}
+												ImGui::SetWindowFontScale(1.0);
+											}
 										}
-										else if(t.entityelement[t.e].bankindex > 0 && t.entityprofile[t.entityelement[t.e].bankindex].ischaracter)
-											DrawDot("*", center.x, center.y, center.z);
-										else if(object->IsCulled())
-											DrawDot(".", center.x, center.y, center.z);
-										else
-											DrawDot("-", center.x, center.y, center.z);
+										else if (bShowClones)
+										{
+											ImGui::SetWindowFontScale(0.75);
+											DrawDot("C", center.x, center.y, center.z);
+											ImGui::SetWindowFontScale(1.0);
+										}
+										if (object->IsOccluded() || object->IsCulled())
+										{
+#ifdef DISPLAYCLONES
+											if (pFrame->pMesh->bTransparency == true)
+											{
+												if (t.entityelement[t.e].bankindex > 0 && t.entityprofile[t.entityelement[t.e].bankindex].ischaracter)
+													DrawDot("T*", center.x, center.y, center.z);
+												else if (object->IsCulled())
+													DrawDot("T.", center.x, center.y, center.z);
+												else
+													DrawDot("T-", center.x, center.y, center.z);
+											}
+											else
+#endif
+											{
+												if (t.entityelement[t.e].bankindex > 0 && t.entityprofile[t.entityelement[t.e].bankindex].ischaracter)
+													DrawDot("*", center.x, center.y, center.z);
+												else if (object->IsCulled())
+													DrawDot(".", center.x, center.y, center.z);
+												else
+													DrawDot("-", center.x, center.y, center.z);
+											}
+										}
 									}
 								}
 								else
@@ -51821,6 +51941,10 @@ void storyboard_openproject(float preview_size_x, float fNodeWidth, float fNodeH
 									CloseFile(1);
 									//PE: Add to list for selection.
 									projectbank_list.push_back(projectname);
+
+									//PE: Make sure to update project thumbs, after adding a project!
+									GetProjectThumbnails();
+
 									BoxerInfo("Project has been imported.", "Information!");
 									current_project_selected = projectname;
 									bTriggerLoad = true;

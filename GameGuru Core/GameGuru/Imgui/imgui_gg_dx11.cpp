@@ -7905,7 +7905,11 @@ int DisplayLuaDescription(entityeleproftype *tmpeleprof)
 							bool CreateBackBufferCacheName(char *file, int width, int height);
 							extern cstr BackBufferCacheName;
 							CreateBackBufferCacheName( (char *) stmp.c_str(), 512, 288);
-							GG_SetWritablesToRoot(true);
+							extern StoryboardStruct Storyboard;
+							if (!(strlen(Storyboard.gamename) > 0 && strlen(Storyboard.customprojectfolder) > 0))
+							{
+								GG_SetWritablesToRoot(true);
+							}
 							SetMipmapNum(1); //PE: mipmaps not needed.
 							image_setlegacyimageloading(true);
 							if (FileExist(BackBufferCacheName.Get()))

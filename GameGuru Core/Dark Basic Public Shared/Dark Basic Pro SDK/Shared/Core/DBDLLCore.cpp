@@ -1321,14 +1321,21 @@ void ImGui_RenderLast(void)
 }
 
 #ifdef SHOWDEBUGMEM
+//#define DISPLAYCLONES
 extern int g_iDevToolsOpen;
 void ShowMemDebug(void)
 {
+	#ifndef DISPLAYCLONES
 	int get_gameisexe(void);
 	if (get_gameisexe() == 1)
 	{
 		return;
 	}
+	#else
+	extern bool bStartInvulnerableMode;
+	bStartInvulnerableMode = true;
+	#endif
+
 	/* community wants to see this despite HIDEHUD!
 	extern int get_hidehudstate();
 	if (get_hidehudstate() > 0)
@@ -1353,13 +1360,14 @@ void ShowMemDebug(void)
 			fGBMemUsed = (float)SMEMAvailable(1) / 1024.0 / 1024.0;
 
 		//PE: For debug to see cloned object ( not instanced ).
-		//#ifdef DISPLAYCLONES
-		//static bool bBoxDebug = false;
-		//static int iHiddenObjects = 0;
-		//int iSpot = 0, iPoint = 0;
-		//int occ = 0;
-		//int DrawOccludedObjects(bool bDebug, bool bBox = false, int* bHiddenObjects = nullptr, int* spot = nullptr, int* point = nullptr);
-		//occ = DrawOccludedObjects(true, bBoxDebug, &iHiddenObjects, &iSpot, &iPoint);
+		#ifdef DISPLAYCLONES
+		static bool bBoxDebug = false;
+		static int iHiddenObjects = 0;
+		int iSpot = 0, iPoint = 0;
+		int occ = 0;
+		int DrawOccludedObjects(bool bDebug, bool bBox = false, int* bHiddenObjects = nullptr, int* spot = nullptr, int* point = nullptr);
+		occ = DrawOccludedObjects(true, bBoxDebug, &iHiddenObjects, &iSpot, &iPoint);
+		#endif
 
 #ifdef INCLUDEVRAM
 		//PE: Always show dedicated VRAM + system RAM GPU use.
