@@ -987,10 +987,30 @@ void game_masterroot_gameloop_initcode(int iUseVRTest)
 				SetDir ( tthisold_s.Get() );
 			}
 
+			//PE: Make sure if using storyboard we set the current level correctly.
+			//+t.game.jumplevel_s{ m_pString = 0x000001468321fe60 "level 3.fpm" m_size = 11 m_capacity = 26 }	cStr
+			//+ g.projectfilename_s{ m_pString = 0x00000146ae96d490 "mapbank\\level 3.fpm" m_size = 19 m_capacity = 27 }	cStr
+			if (strlen(Storyboard.gamename) > 0)
+			{
+				//PE: Find g_Storyboard_Current_Level from t.game.jumplevel_s.
+				for (int i = 0; i < STORYBOARD_MAXNODES; i++)
+				{
+					if (Storyboard.Nodes[i].used)
+					{
+						if (pestrcasestr(Storyboard.Nodes[i].level_name, t.game.jumplevel_s.Get()) != 0)
+						{
+							g_Storyboard_Current_Level = i;
+							strcpy(g_Storyboard_Current_fpm, Storyboard.Nodes[i].level_name);
+						}
+					}
+				}
+			}
+
 			// finally load the level in
 			mapfile_loadproject_fpm ( );
 			t.visuals=t.gamevisuals;
-			t.game.jumplevel_s="";
+			t.game.jumplevel_s = "";
+
 		}
 	}
 
