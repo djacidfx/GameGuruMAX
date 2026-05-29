@@ -1,5 +1,5 @@
 -- LUA Script - precede every function and global member with lowercase name of script + '_main'
--- Speeder v22 by Necrym59 and smallg
+-- Speeder v24 by Necrym59 and smallg
 -- DESCRIPTION: Will create a speeder vehicle object. Set IsImmobile ON.
 -- DESCRIPTION: [PROMPT_TEXT$="E to mount speeder"]
 -- DESCRIPTION: [ENTER_RANGE=150]
@@ -28,13 +28,15 @@
 -- DESCRIPTION: [HEADLIGHT_Z_OFFSET=15(-500,500)] headlight Z offset
 -- DESCRIPTION: [HEADLIGHT_Y_OFFSET=7(1,100)] headlight Y offset
 -- DESCRIPTION: [HEADLIGHT_KEY$="H"] Bound key to activate headlights
--- DESCRIPTION: [@@FUEL_USER_GLOBAL$=""(0=globallist)] user global (eg: MyFuel)
--- DESCRIPTION: [@@WEIGHT_USER_GLOBAL$=""(0=globallist)] user global (eg: MyWeight)
+-- DESCRIPTION: [@@SPEEDER_FUEL_USER_GLOBAL$=""(0=globallist)] user global (eg: MyFuel)
+-- DESCRIPTION: [@@SPEEDER_WEIGHT_USER_GLOBAL$=""(0=globallist)] user global (eg: MyWeight)
+-- DESCRIPTION: [@@SPEEDER_HEALTH_USER_GLOBAL$=""(0=globallist)] user global (eg: MyVehicleHealth)
 -- DESCRIPTION: <Sound0> Moving
 -- DESCRIPTION: <Sound1> Idle Loop
 -- DESCRIPTION: <Sound2> Impact
 -- DESCRIPTION: <Sound3> Radio
 -- DESCRIPTION: <Sound4> Engine Stall
+-- DESCRIPTION: <Sound5> Reversing Beeper
 
 local U = require "scriptbank\\utillib"
 local P = require "scriptbank\\physlib"
@@ -69,8 +71,9 @@ local headlight_z_offset = {}
 local headlight_y_offset = {}
 local headlight_key = {}
 local reversed_control = {}
-local fuel_user_global = {}
-local weight_user_global = {}
+local speeder_fuel_user_global = {}
+local speeder_weight_user_global = {}
+local speeder_health_user_global = {}
 
 local old_health = {}
 local pos_x = {}
@@ -99,8 +102,9 @@ local hlightrange = {}
 local headlight_number = {}
 local currentvalue = {}
 local played = {}
+local revplayed = {}
 
-function speeder_properties(e, prompt_text, enter_range, enter_angle, player_z_adjustment, player_y_adjustment, player_angle_adjustment, maximum_speed, minimum_speed, turn_speed, acceleration, decceleration, impact_range, impact_angle, speeder_health, maximum_slope, use_text, vehicle_hud, readouts, speed_readout_global, aux_readout_global, lock_player, reversed_control, vehicle_unlocked, headlight_name, headlight_z_offset, headlight_y_offset, headlight_key, fuel_user_global, weight_user_global)
+function speeder_properties(e, prompt_text, enter_range, enter_angle, player_z_adjustment, player_y_adjustment, player_angle_adjustment, maximum_speed, minimum_speed, turn_speed, acceleration, decceleration, impact_range, impact_angle, speeder_health, maximum_slope, use_text, vehicle_hud, readouts, speed_readout_global, aux_readout_global, lock_player, reversed_control, vehicle_unlocked, headlight_name, headlight_z_offset, headlight_y_offset, headlight_key, speeder_fuel_user_global, speeder_weight_user_global, speeder_health_user_global)
 	speeder[e].prompt_text = prompt_text
 	speeder[e].enter_range = enter_range
 	speeder[e].enter_angle = enter_angle
@@ -128,8 +132,9 @@ function speeder_properties(e, prompt_text, enter_range, enter_angle, player_z_a
 	speeder[e].headlight_z_offset = headlight_z_offset
 	speeder[e].headlight_y_offset = headlight_y_offset
 	speeder[e].headlight_key = lower(headlight_key)
-	speeder[e].fuel_user_global = fuel_user_global
-	speeder[e].weight_user_global = weight_user_global
+	speeder[e].speeder_fuel_user_global = speeder_fuel_user_global
+	speeder[e].speeder_weight_user_global = speeder_weight_user_global
+	speeder[e].speeder_health_user_global = speeder_health_user_global
 end
 
 function speeder_init(e)
@@ -161,10 +166,11 @@ function speeder_init(e)
 	speeder[e].headlight_z_offset = 15
 	speeder[e].headlight_y_offset = 7
 	speeder[e].headlight_key = "H"
-	speeder[e].fuel_user_global = ""
-	speeder[e].weight_user_global = ""	
+	speeder[e].speeder_fuel_user_global = ""
+	speeder[e].speeder_weight_user_global = ""
+	speeder[e].speeder_health_user_global = ""	
 	speeder[e].headlight_number = 0
-
+	
 	status[e] = "init"
 	speed[e] = 0
 	shealth[e] = 0
@@ -191,6 +197,7 @@ function speeder_init(e)
 	hlightrange[e] = 0
 	currentvalue[e] = 0	
 	played[e] = 0
+	revplayed[e] = 0	
 end 
 
 function speeder_main(e)
@@ -216,9 +223,12 @@ function speeder_main(e)
 				end
 			end		
 		end
-		if speeder[e].weight_user_global > "" then
-			_G["g_UserGlobal['"..speeder[e].weight_user_global.."']"] = 0
-		end	
+		if speeder[e].speeder_weight_user_global > "" then
+			_G["g_UserGlobal['"..speeder[e].speeder_weight_user_global.."']"] = 0
+		end
+		if speeder[e].speeder_health_user_global ~= "" then
+			_G["g_UserGlobal['"..speeder[e].speeder_health_user_global.."']"] = shealth[e]
+		end
 		status[e] = "wait"
 	end
 	
@@ -236,7 +246,7 @@ function speeder_main(e)
 		GetInspeeder(e)
 	end
 	if status[e] == "drive" then
-		if speeder[e].weight_user_global > "" then _G["g_UserGlobal['"..speeder[e].weight_user_global.."']"] = GetEntityWeight(e) end
+		if speeder[e].speeder_weight_user_global > "" then _G["g_UserGlobal['"..speeder[e].speeder_weight_user_global.."']"] = GetEntityWeight(e) end
 		GravityOff(e)
 		UpdatePosition(e,speeder[e].reversed_control)
 		UpdatePlayerPosition(e)
@@ -260,6 +270,9 @@ function speeder_main(e)
 			SetEntityHealth(e,0)
 		end
 		CollisionCheck(e)
+		if speeder[e].speeder_health_user_global ~= "" then
+			_G["g_UserGlobal['"..speeder[e].speeder_health_user_global.."']"] = shealth[e]
+		end
 	end
 	if g_KeyPressE == 0 then 
 		vpressed[e] = 0 
@@ -274,8 +287,8 @@ function speeder_main(e)
 		headlightpause[e] = g_Time + 1000
 		headlightmode[e] = 0
 	end
-	if speeder[e].fuel_user_global ~= "" then
-		if _G["g_UserGlobal['"..speeder[e].fuel_user_global.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..speeder[e].fuel_user_global.."']"] end
+	if speeder[e].speeder_fuel_user_global ~= "" then
+		if _G["g_UserGlobal['"..speeder[e].speeder_fuel_user_global.."']"] ~= nil then currentvalue[e] = _G["g_UserGlobal['"..speeder[e].speeder_fuel_user_global.."']"] end
 		if currentvalue[e] <= 0 then
 			if speed[e] > 0 then
 				speed[e] = speed[e] - speeder[e].acceleration
@@ -376,28 +389,38 @@ function UpdatePlayerPosition(e)
 end 
 
 function Controlspeeder(e)
-	if shealth[e] > 0 then		
+	if shealth[e] > 0 then
+		if speed[e] > -1 then 
+			StopSound(e,5)
+			revplayed[e] = 0
+		end		
 		if g_KeyPressW == 0 and speed[e] > speeder[e].minimum_speed then
 			LoopSound(e,1) 
 			StopSound(e,0)
 		end
 		if g_KeyPressW == 1 then 
 			LoopSound(e,0) -- drive sound
-			StopSound(e,1) 
+			StopSound(e,1)
+			StopSound(e,5)
+			revplayed[e] = 0
 			if speed[e] < speeder[e].maximum_speed then 
 				speed[e] = speed[e] + speeder[e].acceleration/5
 			else 
 				speed[e] = speeder[e].maximum_speed
 				LoopSound(e,0)
 				StopSound(e,1)
-			end 
+			end
 		elseif g_KeyPressS == 1 then 
 			if speed[e] > speeder[e].minimum_speed then 
 				speed[e] = speed[e] - speeder[e].acceleration/5 
-				LoopSound(e,1) 
+				LoopSound(e,1)
 				StopSound(e,0)
+				if speed[e] < -3 and revplayed[e] == 0 then 
+					LoopSound(e,5)
+					revplayed[e] = 1
+				end	
 			else 
-				speed[e] = speeder[e].minimum_speed 
+				speed[e] = speeder[e].minimum_speed 				
 			end 
 		else 
 			if speed[e] > 0 then 
@@ -508,7 +531,7 @@ function GetOutspeeder(e)
 	if g_KeyPressE == 1 and speed[e] > 0 - (speeder[e].maximum_speed/10) and speed[e] < 0 + (speeder[e].maximum_speed/10) and vpressed[e] == 0 then 
 		vpressed[e] = 1 
 		speed[e] = 0
-		if speeder[e].weight_user_global > "" then _G["g_UserGlobal['"..speeder[e].weight_user_global.."']"] = 0 end
+		if speeder[e].speeder_weight_user_global > "" then _G["g_UserGlobal['"..speeder[e].speeder_weight_user_global.."']"] = 0 end
 		new_y = math.rad(g_Entity[e]['y'])		
 		pos_x[e] = g_Entity[e]['x'] + (math.sin(new_y) * speeder[e].enter_range)
 		pos_z[e] = g_Entity[e]['z'] + (math.cos(new_y) * speeder[e].enter_range)

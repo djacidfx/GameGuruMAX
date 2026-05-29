@@ -1,4 +1,4 @@
--- Door Rotate v33 - Necrym59 and AmenMoses and Lee
+-- Door Rotate v34 - Necrym59 and AmenMoses and Lee
 -- DESCRIPTION: Rotates a non-animating door when player interacts with it. When door is initially opened, play <Sound0>. When the door is closing, play <Sound1>.
 -- DESCRIPTION: Customize the [LockedText$="Door is locked. Find a way to unlock it"]
 -- DESCRIPTION: and optionally [!IsUnlocked=1]
@@ -11,6 +11,10 @@
 -- DESCRIPTION: [@ITEM_HIGHLIGHT=0(0=None,1=Shape,2=Outline,3=Icon)]
 -- DESCRIPTION: [HIGHLIGHT_ICON_IMAGEFILE$="imagebank\\icons\\hand.png"]
 -- DESCRIPTION: [@LOGIC_TRIGGER=1(1=None,2=On Opening,3=On Closing,4=On Opening+Closing, 5=On Opening+Closed)]
+-- DESCRIPTION: <Sound0> for Opening Sound
+-- DESCRIPTION: <Sound1> for Closing Sound
+-- DESCRIPTION: <Sound2> for Closed Sound
+-- DESCRIPTION: <Sound3> for Locked Sound
 
 local module_misclib = require "scriptbank\\module_misclib"
 local Q = require "scriptbank\\quatlib"
@@ -34,6 +38,7 @@ local hl_icon			= {}
 local hl_imgwidth		= {}
 local hl_imgheight		= {}
 local logic_trigger		= {}
+local keypause 			= {}
 
 local defaultLockedText		= "Door is locked. Find a way to open it"
 local defaultIsUnlocked		= 1
@@ -107,6 +112,7 @@ function door_rotate_init_name( e, name )
 	hl_imgwidth[e] = 0
 	hl_imgheight[e] = 0	
 	SetEntityAlwaysActive(e,1)
+	keypause[e] = math.huge
 end
 
 function door_rotate_main(e)
@@ -124,6 +130,7 @@ function door_rotate_main(e)
 			SetSpriteOffset(hl_icon[e],hl_imgwidth[e]/2.0, hl_imgheight[e]/2.0)
 			SetSpritePosition(hl_icon[e],500,500)
 		end
+		keypause[e] = g_Time + 1000
 		status[e] = "endinit"
 	end
 
@@ -201,7 +208,7 @@ function door_rotate_main(e)
 		--end pinpoint select object--
 	end
 
-	if (PlayerDist < door.door_range and tEnt[e] == e and GetEntityVisibility(e) == 1) or allowautoopenremotely == 1 then
+	if (PlayerDist < door.door_range and tEnt[e] == e and GetEntityVisibility(e) == 1 and LookingAt == 1) or allowautoopenremotely == 1 then
 		tareweclose = 1
 		-- handle door when closed
 		if door.state == 'Closed' then
@@ -216,6 +223,11 @@ function door_rotate_main(e)
 				end
 			end
 			local tdotheopennow = 0
+			if g_KeyPressE == 1 and door.isunlocked == false and g_Time > keypause[e] then
+				PlaySound(e,3)
+				keyPressed = false
+				keypause[e] = g_Time + 1000
+			end
 			if tcanopennow == 1 then
 				if door.door_type == 'Auto' then
 					tdotheopennow = 1
@@ -232,7 +244,7 @@ function door_rotate_main(e)
 					end
 				end
 				if tdotheopennow == 1 then
-					PlaySound( e, 0 )
+					PlaySound(e,0)
 					door.state = 'Knob'
 					door.timer = timeThisFrame + 150
 					if door.logic_trigger == 2 or door.logic_trigger == 4 or door.logic_trigger == 5 then
@@ -252,6 +264,7 @@ function door_rotate_main(e)
 							ActivateIfUsed(e)
 							PerformLogicConnections(e)
 						end
+						PlaySound(e,1)
 						keyPressed = true
 					end
 				else
@@ -298,7 +311,7 @@ function door_rotate_main(e)
 			CollisionOn( e )
 		else
 			door.state = 'Closed'
-			PlaySound( e, 1 )			
+			PlaySound(e,2)			
 			door.blocking = 1
 			if door.logic_trigger == 5 then
 				ActivateIfUsed(e)
